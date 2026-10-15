@@ -149,6 +149,55 @@ public class AgentPackageContractGuards
     // ────────── 实现 ──────────
 
     /// <summary>
+    /// <b>中立性反向锁</b>（迁移方案 §6：随「唯一源级引擎 + 禁兼引」守卫的断言 ⑤ 迁入本仓）：
+    /// <c>Mud.AI.*</c> 工程不得引用任何 <c>Mud.Feishu*</c> 工程或包。
+    /// </summary>
+    /// <remarks>
+    /// 迁移前该断言在飞书仓扫描 <c>Mud.AI.*</c> 的 csproj；迁移后这些 csproj 只存在于本仓（飞书仓留着会对着
+    /// 不存在的工程空扫 = 假绿），故随实现迁入。方向铁律只朝一边：飞书 AI 适配层 → <c>Mud.AI.*</c>（合法），
+    /// <c>Mud.AI.*</c> → 飞书工程/包（非法，独立发布即不可能）。
+    /// </remarks>
+    [Fact]
+    public void MudAiFamily_ShouldNotDependOnFeishuProjects()
+    {
+        var familyProjects = new[]
+        {
+            Path.Combine(GetSolutionRoot(), "Mud.AI.Abstractions", "Mud.AI.Abstractions.csproj"),
+            Path.Combine(GetSolutionRoot(), "Mud.AI.Agent", "Mud.AI.Agent.csproj"),
+        };
+
+        var scanned = familyProjects.Where(File.Exists).ToArray();
+        scanned.Should().NotBeEmpty("扫描面为空是假绿（csproj 路径解析坏了）");
+
+        var offenders = scanned
+            .Where(path => ReferencesFeishuProjects(File.ReadAllText(path)))
+            .Select(Path.GetFileName)
+            .ToArray();
+
+        offenders.Should().BeEmpty(
+            "Mud.AI.* 是产品中立的运行期 / 契约层，不得反向依赖任何 Mud.Feishu* 工程或包"
+            + "（方向：飞书适配层 → Mud.AI.*，反向即倒置、独立发布即不可能）：{0}",
+            string.Join(" | ", offenders));
+    }
+
+    /// <summary>检查器自证：合成「Mud.AI.* → Mud.Feishu*」必须被点名；纯 Mud.AI 内部引用与注释不得误伤。</summary>
+    [Theory]
+    [InlineData("<Project><ItemGroup><ProjectReference Include=\"..\\Mud.Feishu.Abstractions\\Mud.Feishu.Abstractions.csproj\" /></ItemGroup></Project>", true)]
+    [InlineData("<Project><ItemGroup><PackageReference Include=\"Mud.Feishu.AI\" Version=\"1.0.0\" /></ItemGroup></Project>", true)]
+    [InlineData("<Project><ItemGroup><ProjectReference Include=\"..\\Mud.AI.Abstractions\\Mud.AI.Abstractions.csproj\" /></ItemGroup></Project>", false)]
+    [InlineData("<Project><!-- <ProjectReference Include=\"..\\Mud.Feishu.AI\\Mud.Feishu.AI.csproj\" /> --></Project>", false)]
+    public void FeishuDependencyChecker_ShouldFlagMudAiToFeishuReferences(string csprojContent, bool expected)
+        => ReferencesFeishuProjects(csprojContent).Should().Be(expected);
+
+    /// <summary>判据：csproj 中是否存在指向任何 <c>Mud.Feishu*</c> 工程或包的引用（先剔 XML 注释）。</summary>
+    private static bool ReferencesFeishuProjects(string csprojContent)
+    {
+        var content = StripXmlComments(csprojContent);
+        return Regex.IsMatch(content, @"<ProjectReference\s+Include=""[^""]*Mud\.Feishu[^""]*\.csproj""")
+            || Regex.IsMatch(content, @"<PackageReference\s+Include=""Mud\.Feishu[^""]*""");
+    }
+
+    /// <summary>
     /// 判据：声明了<b>组件本身</b>（<c>Include="Mud.HttpUtils"</c>——模式含闭引号，
     /// 故 <c>Mud.HttpUtils.Attributes</c> 这类子包不会命中）。先剔除 XML 注释：注释不是声明。
     /// </summary>
