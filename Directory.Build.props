@@ -1,0 +1,82 @@
+<Project>
+	<PropertyGroup>
+		<!-- 新仓自有版本线（方案 §3.3 D-3）：与飞书仓全局 <Version> 解耦，自 1.0.0 起步。 -->
+		<Version>1.0.0</Version>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoDefaultExcludes>true</NoDefaultExcludes>
+		<Copyright>© 2019-2026 Mud Studio Co.,Ltd.</Copyright>
+		<Authors>Mud Studio</Authors>
+		<Company>Mud Studio</Company>
+		<LangVersion>13.0</LangVersion>
+		<NoWarn>$(NoWarn);NU1605</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);NU1605</WarningsNotAsErrors>
+		<!-- 版本漂移防护（R-3）：声明版本与解析版本不一致时立即失败。 -->
+		<WarningsAsErrors>$(WarningsAsErrors);NU1603</WarningsAsErrors>
+
+		<!-- 打包元数据（方案 §5.1）：包身份已独立于飞书仓，故在根 props 统一声明。
+		     图标/README 由下方 ItemGroup 逐工程注入（PackageIcon/PackageReadmeFile 指向包内根）。 -->
+		<PackageProjectUrl>http://www.mudtools.cn/</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/mudtools/Mud.AI</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageIcon>Icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>Mud.AI;Agent;Abstractions;ToolSurface;Roslyn;SourceGenerator;AOT</PackageTags>
+	</PropertyGroup>
+
+	<!-- AOT006 仅在启用 AOT 分析的 TFM（net8+）上有语义。netstandard2.0 / net6.0 不启用
+	     IsAotCompatible，按 TFM 精确豁免（源 props 同款）。 -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net6.0'">
+		<NoWarn>$(NoWarn);AOT006</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);AOT006</WarningsNotAsErrors>
+		<!-- Microsoft.Extensions.* 10.x（ns2.0 兼容资产）在 net6.0/ns2.0 上触发 targets 兼容性告警，
+		     程序集本身 TFM 兼容，按官方属性抑制（源 props 同款）。 -->
+		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+	</PropertyGroup>
+
+	<!-- AOT 全局配置：仅在 .NET 8+ TFM 上启用 AOT 分析器。 -->
+	<PropertyGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'net6.0'">
+		<IsAotCompatible>true</IsAotCompatible>
+		<EnableAotAnalyzer>true</EnableAotAnalyzer>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<TrimMode>full</TrimMode>
+		<WarningsAsErrors>$(WarningsAsErrors);AOT001;AOT002;AOT003;AOT004;AOT007</WarningsAsErrors>
+		<!-- ConfigurationBinder.Bind / Configure<T>(IConfiguration) 的反射实现会触发 IL2026/IL3050，
+		     启用配置绑定源生成器后绑定代码在编译期生成，消除这两类告警。 -->
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+	</PropertyGroup>
+
+	<!-- 严格模式（可选）：将 IL2xxx/IL3xxx/AOT00x 升级为错误。 -->
+	<PropertyGroup Condition="'$(AotStrictMode)' == 'true'">
+		<WarningsAsErrors>$(WarningsAsErrors);IL2026;IL2046;IL2050;IL2057;IL2067;IL2070;IL2072;IL2075;IL2080;IL3050</WarningsAsErrors>
+	</PropertyGroup>
+
+	<!-- M.E.* 统一定版于 10.0.12（与 Microsoft.Agents.AI 1.25.0 的传递依赖对齐，防 NU1603 漂移）。 -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net9.0' or '$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="System.Text.Json" Version="10.0.12" />
+	</ItemGroup>
+
+	<!-- 打包资产（方案 §5.1）：所有可打包工程共用仓根 Icon.png / README.md。
+	     测试工程由 Tests/Directory.Build.props 遮蔽本文件且 IsPackable=false，不受影响。 -->
+	<ItemGroup>
+		<None Include="$(MSBuildThisFileDirectory)Icon.png" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+	</ItemGroup>
+</Project>

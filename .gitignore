@@ -1,0 +1,26 @@
+################################################################################
+# Mud.AI 仓库 .gitignore
+################################################################################
+
+/.vs
+/.vscode
+/.idea
+/.opencode
+/.docs
+/.scratch
+/artifacts
+/TestResults
+/bin
+/test-reports
+node_modules
+
+# 各工程构建产物
+**/bin/
+**/obj/
+**/TestResults/
+
+*.user
+*.local.json
+**/appsettings.local.json
+**/appsettings.*.json
+!**/appsettings.example.json

@@ -1,0 +1,55 @@
+<Project>
+	<PropertyGroup>
+		<!-- 测试 TFM 收敛：全部测试工程统一 net8.0 单 TFM（沿用飞书仓 Tests props 口径）。 -->
+		<TargetFrameworks>net8.0</TargetFrameworks>
+		<Version>1.0.0</Version>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<NoDefaultExcludes>true</NoDefaultExcludes>
+		<Copyright>© 2019-2026 Mud Studio Co.,Ltd.</Copyright>
+		<Authors>Mud Studio</Authors>
+		<Company>Mud Studio</Company>
+		<LangVersion>13.0</LangVersion>
+		<!-- 本文件会遮蔽仓库根的 Directory.Build.props，故此处显式继承治理设置，避免测试项目成为门禁盲区 -->
+		<NoWarn>$(NoWarn);NU1605</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);NU1605</WarningsNotAsErrors>
+		<!-- 版本漂移防护：声明版本与解析版本不一致时立即失败 -->
+		<WarningsAsErrors>$(WarningsAsErrors);NU1603</WarningsAsErrors>
+	</PropertyGroup>
+
+	<!-- AOT006 仅在启用 AOT 分析的 TFM（net8+）上有语义，net6.0 精确豁免（与根目录策略一致） -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<NoWarn>$(NoWarn);AOT006</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);AOT006</WarningsNotAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="FluentAssertions" Version="8.8.0" />
+		<PackageReference Include="FsCheck" Version="2.16.6" />
+		<PackageReference Include="FsCheck.Xunit" Version="2.16.6" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net9.0' or '$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+</Project>
