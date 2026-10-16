@@ -12,25 +12,18 @@ using Mud.AI.Abstractions.Observability;
 
 namespace Mud.AI.Agent.Channels;
 
-/// <summary>
-/// 分片缓冲流式通道基类：增量缓冲达产品侧配置的分片长度阈值 <b>且</b>距上次下游更新 ≥
-/// <see cref="MinUpdateInterval"/>（常量 800ms，防飞书频率限制）才更新一次下游；<see cref="FlushAsync"/> 终态无条件落地。
-/// </summary>
+/// <summary>分片缓冲流式通道基类：增量缓冲达产品侧配置的分片长度阈值 <b>且</b>距上次下游更新 ≥
+/// <see cref="MinUpdateInterval"/>（常量 800ms，防飞书频率限制）才更新一次下游；<see cref="FlushAsync"/> 终态无条件落地。</summary>
 /// <remarks>
 /// <b>双阈值语义</b>：分片长度为「量」阈值、最小间隔为「率」阈值——长增量按分片更新；短增量连发被间隔钳制继续缓冲
-/// （牺牲字粒度，换频率安全）。两通道（编辑消息通道 / 卡片流通道）
-/// 缓冲语义同构，用例参数化覆盖。
-/// <para>
-/// <b>失败语义</b>（接口契约，子类共用）：<see cref="BeginAsync"/> 失败向上抛（调用方/降级链回退，模型尚未调用、零重复成本）；
-/// 单次更新的异常经 <see cref="UpdateWithIsolationAsync"/> 隔离——占位消息停留上一次成功内容，不中断模型流；子类
-/// <see cref="UpdateCoreAsync"/> 内的业务级失败（如 <c>outcome.Ok=false</c>）自行记日志返回，同样不中断模型流。
-/// </para>
-/// <para>
+/// （牺牲字粒度，换频率安全）。两通道（编辑消息通道 / 卡片流通道）缓冲语义同构，用例参数化覆盖。
+/// <b>失败语义</b>（接口契约，子类共用）：<see cref="BeginAsync"/> 失败向上抛（调用方/降级链回退，模型尚未调用、零
+/// 重复成本）；单次更新的异常经 <see cref="UpdateWithIsolationAsync"/> 隔离——占位消息停留上一次成功内容，不中断模型流；
+/// 子类 <see cref="UpdateCoreAsync"/> 内的业务级失败（如 <c>outcome.Ok=false</c>）自行记日志返回，同样不中断模型流。
 /// <b>状态生命周期契约</b>：通道注册为 <c>Singleton</c>（进程寿命），故<b>子类新增的任何 per-messageId 状态（字典/集合）
 /// 必须在 <see cref="OnFlushed"/> 中移除</b>——基类在 <c>FlushAsync</c> 终态落地之后无条件调用该钩子；未覆写即泄漏，
 /// 由 <c>ChannelStateLifecycleContractGuards</c> 反射断言（Begin→Write→Flush 后全部
 /// <c>ConcurrentDictionary&lt;string, *&gt;</c> 字段计数归零）兜住。
-/// </para>
 /// </remarks>
 public abstract class BufferedMessageChannel : IMessageChannel
 {
@@ -47,9 +40,7 @@ public abstract class BufferedMessageChannel : IMessageChannel
     private readonly IAgentTelemetry _telemetry;
     private readonly Func<DateTime> _clock;
 
-    /// <summary>
-    /// 初始化缓冲基类。
-    /// </summary>
+    /// <summary>初始化缓冲基类。</summary>
     /// <param name="chunkLength">分片编辑阈值（字符；① 式参数注入，必须 ≥ 1）。</param>
     /// <param name="telemetry">遥测端口（可空 ⇒ Noop；② 式，降级可观测的注入点）。</param>
     /// <param name="minUpdateInterval">最小更新间隔（缺省 <see cref="MinUpdateIntervalMs"/> 毫秒；测试可传 0）。</param>
@@ -75,10 +66,8 @@ public abstract class BufferedMessageChannel : IMessageChannel
     /// <summary>分片编辑阈值（字符）。</summary>
     protected int ChunkLength => _chunkLength;
 
-    /// <summary>
-    /// 降级原因文案（② 式：中立默认值；产品子类覆写为自己的受控枚举值，
-    /// 产品指标名因此留在产品侧——中立包不持有产品词汇）。
-    /// </summary>
+    /// <summary>降级原因文案（② 式：中立默认值；产品子类覆写为自己的受控枚举值，产品指标名因此留在产品侧——中立包
+    /// 不持有产品词汇）。</summary>
     protected virtual string DegradedReason => "channel_update_failed";
 
     /// <inheritdoc />
@@ -142,25 +131,15 @@ public abstract class BufferedMessageChannel : IMessageChannel
         }
     }
 
-    /// <summary>
-    /// 状态清理钩子：<b>子类新增的任何 per-messageId 状态必须在此移除</b>。
-    /// </summary>
+    /// <summary>状态清理钩子：<b>子类新增的任何 per-messageId 状态必须在此移除</b>。</summary>
     /// <remarks>
-    /// <para>
-    /// 本钩子是"长生命周期对象的状态生命周期"契约点：通道实例注册为 <c>Singleton</c>（与进程同寿命），
-    /// 若子类在 <see cref="BeginAsync"/> 中登记的字典键（<c>biz_id</c> / <c>messageId</c> 等）单调新增且永不重复，
-    /// 而清理又只做在基类自己的字典上，则泄漏是<b>确定性</b>的（不是"疏忽"而是"缺少强制机制"）。
-    /// </para>
-    /// <para>
-    /// 为什么不是"补两行 <c>TryRemove</c>"：把清理从<b>私有实现细节</b>提升为<b>可覆写的契约点</b>后，
-    /// "新增一个字典字段"在写代码时就必须在"覆写本钩子 / 明确不覆写"之间做出选择；
-    /// 并被元守卫 <c>ChannelStateLifecycleContractGuards</c>（反射枚举全部 <see cref="IMessageChannel"/>
-    /// 实现的 <c>ConcurrentDictionary&lt;string, *&gt;</c> 字段，断言 Begin→Write→Flush 后计数归零）机械锁定。
-    /// </para>
-    /// <para>
-    /// 因此<b>未覆写本钩子的新增状态字段会被守卫直接报红</b>，而新增通道实现亦须在守卫中登记构造工厂
-    /// （守卫对"未登记"同样报红），覆盖面不依赖评审者是否想到。
-    /// </para>
+    /// 本钩子是"长生命周期对象的状态生命周期"契约点：通道实例注册为 <c>Singleton</c>（与进程同寿命），若子类在
+    /// <see cref="BeginAsync"/> 中登记的字典键（<c>biz_id</c> / <c>messageId</c> 等）单调新增且永不重复，而清理又只做在
+    /// 基类自己的字典上，则泄漏是<b>确定性</b>的（不是"疏忽"而是"缺少强制机制"）。把清理从<b>私有实现细节</b>提升为
+    /// <b>可覆写的契约点</b>后，"新增一个字典字段"在写代码时就必须在"覆写本钩子 / 明确不覆写"之间做出选择；
+    /// 并被元守卫 <c>ChannelStateLifecycleContractGuards</c>（反射枚举全部 <see cref="IMessageChannel"/> 实现的
+    /// <c>ConcurrentDictionary&lt;string, *&gt;</c> 字段，断言 Begin→Write→Flush 后计数归零）机械锁定——<b>未覆写本钩子
+    /// 的新增状态字段会被守卫直接报红</b>，新增通道实现亦须在守卫中登记构造工厂（守卫对"未登记"同样报红）。
     /// </remarks>
     /// <param name="messageId">已终结的占位消息 ID。</param>
     protected virtual void OnFlushed(string messageId)
@@ -206,11 +185,8 @@ public abstract class BufferedMessageChannel : IMessageChannel
         }
     }
 
-    /// <summary>
-    /// 单次更新失败的降级记录钩子：默认经 <see cref="IAgentTelemetry"/> 端口记一次
-    /// （<see cref="DegradedReason"/> 文案）；产品子类覆写以补产品维度（如 app_key tag）——
-    /// 迁移期产品指标因此逐字节不变。
-    /// </summary>
+    /// <summary>单次更新失败的降级记录钩子：默认经 <see cref="IAgentTelemetry"/> 端口记一次（<see cref="DegradedReason"/>
+    /// 文案）；产品子类覆写以补产品维度（如 app_key tag）——迁移期产品指标因此逐字节不变。</summary>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="messageId">占位消息 ID。</param>
     /// <param name="exception">被隔离的异常。</param>
