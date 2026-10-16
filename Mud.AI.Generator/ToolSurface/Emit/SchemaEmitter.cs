@@ -21,8 +21,8 @@ namespace Mud.AI.ToolSurface.Emit;
 /// 产物命名空间 <c>{P}Schemas</c>/<c>{P}Contracts</c> → <see cref="SdkToolProfileModel.GeneratedNamespace"/>、<c>{P}Names</c> → <see cref="SdkToolProfileModel.ContractNamespace"/>（勿与门槛值混淆）；风险枚举全名 → <see cref="SdkToolProfileModel.RiskEnumFullName"/>；golden 文件名 → <see cref="SdkToolProfileModel.GoldenFileName"/>（全名匹配，非后缀匹配）。
 /// </para>
 /// <para>
-/// <b>D2「单一真相源」纪律</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定必须全部从工具特性派生，
-/// <b>不得</b>再手写任何平行清单——手写清单与特性表一旦漂移，名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"。
+/// <b>单一真相源纪律</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定必须全部从工具特性派生，
+/// <b>不得</b>手写平行清单——漂移后名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"。
 /// </para>
 /// <para>
 /// <b>名字契约的所有者唯一</b>：工具名契约表只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/> 程序集（工具面的实现包）——
@@ -36,10 +36,9 @@ internal static class SchemaEmitter
     /// <c>AdditionalTextsProvider</c> 过滤时消费；<b>全文件名</b>匹配）。
     /// </summary>
     /// <remarks>
-    /// <see cref="SdkToolProfileModel.GoldenFileName"/> 是<b>非必填槽</b>（如剖面尚未固化快照时）：
-    /// 未声明（空串）时本方法恒为 <see langword="false"/>。否则 <c>EndsWith("")</c> 恒为 true，
-    /// 消费方工程里任意一个 AdditionalFile（appsettings.json / 任意 .txt）都会被当作
-    /// golden 快照参与逐字节比对，凭空产出零容忍的槽位 014 并使构建失败。
+    /// <see cref="SdkToolProfileModel.GoldenFileName"/> 是<b>非必填槽</b>（剖面尚未固化快照时为空串）：未声明时
+    /// 本方法恒为 <see langword="false"/>——否则 <c>EndsWith("")</c> 恒为 true，消费方工程里任意 AdditionalFile
+    /// （任意 .txt / appsettings.json）都会被当作 golden 快照参与比对，凭空产出零容忍的槽位 014 并构建失败。
     /// </remarks>
     public static bool IsGoldenFile(string path, SdkToolProfileModel profile)
         => profile.GoldenFileName.Length > 0

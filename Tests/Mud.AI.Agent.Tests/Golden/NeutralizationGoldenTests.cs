@@ -17,8 +17,8 @@ namespace Mud.AI.Agent.Tests.Golden;
 /// 时序敏感（闸门）与端到端（派生处理器）行为刻意不做快照，由既有行为断言覆盖。
 /// </para>
 /// <para>
-/// <b>N6 · D2 迁移形态</b>：原断言读 <c>FeishuAgent</c> 会话工厂与产品事实
-/// （<c>FeishuSummarizerFacts</c> 摘要提示词与 idKeys、<c>KnowledgeContextAssembler</c> 头尾文案）。
+/// <b>迁移形态</b>：断言只读中立事实——摘要提示词与 idKeys 走中立内建缺省，
+/// 产品文案（如 <c>KnowledgeContextAssembler</c> 头尾）经参数注入参与。
 /// 中立形态的等价替换（快照文本零漂移）：
 /// <list type="bullet">
 /// <item>会话工厂 → 本地 <see cref="GoldenTestSession"/>（<c>AgentSession</c> 是 MAF 会话，自建子类即可）；</item>
@@ -77,7 +77,7 @@ public class NeutralizationGoldenTests
         var session = NewSession();
         session.SetInMemoryChatHistory(history, StateKey, null);
 
-        // N6 · D2：提示词/idKeys 用中立内建缺省（null）——黄金场景不设 StateBag、
+        // 提示词/idKeys 用中立内建缺省（null）——黄金场景不设 StateBag、
         // 摘要文本来自脚本化 mock，产品事实不参与快照输出（零漂移论证见类 remarks）。
         var summarizer = new ConversationSummarizer(
             new FixedSummaryClient().Object,
@@ -232,7 +232,7 @@ public class NeutralizationGoldenTests
             .Setup(r => r.RetrieveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(chunks);
 
-        // N6 · D2：中立机制 + 逐字节复制的产品头尾文案（产品事实经参数注入的既有形态）。
+        // 中立机制 + 逐字节复制的产品头尾文案（产品事实经参数注入的既有形态）。
         var assembler = new Mud.AI.Agent.Context.RetrievalContextAssembler(
             retriever.Object, KnowledgeHeader, KnowledgeFooter, minScore: minScore);
         var request = new ConversationRequest("app-a", ConversationScope.Group(), "oc_1", "ou_1", "om_1", MentionedText: mentionedText);

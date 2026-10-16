@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.Channels;
 
 /// <summary>
-/// 流式通道降级链测试（AI-FD-D12 P2D-2a）：卡片流能力不可用自动降级编辑通道（事件处理器零感知）、
+/// 流式通道降级链测试：卡片流能力不可用自动降级编辑通道（事件处理器零感知）、
 /// 群聊跳过卡片流直走编辑通道、全部失败上抛、messageId 生命周期互斥。
 /// </summary>
 /// <remarks>

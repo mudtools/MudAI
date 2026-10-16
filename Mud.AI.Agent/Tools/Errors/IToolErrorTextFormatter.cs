@@ -34,7 +34,7 @@ public interface IToolErrorTextFormatter
     string Format(string toolName, string reason);
 
     /// <summary>
-    /// <b>E-3：渲染"下一步做什么"的一行恢复提示</b>（<c>internal/recovery/hint.go</c> 的本地等价物）。
+    /// <b>渲染"下一步做什么"的一行恢复提示</b>（<c>internal/recovery/hint.go</c> 的本地等价物）。
     /// </summary>
     /// <param name="error">结构化错误载荷（分类 + 子类 + scope 事实 + 码表命中决定提示内容）。</param>
     /// <returns>

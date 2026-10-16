@@ -70,7 +70,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
     /// <param name="emitNullableEnable">是否发射 #nullable enable（默认 true）。</param>
     public static void GenerateFileHeader(StringBuilder sb, IEnumerable<string> usingNamespaces, bool emitNullableEnable = true)
     {
-        // [Phase4 修复 5.1] 公开 API 的参数守卫（CA1062）：本方法为库的公开契约入口，
+        // 公开 API 的参数守卫（CA1062）：本方法为库的公开契约入口，
         // 显式校验可把「调用方传 null」的 NRE 提前为参数异常（源生成器内 NRE 会被 csc 报为 AD0001）。
         if (sb == null)
             throw new ArgumentNullException(nameof(sb));
@@ -178,7 +178,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
             var tree = CSharpSyntaxTree.ParseText(SourceText.From(code, Encoding.UTF8));
             foreach (var diag in tree.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error))
             {
-                // [Phase4 修复 5.1] 显式 InvariantCulture（CA1305）：诊断文本仅用于日志，
+                // 显式 InvariantCulture（CA1305）：诊断文本仅用于日志，
                 // 不应受当前区域设置影响（否则日志在不同机器上不可比）。
                 GeneratorDebugLogger.Log($"生成代码语法错误 [{hintName}]: {diag.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}");
             }

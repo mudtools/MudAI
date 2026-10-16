@@ -23,7 +23,7 @@ namespace Mud.AI.Agent.Tools.Errors;
 /// <b>截断保护</b>：载荷 ≤ 512 字节且置于首行，正文截断不得吃掉载荷（守卫断言）。
 /// </para>
 /// <para>
-/// <b>BUG-8（恢复字段的预算优先级）</b>：<c>suggestions</c> 是自由文本、长度不可控，
+/// <b>恢复字段的预算优先级</b>：<c>suggestions</c> 是自由文本、长度不可控，
 /// 若它把载荷推过 512 上界，则<b>先丢 suggestions、再丢 trace</b>——
 /// <c>category</c>/<c>subtype</c>/<c>retryable</c> 这三个"模型可分支的最小集"恒被保留。
 /// 该取舍是<b>单向的</b>：不得为了塞进建议而牺牲分类字段（分类没了，建议也无从解读）。
@@ -40,14 +40,14 @@ public static class ToolErrorPayloadSerializer
     /// <summary>单条建议字符上界（超出截断；保持载荷有界）。</summary>
     public const int MaxSuggestionLength = 96;
 
-    /// <summary>E-1：权限清单条数上界（scope 是短标识符，条数上界即长度上界）。</summary>
+    /// <summary>权限清单条数上界（scope 是短标识符，条数上界即长度上界）。</summary>
     public const int MaxScopeCount = 6;
 
     /// <summary>
     /// 将 <see cref="ToolError"/> 序列化为紧凑 JSON 行（无换行符）。
     /// </summary>
     /// <remarks>
-    /// <b>降级顺序（E-1 扩展，单向不可逆）</b>：完整 → 丢 <c>suggestions</c> → 丢 <c>required_scopes</c>
+    /// <b>降级顺序（单向不可逆）</b>：完整 → 丢 <c>suggestions</c> → 丢 <c>required_scopes</c>
     /// → 丢 <c>trace</c>。三级降级都不触碰 <c>category</c>/<c>subtype</c>/<c>retryable</c>——
     /// 它们是"模型可分支的最小集"（没有分类，建议与权限清单也无从解读）。
     /// </remarks>
@@ -59,14 +59,14 @@ public static class ToolErrorPayloadSerializer
             return full;
         }
 
-        // 上界保护（BUG-8）：先丢 suggestions（次要恢复信息），保留权限事实与 trace。
+        // 上界保护：先丢 suggestions（次要恢复信息），保留权限事实与 trace。
         var withoutSuggestions = SerializeCore(error, includeSuggestions: false, includeRequiredScopes: true);
         if (withoutSuggestions.Length <= MaxPayloadBytes)
         {
             return withoutSuggestions;
         }
 
-        // E-1：再丢 required_scopes（权限清单比 trace 更容易从宿主配置侧复原）。
+        // 再丢 required_scopes（权限清单比 trace 更容易从宿主配置侧复原）。
         var coreOnly = SerializeCore(error, includeSuggestions: false, includeRequiredScopes: false);
         if (coreOnly.Length <= MaxPayloadBytes)
         {
@@ -115,7 +115,7 @@ public static class ToolErrorPayloadSerializer
             AppendSuggestions(sb, suggestions);
         }
 
-        // E-1：工具**声明**的所需权限（结构化事实投影；不是"平台已开通什么"的判断）。
+        // 工具**声明**的所需权限（结构化事实投影；不是"平台已开通什么"的判断）。
         if (includeRequiredScopes && error.RequiredScopes is { Count: > 0 } scopes)
         {
             AppendStringArray(sb, "required_scopes", scopes, MaxScopeCount);
@@ -137,7 +137,7 @@ public static class ToolErrorPayloadSerializer
     /// <remarks>
     /// 与其它字段不同，建议与 scope 清单里的值都可能是<b>自由文本/外部输入</b>，
     /// 故必须经 <see cref="JsonEncodedText"/> 转义（引号/反斜杠/控制字符），不能沿用直拼。
-    /// <c>suggestions</c>（BUG-8）与 <c>required_scopes</c>（E-1）共用本实现——两处口径不会漂移。
+    /// <c>suggestions</c> 与 <c>required_scopes</c> 共用本实现——两处口径不会漂移。
     /// </remarks>
     private static void AppendStringArray(
         StringBuilder sb, string key, IReadOnlyList<string> values, int maxCount)

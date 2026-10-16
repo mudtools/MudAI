@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.ContractGuards;
 
 /// <summary>
-/// T10 / D10 流式文本抑制选项守卫——中立回合管线半边。
+/// 流式文本抑制选项守卫——中立回合管线半边。
 /// </summary>
 /// <remarks>
 /// <b>迁移说明</b>：源守卫的四条断言里，①—③ 面向产品侧 <c>FeishuAgentOptions</c> / <c>FeishuAgent</c>

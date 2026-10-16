@@ -13,8 +13,8 @@ namespace Mud.AI.Agent.Tests.Golden;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>D2 迁移说明</b>：快照与断言自 <c>Tests/Mud.Feishu.AI.Tests/Golden</c> 整体迁入
-/// （测试随类型走，P3 上游化时覆盖跟着中立包离开飞书仓）；迁移要求快照文本<b>零漂移</b>——
+/// <b>迁移说明</b>：快照与断言自 <c>Tests/Mud.Feishu.AI.Tests/Golden</c> 整体迁入
+/// （测试随类型走，中立包上游化时覆盖跟着一起走）；迁移要求快照文本<b>零漂移</b>——
 /// 依赖 <c>FeishuAgent</c> 的会话工厂与产品事实（<c>FeishuSummarizerFacts</c> /
 /// <c>KnowledgeContextAssembler</c> 头尾文案）改为中立等价形态（见 <see cref="NeutralizationGoldenTests"/>）。
 /// </para>

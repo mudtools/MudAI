@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.Context;
 
 /// <summary>
-/// <see cref="SenderInfoContextAssembler"/>（E8 迁G）的自有测试：ID 形态注入与脱敏边界。
+/// <see cref="SenderInfoContextAssembler"/> 的自有测试：ID 形态注入与脱敏边界。
 /// </summary>
 public class SenderInfoContextAssemblerTests
 {

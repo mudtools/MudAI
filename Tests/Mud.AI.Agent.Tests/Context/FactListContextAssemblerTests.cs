@@ -10,7 +10,7 @@ using Mud.AI.Agent.Context;
 namespace Mud.AI.Agent.Tests.Context;
 
 /// <summary>
-/// <see cref="FactListContextAssembler"/>（N4 · E5/E6 机制）的自有测试：
+/// <see cref="FactListContextAssembler"/> 的自有测试：
 /// 事实列表机制（空值跳过 / 逐行扣预算 / 截断标记 / 条数闸 / untrusted 头）与钩子覆写。
 /// </summary>
 /// <remarks>产品子类（审批 / 多维表格）的行为覆盖在 AI.Tests 的 <c>ApprovalContextAssemblerTests</c>。</remarks>

@@ -7,10 +7,7 @@
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>
-/// Tier C 扫描器：把手写工具特性接口（策展暴露面的<b>唯一</b>声明处）编译为
-/// <see cref="ToolSchemaModel"/>，并就 <c>Source</c> 与 SDK 事实做交叉校验。
-/// </summary>
+/// <summary>Tier C 扫描器：把手写工具特性接口（策展暴露面的<b>唯一</b>声明处）编译为 <see cref="ToolSchemaModel"/>，并就 <c>Source</c> 与 SDK 事实做交叉校验。</summary>
 /// <remarks>
 /// <para>
 /// 泛化点：特性识别 → <see cref="Extractors.GetToolAttribute"/>（<c>ToolAttributeName/Namespace</c> 槽）；源挂钩解析 →

@@ -31,7 +31,7 @@ Mud.AI 家族自飞书仓（原 `MudFeishu`）按「P3 上游化」独立后的�
 - 统一 C# 13.0、`Nullable` enable；XML 文档注释随包分发。
 - net8.0+ 启用 AOT 分析（`TrimMode=full`），ns2.0 / net6.0 按 TFM 精确豁免；版本漂移（NU1603）即构建失败。
 - 依赖方向单向无环：消费方 → `Mud.AI.Agent` → `Mud.AI.Abstractions`；本仓零 `Mud.Feishu*` 依赖，产品侧只经 NuGet 包显式钉版引用。
-- 注释纪律（手写运行时层，Tests 同遵）：评审批次编号必须能在 `documents/**` 或本文件里被解析；过程叙述必须链接存在的文档；注释行数与最长叙述块冻结在 `documents/comment-budget-baseline.json`（只允许下压），由 `CommentConventionContractGuards` 机械校验。编号闭集覆盖全部批次形态（中介方案 / 条目 / 策略轴 / 错误契约 / 工作组 / 任务分支 / 结论 / 裸轮次 / 文档版本 / 方案条目引用；`P95/P99` 百分位与 `C0/C1` 控制字符块是合法记号，显式排除）。台账清理与重新固化走 `scripts/comment-audit.ps1`，作用域实况扫描走 `scripts/comment-live-scan.ps1`。
+- 注释纪律（手写运行时层，Tests 同遵）：评审批次编号必须能在 `documents/**` 或本文件里被解析；过程叙述必须链接存在的文档；注释行数与最长叙述块冻结在 `documents/comment-budget-baseline.json`（只允许下压），由 `CommentConventionContractGuards` 机械校验。编号闭集覆盖全部批次形态（中介方案 / 条目 / 策略轴 / 错误契约 / 工作组 / 任务分支 / 结论 / 裸轮次 / 缺陷号 / 文档版本 / 方案条目引用；`P95/P99` 百分位与 `C0/C1` 控制字符块是合法记号，显式排除）。台账清理与重新固化走 `scripts/comment-audit.ps1`，作用域实况扫描走 `scripts/comment-live-scan.ps1`。
 - PowerShell 脚本编码：Windows PowerShell 5.1 把无 BOM 的 UTF-8 当 ANSI 解析，含中文字面量的脚本必须带 UTF-8 BOM（或纯 ASCII），否则直接解析失败。
 
 [1.0.0]: https://github.com/mudtools/Mud.AI/releases/tag/v1.0.0

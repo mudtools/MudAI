@@ -7,13 +7,11 @@
 
 namespace Mud.AI.Abstractions.Tools;
 
-/// <summary>
-/// 标注一个工具接口为 LLM FunctionCall 工具。
-/// </summary>
+/// <summary>标注一个工具接口为 LLM FunctionCall 工具。</summary>
 /// <remarks>
 /// <para>
-/// 接口只声明 Schema（工具名、描述、模型可见参数），不复用 HTTP 路由特性
-/// （语义分属「工具参数」与「HTTP 绑定」两层）；参数到强类型请求的映射由产品侧绑定类型在执行链内完成。
+/// 接口只声明 Schema（工具名、描述、模型可见参数），不复用 HTTP 路由特性（语义分属「工具参数」与
+/// 「HTTP 绑定」两层）；参数到强类型请求的映射由产品侧绑定类型在执行链内完成。
 /// </para>
 /// <para>
 /// 工具默认「进注册表不启用」，宿主须显式 MapTool（白名单语义）。
@@ -28,14 +26,10 @@ public sealed class AgentToolAttribute(string name) : Attribute
     /// <summary>模型侧描述（Skills 友好风格：短参数名 + 调用样例 + 权限一句话）。</summary>
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 所需权限点清单：随 Schema 输出，供产品侧授权门禁钩子与运维审计消费；SDK 不内建 scope 校验。
-    /// </summary>
+    /// <summary>所需权限点清单：随 Schema 输出，供产品侧授权门禁与审计消费；SDK 不内建 scope 校验。</summary>
     public string[] RequiredScopes { get; set; } = [];
 
-    /// <summary>
-    /// 是否写操作：写工具在强制授权模式下必须过授权门禁。
-    /// </summary>
+    /// <summary>是否写操作：写工具在强制授权模式下必须过授权门禁。</summary>
     public bool IsWrite { get; set; }
 
     /// <summary>

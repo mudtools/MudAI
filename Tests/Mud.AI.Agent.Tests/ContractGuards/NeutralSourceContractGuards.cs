@@ -70,7 +70,7 @@ public class NeutralSourceContractGuards
     }
 
     /// <summary>
-    /// AI-FD-D12 批次 A/B 新增配置属性（<c>MaxHistoryTokens</c>）的<b>消费点</b>（R5 规则 2）——中立半边。
+    /// 配置属性（<c>MaxHistoryTokens</c>）的<b>消费点</b>——中立半边。
     /// </summary>
     /// <remarks>
     /// <b>迁移拆分</b>：<c>MaxHistoryTokens</c> 的消费点（中立 <c>ConversationSummarizer</c>）随实现迁入本仓；
@@ -183,8 +183,8 @@ public class NeutralSourceContractGuards
                 $"中立 Agents/ 不得硬编码任何产品状态键前缀（{Path.GetFileName(neutralAgentFile)}）——字面量归产品侧所有");
         }
 
-        // P1-H3 / D4：机制（读取状态袋）在**中立门面**里——门面必须以参数接收该键，
-        // 且绝不能出现任何 `feishu.` 前缀（否则等于把产品命名面焊进包族底层，P3 上游化时它会跟着一起走）。
+        // 机制（读取状态袋）在**中立门面**里——门面必须以参数接收该键，
+        // 且绝不能出现任何 `feishu.` 前缀（否则等于把产品命名面焊进包族底层，上游化时它会跟着一起走）。
         var storeSource = ReadSource("Mud.AI.Agent", "Sessions", "AgentSessionStore.cs");
         storeSource.Should().Contain("_historyStateKey", "中立门面必须以参数接收历史状态键（D4：来源参数化）");
         storeSource.Should().NotContain("\"feishu.",

@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.Tools.Args;
 
 /// <summary>
-/// 入站净化正反用例矩阵（AT-B19 / 不变量 A5）。
+/// 入站净化正反用例矩阵。
 /// </summary>
 /// <remarks>
 /// <para>

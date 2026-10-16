@@ -130,6 +130,8 @@ public class CommentConventionContractGuards
     [InlineData("// E8 上移：已核实零产品语义", "E8")]
     [InlineData("// S-1：glob / 域级策略匹配器", "S-1")]
     [InlineData("// WP1 修复（S1）：只识别 string", "WP1")]
+    [InlineData("// BUG-8（恢复字段的预算优先级）：suggestions 是自由文本", "BUG-8")]
+    [InlineData("// required_scopes（E-1）与 suggestions 共用本实现", "E-1")]
     [InlineData("// B-6：条件必填是跨参数约束", "B-6")]
     [InlineData("// F-2：常量类闭集映射表", "F-2")]
     [InlineData("// C4a：先落快照再通知", "C4a")]

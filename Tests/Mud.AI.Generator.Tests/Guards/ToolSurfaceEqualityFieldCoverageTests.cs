@@ -24,11 +24,11 @@ namespace Mud.AI.Generator.Tests;
 /// （"守卫不是被删除，而是被遗忘"）。
 /// </para>
 /// <para>
-/// <b>缺陷背景（AT-B16 及其泛化）</b>：Roslyn 增量管线的正确性依赖
+/// <b>缺陷背景</b>：Roslyn 增量管线的正确性依赖
 /// "相等字段集 ⊇ 影响产物的事实字段集"，这是纯人工不变量，且失败模式<b>静默</b>：
 /// 漏字段 ⇒ 改了接口不重生成 ⇒ 产物过期 ⇒ Schema 与真实工具面不一致。
-/// 本仓已因此漏过两次（<c>ToolSchemaModel</c> 曾漏 <c>Source</c>、<c>CapabilityParameter</c> 曾漏文档描述），
-/// 修复时补了字段却<b>没补任何守卫</b>——两处实现至今仍以"AT-B16"注释引用这次事故。
+/// 本仓已因此漏过两次（<c>ToolSchemaModel</c> 漏 <c>Source</c>、<c>CapabilityParameter</c> 漏文档描述），
+/// 修复时补了字段却<b>没补守卫</b>——故本组用例按"相等字段集 ⊇ 事实字段集"逐类型断言。
 /// </para>
 /// <para>
 /// <b>判据（为什么选"构造参数 ⊆ 相等字段"）</b>：构造参数是"一个值对象携带的全部事实"的唯一权威列举。
@@ -52,14 +52,14 @@ public class ToolSurfaceEqualityFieldCoverageTests
         => AssertCtorFieldsParticipate("CapabilityEntry", "CapabilityEntry.cs");
 
     /// <summary>
-    /// <c>CapabilityParameter</c>：全部构造字段（含<b>文档描述</b>——AT-B16 曾漏的那个）必须参与。
+    /// <c>CapabilityParameter</c>：全部构造字段（含<b>文档描述</b>）必须参与。
     /// </summary>
     [Fact]
     public void CapabilityParameter_EveryConstructorParameter_ShouldParticipateInEqualityAndHash()
         => AssertCtorFieldsParticipate("CapabilityParameter", "CapabilityParameter.cs");
 
     /// <summary>
-    /// <c>ToolSchemaModel</c>：全部构造字段必须参与（AT-B16 的教训：曾漏 <c>Source</c>）。
+    /// <c>ToolSchemaModel</c>：全部构造字段必须参与（<c>Source</c> 必在其中）。
     /// </summary>
     [Fact]
     public void ToolSchemaModel_EveryConstructorParameter_ShouldParticipateInEqualityAndHash()

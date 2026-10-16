@@ -14,19 +14,15 @@ namespace Mud.AI.Agent.Tools;
 /// 「序列化 → <c>MaxToolResultLength</c> 截断 → <c>Truncated</c>/<c>TruncationReason</c> 标记」。
 /// </summary>
 /// <remarks>
-/// <b>为什么需要它</b>：截断必须是「出口的性质」而非「某几个执行器记得写的一步」——后者下，手拼信封<b>静默截断</b>
+/// <b>为什么需要它</b>：截断必须是「出口的性质」而非「某几个执行器记得写的一步」——否则手拼信封<b>静默截断</b>
 /// （<c>Truncated</c> 恒 <c>false</c> ⇒ 模型把不完整结果当完整事实，OTel <c>tag_truncated</c> 恒 false 使监控对截断率失明），
-/// 写工具回执信封则<b>完全无预算意识</b>；收口到本类型后这两种失败模式结构上不可能出现。
-/// <para>
-/// <b>无状态（有意）</b>：全部方法显式接收 <c>maxLength</c>，<b>不</b>持有长度——库内有两个出口持有者（<c>ToolExecutor</c> 为 <c>readonly struct</c>，写工具用 <c>0</c> 表示无预算；<c>FeishuToolBinding</c> 为持 <c>FeishuAgentOptions</c> 的 <c>sealed class</c>），本类型若也持长度，两者各 new 一个实例 ⇒「唯一出口」退化为「唯一实现」。
-/// </para>
-/// <para>
-/// <b>净化不在此处</b>：净化属「模型可见」边界而非「工具结果构造」边界——<c>FeishuToolBinding</c> 第 ⑥ 步对所有执行器产出统一施加（无开关、不可绕过），执行链自身生成的拒绝/异常文本经 <c>EgressResult</c> 净化；本类型只管<b>预算与标记</b>（含错误载荷的单一构造）。
-/// </para>
-/// <para>
-/// <b><c>maxLength</c> ≤ 0 = 无预算</b>（不截断、不标记），与 <c>ToolExecutor(string toolName)</c> 单参构造的既有语义一致。
-/// ⚠️ <b>不能把 0 直传 <c>ToolResultText.Truncate</c></b>——那里把 &lt;1 钳制为 1，会截成 1 个字符。
-/// </para>
+/// 写工具回执则<b>完全无预算意识</b>；收口到本类型后这两种失败模式结构上不可能出现。
+/// <b>无状态（有意）</b>：方法显式接收 <c>maxLength</c> 而不持有长度——否则每多一个出口持有者就多一个实例，
+/// 「唯一出口」退化为「唯一实现」。
+/// <b>净化不在此处</b>：净化属「模型可见」边界而非「工具结果构造」边界，由调用方对全部执行器产出统一施加
+/// （无开关、不可绕过）；本类型只管<b>预算与标记</b>（含错误载荷的单一构造）。
+/// <b><c>maxLength</c> ≤ 0 = 无预算</b>（不截断、不标记）。⚠️ <b>不得把 0 直传
+/// <c>ToolResultText.Truncate</c></b>——那里把 &lt;1 钳制为 1，会截成 1 个字符。
 /// </remarks>
 public static class ToolResultPipeline
 {
@@ -36,9 +32,7 @@ public static class ToolResultPipeline
     /// <summary>JSON 感知截断原因（<c>ToolResultText.TruncateJson</c> 路径）。</summary>
     public const string JsonTruncationReason = "JSON 感知截断";
 
-    /// <summary>
-    /// 纯文本出口：按预算截断并回填截断标记。
-    /// </summary>
+    /// <summary>纯文本出口：按预算截断并回填截断标记。</summary>
     /// <param name="text">待回填的文本（可空——投影函数常把"本来就没有值"直传进来）。</param>
     /// <param name="maxLength">预算上限；≤ 0 表示无预算。</param>
     /// <returns>带截断标记的工具结果。</returns>
@@ -58,13 +52,11 @@ public static class ToolResultPipeline
     /// JSON 信封出口：序列化为保留中文的紧凑 JSON → JSON 感知截断 → 回填截断标记。
     /// </summary>
     /// <remarks>
-    /// 这是手拼信封的<b>唯一</b>合法形态（一类与二类形态都收敛于此）。
-    /// 直接 <c>ToolResult.FromText(ToolResultText.TruncateJson(ToolResultJson.ToText(x), n))</c>
+    /// 手拼信封的<b>唯一</b>合法形态；直接 <c>ToolResult.FromText(ToolResultText.TruncateJson(...))</c>
     /// 由 <c>TruncationVisibilityContractGuards</c> 机械拦截。
     /// </remarks>
     /// <param name="node">信封节点（非空——入口信封必须存在，否则说明调用方搞错了路径）。</param>
     /// <param name="maxLength">预算上限；≤ 0 表示无预算。</param>
-    /// <returns>带截断标记的工具结果。</returns>
     public static ToolResult OkJson(JsonNode node, int maxLength)
     {
         var full = ToolResultJson.ToText(node);
@@ -78,23 +70,16 @@ public static class ToolResultPipeline
     }
 
     /// <summary>
-    /// <b>写工具回执出口</b>：写工具的成功回执是"单 ID 迷你信封"（2–4 个标量字段，
-    /// 由入参 Schema 与平台返回共同界定），<b>按构造有界，显式声明无预算</b>。
+    /// <b>写工具回执出口</b>：写工具的成功回执是"单 ID 迷你信封"（2–4 个标量字段，由入参 Schema
+    /// 与平台返回共同界定），<b>按构造有界，显式声明无预算</b>。
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// 存在的理由：写回执的"出口"<b>不得</b>由每个写执行器各写一次（<c>ToolResult.FromText(ToolResultJson.ToText(...))</c>）
-    /// ——那样<b>预算纪律在结构上无处可依</b>（同一个文件里可以既截断留痕又不截断，态度自相矛盾）。
-    /// 收口到本方法后，"写回执无预算"是一个<b>被显式声明并被单一地点评审</b>的决策，
-    /// 而不是"某处忘了截断"。
-    /// </para>
-    /// <para>
-    /// <b>为什么不给它们预算</b>：这 6 个执行器（Board / DocxSheetsDrive / Mail /
-    /// MessageAndApproval / Spark / DriveCollab）的构造签名不接 <c>IOptions&lt;FeishuAgentOptions&gt;</c>
-    /// （由生成器按执行器类发射的域注册器解析）。为"由构造即有界的迷你信封"引入 options 依赖
-    /// 会改动 6 个构造函数 + 其生成注册器，换不到可观测收益。若将来某个回执开始承载<b>无界的
-    /// 平台数据</b>（如列表/正文），它必须改用 <see cref="OkJson"/> 而不是本方法。
-    /// </para>
+    /// 存在的理由：写回执的"出口"<b>不得</b>由每个写执行器各写一次——那样<b>预算纪律在结构上无处可依</b>
+    /// （同一文件里可以既截断留痕又不截断）。收口到本方法后，"写回执无预算"是一个被显式声明、被单一
+    /// 地点评审的决策，而不是"某处忘了截断"。<b>不给预算的理由</b>：这些执行器的构造签名不接
+    /// <c>IOptions</c>（由生成器按执行器类发射的域注册器解析），为"由构造即有界的迷你信封"引入 options
+    /// 依赖要改构造函数与生成注册器，换不到可观测收益；若某个回执开始承载<b>无界的平台数据</b>，
+    /// 必须改用 <see cref="OkJson"/>。
     /// </remarks>
     /// <param name="receipt">回执信封。</param>
     /// <returns>工具结果（无截断标记）。</returns>
@@ -102,16 +87,13 @@ public static class ToolResultPipeline
         => ToolResult.FromText(ToolResultJson.ToText(receipt));
 
     /// <summary>
-    /// 错误出口（<b>唯一</b>的错误载荷构造点）：F 首行结构化 JSON + 人类可读正文，经预算截断。
+    /// 错误出口（<b>唯一</b>的错误载荷构造点）：首行结构化 JSON + 人类可读正文，经预算截断。
     /// </summary>
     /// <remarks>
-    /// E-1 扩展：<paramref name="requiredScopes"/> 只在<b>确有 scope 事实</b>时传入
+    /// 三处同构构造（<c>ToolExecutor.FromStructuredError</c>、产品侧出口绑定与其 catch 路径）全部收敛到
+    /// 此处——错误契约演进时只需改一处；三处的唯一差异是 <paramref name="trace"/>（catch 路径携带 Span
+    /// Id），已作为显式可选形参保留。<paramref name="requiredScopes"/> 只在<b>确有 scope 事实</b>时传入
     /// （授权类拒绝路径从工具声明投影），其他分类恒为 <see langword="null"/>。
-    /// </remarks>
-    /// <remarks>
-    /// 三处同构构造（<c>ToolExecutor.FromStructuredError</c>、<c>FeishuToolBinding.EgressResult</c>
-    /// 与 <c>FeishuToolBinding</c> 的 catch 路径）全部收敛到此处——错误契约演进时只需改一处。
-    /// 三处的唯一差异是 <paramref name="trace"/>（catch 路径携带 Span Id），已作为显式可选形参保留。
     /// </remarks>
     /// <param name="toolName">工具名（载荷锚点）。</param>
     /// <param name="category">错误语义分类。</param>
@@ -121,8 +103,8 @@ public static class ToolResultPipeline
     /// <param name="apiCode">产品业务 code（可空；进载荷 <c>api_code</c>）。</param>
     /// <param name="trace">追踪号（可空；仅 catch 路径携带）。</param>
     /// <param name="attempts">尝试次数（默认 1；重试路径回填实际次数）。</param>
-    /// <param name="suggestions">恢复候选（BUG-8；可空——无<b>事实</b>来源时不得杜撰）。</param>
-    /// <param name="requiredScopes">E-1：工具声明的所需权限（仅授权类拒绝路径传入；可空）。</param>
+    /// <param name="suggestions">恢复候选（可空——无<b>事实</b>来源时不得杜撰）。</param>
+    /// <param name="requiredScopes">工具声明的所需权限（仅授权类拒绝路径传入；可空）。</param>
     /// <param name="retryAfterSeconds">建议等待秒数（可空）。</param>
     /// <returns>带结构化载荷的错误结果（<b>未净化</b>——净化由调用方按各自出口纪律施加）。</returns>
     public static ToolResult Error(
@@ -147,9 +129,9 @@ public static class ToolResultPipeline
     /// 错误出口的<b>文本</b>形态：调用方已完成净化/文案加工，只需本出口施加预算。
     /// </summary>
     /// <remarks>
-    /// 存在的理由：<c>FeishuToolBinding</c> 的错误出口必须在**同一段代码**里先净化再截断
-    /// （净化是"模型可见"边界，且它会改变文本长度），故不能经 <see cref="Error"/> 的
-    /// "先拼装再截断"路径。本方法让两条路径共用同一个预算实现，不留第二处截断逻辑。
+    /// 产品侧错误出口必须在**同一段代码**里先净化再截断（净化是"模型可见"边界，且它会改变文本长度），
+    /// 故不能经 <see cref="Error"/> 的"先拼装再截断"路径；本方法让两条路径共用同一个预算实现，
+    /// 不留第二处截断逻辑。
     /// </remarks>
     /// <param name="payload">错误载荷（已经 <see cref="ToolErrorFactory"/> 构造）。</param>
     /// <param name="combined">完整文本（首行 JSON + 正文；调用方负责净化）。</param>
@@ -161,10 +143,10 @@ public static class ToolResultPipeline
             maxLength > 0 ? ToolResultText.Truncate(combined, maxLength) : combined);
 
     /// <summary>
-    /// 单源截断判据：文本长度是否超过预算。<b>不用"截断后长度比较"</b>——两个截断器的标记/提示文本
-    /// 都<b>附加</b>在结果里（JSON 感知截断还会保留末尾 <c>truncated</c>/<c>hint</c> 键），
-    /// 因此"截断后更长"完全可能（如 101 字符被截到 100 再附约 80 字符标记），
-    /// 用长度比较会漏判——本判据只看"截断动作是否会被触发"，与两个截断器的进入条件逐字一致。
+    /// 单源截断判据：文本长度是否超过预算。<b>不得改用"截断后长度比较"</b>——两个截断器的标记/提示文本都
+    /// <b>附加</b>在结果里（JSON 感知截断还会保留末尾 <c>truncated</c>/<c>hint</c> 键），故"截断后更长"
+    /// 完全可能（101 字符截到 100 再附约 80 字符标记）而漏判；本判据只看"截断动作是否会被触发"，
+    /// 与两个截断器的进入条件逐字一致。
     /// </summary>
     /// <param name="text">原始文本。</param>
     /// <param name="maxLength">预算上限。</param>

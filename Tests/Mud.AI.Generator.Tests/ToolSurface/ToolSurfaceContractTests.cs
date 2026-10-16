@@ -152,7 +152,7 @@ public class ToolSurfaceContractTests
     /// <para>
     /// 既有 <c>ToolSurfaceEqualityFieldCoverageTests</c> 只覆盖 <c>Extraction/</c> 下三个值键
     /// （<c>CapabilityEntry</c>/<c>CapabilityParameter</c>/<c>ToolSchemaModel</c>），
-    /// 本类型此前<b>无守卫</b>——本用例关闭该缺口（与 AT-B16 同类失效通道）。
+    /// 本类型此前<b>无守卫</b>——本用例关闭该缺口（同类失效通道）。
     /// </para>
     /// <para>
     /// 判据取"槽名出现在方法体文本中"（对标量槽与集合槽两种形态都成立：集合槽走
@@ -255,7 +255,7 @@ public class ToolSurfaceContractTests
         slots.Distinct().Should().HaveCount(slots.Count, "槽位号必须唯一（拼入诊断 ID 后决定档位）");
         slots.Should().BeInAscendingOrder();
 
-        // 上游 AT-B14 清理后的僵尸位不得复活；026（兜底）与 027（派生常量冲突）必须存在。
+        // 上游清理后的僵尸位不得复活；026（兜底）与 027（派生常量冲突）必须存在。
         slots.Should().NotContain(7, "007 已在上游清理，本表不复活");
         slots.Should().NotContain(12, "012 已在上游清理，本表不复活");
         slots.Should().NotContain(13, "013 已在上游清理，本表不复活");

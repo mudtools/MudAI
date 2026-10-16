@@ -28,7 +28,7 @@ public class TurnPipelineContractGuards
     /// </summary>
     /// <remarks>
     /// <para>
-    /// E1（897 行状态机拆分）最易被"顺手简化"破坏的点：多租户分级是<b>产品政策</b>，
+    /// 最易被"顺手简化"破坏的点：多租户分级是<b>产品政策</b>，
     /// 必须经 <see cref="Mud.AI.Agent.Events.ConversationalTurnOptions.ValidateRequestPolicies"/>
     /// 委托由产品薄壳注入（③ 式）。管线内一旦出现判断分支，中立包就焊死了某一家的租户语义。
     /// </para>

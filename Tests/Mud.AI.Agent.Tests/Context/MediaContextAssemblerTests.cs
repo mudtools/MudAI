@@ -10,7 +10,7 @@ using Mud.AI.Agent.Context;
 namespace Mud.AI.Agent.Tests.Context;
 
 /// <summary>
-/// <see cref="MediaContextAssembler"/>（N4 · E7 机制）的自有测试：
+/// <see cref="MediaContextAssembler"/> 的自有测试：
 /// 事实提取 / text 短路 / 截断 / untrusted 头 / 失败隔离跳过（取消原样传播）。
 /// </summary>
 /// <remarks>产品子类（媒体类型判定 + 转写器适配 + 占位降级）的行为覆盖在产品侧。</remarks>

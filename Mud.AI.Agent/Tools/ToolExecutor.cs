@@ -12,17 +12,17 @@ using System.Text.Json.Nodes;
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>
-/// 执行器骨架：把"参数校验失败回填 / JSON 解析失败回填 / ApiResult 解包 + 失败回填 + 成功投影 + 截断"三段机械骨架
-/// 从全部执行器方法中抽出（投影是有意策展、留在各执行器；骨架是纯机械、收拢于此）。
+/// 执行器骨架：参数校验失败回填 / JSON 解析失败回填 / ApiResult 解包（失败回填 + 成功投影 + 截断）
+/// 三段机械骨架；投影是有意策展的，留在各执行器。
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）。
-/// 本类型不再自行比较长度/拼装标记——"截断是出口的性质，而不是某个执行器记得写的一步"。
+/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）：本类型不比较长度、
+/// 不拼装标记——"截断是出口的性质，而不是某个执行器记得写的一步"。
 /// </para>
 /// <para>
-/// <b>per-method 实例</b>：工具名 + 截断上限在构造时绑定一次，执行器方法内
-/// <c>FeishuToolNames.X</c> 只出现 1 处（守卫机械断言防回归）。
+/// <b>per-method 实例</b>：工具名 + 截断上限构造时绑定一次，执行器方法内 <c>FeishuToolNames.X</c>
+/// 只出现 1 处（守卫机械断言防回归）。
 /// </para>
 /// </remarks>
 /// <param name="toolName">工具名（结构化错误的锚点）。</param>
@@ -36,27 +36,24 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     }
 
     /// <summary>
-    /// <b><c>IOptions</c> 空值守卫的唯一地点</b>——执行器只声明"工具名 + 依赖"，
-    /// 构造参数校验集中于此。
+    /// <b><c>IOptions</c> 空值守卫的唯一地点</b>——执行器只声明"工具名 + 依赖"，构造参数校验集中于此。
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 该守卫只允许存在于此处：执行器各自重写（<c>(options ?? throw …).Value.MaxXxx</c>，含多个预算项的域
-    /// 就写多遍）会让判据分裂。由守卫
+    /// 守卫只允许存在于此处（执行器各自重写 <c>(options ?? throw …).Value.MaxXxx</c> 会让判据分裂），由
     /// <c>ToolExecutorSkeletonGuards.OptionsNullGuard_ShouldLiveOnlyInToolExecutor</c> 机械锁定不回潮。
     /// </para>
     /// <para>
     /// <b>为什么是泛型而不是 <c>IOptions&lt;FeishuAgentOptions&gt;</c></b>：骨架所在包不得反向依赖任何产品包
-    /// （飞书/企微的 Options 都在各自的下游包，连同类型搬走违反中立命名、不搬则成环）。泛型化后调用点
-    /// <c>ToolExecutor.Require(options)</c> 靠类型推断适配，空值守卫仍只在骨架一处；返回已校验的 Options
-    /// 让"守卫一次、读取多次"成为唯一形态（执行器需要多个预算项，按值分别开放会重复过守卫——正是重复的来源）。
+    /// （产品 Options 在下游包，连同类型搬走违反中立命名、不搬则成环）。返回已校验的 Options 让
+    /// "守卫一次、读取多次"成为唯一形态——按值分别开放会重复过守卫，正是重复的来源。
     /// </para>
     /// </remarks>
     /// <param name="options">宿主注入的 Agent 选项（<see langword="null"/> ⇒ 立即抛，构造期即暴露配置错误）。</param>
     /// <returns>已校验的选项值。</returns>
-    // 泛型参数带 DynamicallyAccessedMembers：IOptions<TOptions> 的上游契约要求
-    // PublicParameterlessConstructor（配置绑定源生成经 new T() 构造）；不标注即 IL2091。
-    // netstandard2.0 的 BCL 该特性为 internal，按仓库既有体例 #if 裁剪（见 FeishuWebSocketServiceBuilder）。
+    // DynamicallyAccessedMembers：IOptions<TOptions> 上游契约要求 PublicParameterlessConstructor
+    // （配置绑定源生成经 new T() 构造），不标注即 IL2091；netstandard2.0 的 BCL 该特性为 internal，
+    // 按仓库既有体例 #if 裁剪。
 #if NET6_0_OR_GREATER
     public static TOptions Require<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
         IOptions<TOptions> options) where TOptions : class
@@ -67,8 +64,8 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
         => (options ?? throw new ArgumentNullException(nameof(options))).Value;
 
     /// <summary>
-    /// 工具名（方法体内<b>策展错误路径</b>复用：dry-run 摘要、filter/sort 解析错误等——
-    /// 保证 <c>FeishuToolNames.X</c> 在每个执行器方法中只出现 1 处，其余经本属性）。
+    /// 工具名（方法体内<b>策展错误路径</b>复用：dry-run 摘要、filter/sort 解析错误等）——保证
+    /// <c>FeishuToolNames.X</c> 在每个执行器方法中只出现 1 处，其余经本属性。
     /// </summary>
     public string ToolName => toolName;
 
@@ -87,8 +84,7 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
         catch (ArgumentException ex)
         {
             // 有意静默（守卫白名单）：异常被**转换**为模型可见的结构化错误文本（换了一条上报通道：
-            // 回填模型 + FeishuToolBinding 侧同样计 Error 指标与审计），不是吞掉。
-            // 闭集非法值携带的候选（ToolArgumentException.Suggestions）随载荷回填模型。
+            // 回填模型 + 调用方侧同样计 Error 指标与审计），不是吞掉；闭集非法值的候选随载荷回填模型。
             return FromStructuredError(
                 ToolErrorCategory.Validation, ToolErrorSubtype.InvalidArgs, ex.Message,
                 suggestions: (ex as ToolArgumentException)?.Suggestions);
@@ -130,17 +126,13 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     }
 
     /// <summary>
-    /// <b>多步链路</b>（如上传 → 发送）的失败短路：解包失败时返回结构化错误结果，成功时返回 <see langword="null"/>，调用方据此继续下一步。
+    /// <b>多步链路</b>（如上传 → 发送）的失败短路：解包失败返回结构化错误结果，成功返回
+    /// <see langword="null"/>，调用方据此继续下一步。
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// 用法：<c>if (executor.FailIfError(uploadOutcome) is { } failure) { return failure; }</c>——与 <c>FromApi*</c> 同一体例
-    /// （错误回填仍集中在 <see cref="ToolExecutor"/>），中间步骤因此<b>不需要</b>手写 <c>if (!outcome.Ok)</c> 骨架（守卫锁死该形态）。
-    /// </para>
-    /// <para>
-    /// 为什么中间步骤不能直接用 <c>FromApi*</c>：那需要一个"成功投影"，
-    /// 而中间步骤的产物（如 <c>image_key</c>）不是工具结果，投影只能写成恒等函数——那会掩盖意图。
-    /// </para>
+    /// 用法 <c>if (executor.FailIfError(uploadOutcome) is { } failure) { return failure; }</c>——中间步骤因此
+    /// <b>不需要</b>手写 <c>if (!outcome.Ok)</c> 骨架（守卫锁死该形态）。不能改用 <c>FromApi*</c>：那要求
+    /// "成功投影"，而中间产物（如 <c>image_key</c>）不是工具结果，投影只能写成恒等函数——那会掩盖意图。
     /// </remarks>
     /// <typeparam name="T">业务载荷类型。</typeparam>
     /// <param name="outcome">产品侧 API 结果读取器（如飞书 <c>FeishuApiResultReader.Read</c>）的解包结果。</param>
@@ -154,16 +146,11 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     /// <b>统一分页出口（页状态显式版）</b>：给<b>翻页契约字段名与基类不一致</b>的历史 DTO 用。
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>为什么需要它</b>：仓内少数结果类型是"自带 <c>items</c>/<c>total</c>/<c>has_more</c>/<c>page_token</c>
-    /// 但<b>不继承</b> <c>ApiPageListResult</c>"的独立 DTO（如 <c>SearchMinutesResult</c>）；没有本重载时，
-    /// 这类工具只能退回"手写两段（聚合 + 单页）"——正是本方法要消灭的形态。
-    /// </para>
-    /// <para>
-    /// <b>纪律</b>：<paramref name="readPageState"/> 必须读<b>该 DTO 自己声明的</b>那两个字段
-    /// （而不是另找等价字段猜值）；空值语义按"<c>has_more == true</c> 才算有下一页"处理
-    /// （可空布尔的历史 DTO 里，<c>null</c> 表示"未知"，此时停在第 N 页而不要无限翻）。
-    /// </para>
+    /// 少数结果类型自带 <c>items</c>/<c>total</c>/<c>has_more</c>/<c>page_token</c> 但<b>不继承</b>
+    /// <c>ApiPageListResult</c>；没有本重载，这类工具只能退回"手写两段（聚合 + 单页）"。纪律：
+    /// <paramref name="readPageState"/> 必须读<b>该 DTO 自己声明的</b>那两个字段（不得另找等价字段猜值）；
+    /// 空值按"<c>has_more == true</c> 才算有下一页"处理（可空布尔里 <c>null</c> = 未知，
+    /// 此时停在第 N 页而非无限翻）。
     /// </remarks>
     public async Task<ToolResult> FromPagedApiAsync<TPage>(
         Func<string?, CancellationToken, Task<ToolApiOutcome<TPage>>> fetchPage,
@@ -196,8 +183,8 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
 
         var single = await fetchPage(pageToken, cancellationToken).ConfigureAwait(false);
 
-        // untruncated：少数工具的**单页**语义是"不截断"（如 minutes.search 的逐条预览已自带窗口）。
-        // 显式开关而不是"顺手统一成 FromApi"——那会把既有单页行为从"不截断"静默改成"截断"（红线形态）。
+        // untruncated：少数工具的**单页**语义是"不截断"（逐条预览已自带窗口）。必须显式开关，
+        // 不能"顺手统一成 FromApi"——那会把单页行为从"不截断"静默改成"截断"（红线形态）。
         return untruncated ? FromApiUntruncated(single, project) : FromApi(single, project);
     }
 
@@ -250,12 +237,9 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     }
 
     /// <summary>
-    /// 构造带结构化错误载荷的错误结果（结构化错误契约：首行 JSON + 人类可读正文）。
+    /// 构造带结构化错误载荷的错误结果（首行 JSON + 人类可读正文）。载荷构造收口到
+    /// <see cref="ToolErrorFactory"/>（唯一构造点），本方法只负责正文这一层。
     /// </summary>
-    /// <remarks>
-    /// 载荷构造收口到 <see cref="ToolErrorFactory"/>（唯一构造点），
-    /// 本方法只负责"人类可读正文由执行链的分类文案生成"这一层。
-    /// </remarks>
     private ToolResult FromStructuredError(
         ToolErrorCategory category,
         string subtype,

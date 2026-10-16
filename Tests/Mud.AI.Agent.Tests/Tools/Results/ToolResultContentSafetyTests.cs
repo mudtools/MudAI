@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.Tools.Results;
 
 /// <summary>
-/// 出站内容安全检测（AT-F14）：4 条注入规则的正反用例 + 模式语义（off/warn/block）。
+/// 出站内容安全检测：注入规则的正反用例 + 模式语义（off/warn/block）。
 /// </summary>
 /// <remarks>
 /// 模式字面量（<c>"off"</c>/<c>"warn"</c>）在中立侧直接以字符串表达——模式字符串属于产品配置面

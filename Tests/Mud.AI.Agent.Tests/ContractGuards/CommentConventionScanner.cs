@@ -53,7 +53,7 @@ internal static class CommentConventionScanner
     /// </para>
     /// </remarks>
     public static readonly Regex AnchorToken = new(
-        @"(?<![\w-])(?:DP-[A-Z]+\d+-\d+|R\d+-\d+[a-z]?|P\dD-\d+[a-z]?|P\d+-\d+[a-z]?|R-\d+|AT-[A-Z]\d+|AI-FD-[A-Z]+\d+|T\d+ / D\d+|N\d+(?:-[a-z]\d*)?|E\d+|S-?\d+|B-?\d+(?:-\d+)?|WP\d+|F-\d+|C(?!0|1)\d+[a-z]?|R\d+|v\d+(?:\.\d+)+|§\d+(?:\.\d+)*(?:-\d+)?)(?![\w-])",
+        @"(?<![\w-])(?:DP-[A-Z]+\d+-\d+|R\d+-\d+[a-z]?|P\dD-\d+[a-z]?|P\d+-\d+[a-z]?|R-\d+|AT-[A-Z]\d+|AI-FD-[A-Z]+\d+|T\d+ / D\d+|N\d+(?:-[a-z]\d*)?|E-?\d+|S-?\d+|B-?\d+(?:-\d+)?|WP\d+|F-\d+|C(?!0|1)\d+[a-z]?|R\d+|BUG-\d+|v\d+(?:\.\d+)+|§\d+(?:\.\d+)*(?:-\d+)?)(?![\w-])",
         RegexOptions.CultureInvariant);
 
     /// <summary>
