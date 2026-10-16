@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tools.Errors;
 
 /// <summary>
-/// <b>R-7 窄接缝</b>：把「工具名 + 原因」渲染为<b>结构化错误文本</b>（首行 JSON 载荷 + 人类可读正文）
+/// <b>窄接缝</b>：把「工具名 + 原因」渲染为<b>结构化错误文本</b>（首行 JSON 载荷 + 人类可读正文）
 /// 的唯一公开入口。
 /// </summary>
 /// <remarks>
@@ -20,8 +20,7 @@ namespace Mud.AI.Agent.Tools.Errors;
 /// <para>
 /// <b>为什么不让调用方自己拼 JSON</b>：错误载荷的字段集（<c>category</c>/<c>subtype</c>/<c>retryable</c>/
 /// <c>api_code</c>/<c>attempts</c>/<c>trace</c>/<c>tool</c>）是<b>模型可见契约</b>，由
-/// <c>ToolErrorFactory</c> 单点构造。让 MCP 手拼会立刻产生第二份契约（且与 R-1 的
-/// "错误出口唯一"直接冲突）。
+/// <c>ToolErrorFactory</c> 单点构造。让 MCP 手拼会立刻产生第二份契约（与"错误出口唯一"直接冲突）。
 /// </para>
 /// </remarks>
 public interface IToolErrorTextFormatter

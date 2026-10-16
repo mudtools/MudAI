@@ -19,15 +19,14 @@ namespace Mud.AI.Agent.Approvals;
 /// </para>
 /// <para>
 /// <b>时钟可注入</b>：<c>clock</c> 参数（默认 <see cref="DateTimeOffset.UtcNow"/>）让过期语义
-/// 可被<b>确定性</b>单测覆盖——不用墙钟等待（历史教训：墙钟上界断言在并发负载下必然抖动）。
+/// 可被<b>确定性</b>单测覆盖——不用墙钟等待（墙钟上界断言在并发负载下必然抖动）。
 /// </para>
 /// <para>
 /// <b>并发</b>：单把锁保护「查—判—摘」的原子性。消费必须原子（否则两个并发批准可能都返回 true
 /// ⇒ 同一次写操作被执行两次）；本实现刻意不追求无锁，因为该路径是低频人工操作。
 /// </para>
 /// <para>
-/// <b>中立化说明</b>：本类型自产品适配层原样迁入（零产品语义——复合键用中立 <c>TenantKey</c>，
-/// 全部字段类型都由被中立化的值类型承载）。多实例部署由宿主替换为分布式实现。
+/// <b>中立化说明</b>：自产品适配层原样迁入，零产品语义（复合键用中立 <c>TenantKey</c>）。多实例部署由宿主替换为分布式实现。
 /// </para>
 /// </remarks>
 public sealed class InMemoryPendingApprovalStore : IPendingApprovalStore

@@ -16,35 +16,19 @@ namespace Mud.AI.ToolSurface;
 /// 工具特性接口编译为「模型可调用工具」的全部编译期产物。
 /// </summary>
 /// <remarks>
-/// <para><b>管道（L1 → L2 → L4，结构照搬上游 <c>FeishuToolSchemaGenerator</c>）</b>：</para>
-/// <list type="number">
-/// <item>L1 抽取（<see cref="ToolSurfaceScanner"/> / <see cref="ToolHandlerScanner"/>）：
-/// 接口符号 + <c>Source</c> 源挂钩 → 值模型；</item>
-/// <item>L2 渲染（<see cref="SchemaWriter"/> + Emit 家族）：条目 → 描述符 JSON 与全部产物；</item>
-/// <item>L4 校验（<see cref="DescriptorValidator"/>）：结构/类型/跨字段一致 → 动态槽位诊断。</item>
-/// </list>
+/// <para><b>管道（L1 → L2 → L4）</b>：抽取（<see cref="ToolSurfaceScanner"/> / <see cref="ToolHandlerScanner"/>）→
+/// 渲染（<see cref="SchemaWriter"/> + Emit 家族）→ 校验（<see cref="DescriptorValidator"/>），各阶段职责见对应类型。</para>
 /// <para>
-/// <b>剖面扇出（§5.3 v2.1）</b>：一个编译可含 0/1/N 个 <c>ISdkToolProfile</c> 实现。
-/// 剖面集合经 <c>CompilationProvider</c> 解析并按 <see cref="SdkToolProfileModel.Name"/> 排序；
-/// 每条输出路径对每个 profile 各跑一遍，hintName 由 <c>{ProductPrefix}</c> 天然隔离。
-/// 工具接口按「哪个剖面的 <c>ToolAttributeName/Namespace</c> 命中」归属唯一剖面，互不串味。
+/// <b>剖面扇出</b>：一个编译可含 0/1/N 个 <c>ISdkToolProfile</c> 实现；剖面集合经 <c>CompilationProvider</c> 解析并按
+/// <see cref="SdkToolProfileModel.Name"/> 排序，每条输出路径对每个 profile 各跑一遍，hintName 由 <c>{ProductPrefix}</c> 天然隔离；工具接口按「哪个剖面的 <c>ToolAttributeName/Namespace</c> 命中」归属唯一剖面，互不串味。
 /// </para>
 /// <para>
-/// <b>空剖面短路（§5.3/§7.2 硬性前提）</b>：纯 HTTP 消费方（无 <c>ISdkToolProfile</c> 实现）下，
-/// 候选谓词是 O(1) 语法判定，语义变换在 <see cref="ProfileDiscovery.ResolveProfiles"/> 返回空集合后
-/// 即返回 <see langword="null"/>——不进入任何扫描/发射逻辑，0 工具诊断、0 工具 AddSource。
-/// 注：<c>ISdkToolProfile</c> 定义于 Abstractions、所有消费方恒引用该程序集，剖面存在性判定
-/// 无法借 <c>GetTypeByMetadataName</c> 早退；解析结果按 Compilation 缓存（见
-/// <see cref="ProfileDiscovery"/>），全程序集类型枚举每编译至多支付一次、由 profiles 节点
-/// 与全部变换共享。另：<c>IIncrementalGenerator.Initialize</c> 无法在注册前拿到编译，
-/// 故「不注册任何 SyntaxProvider」的表述落地为「注册最廉价的语法谓词 + 语义变换零产物短路」；
-/// §10 测试门禁断言的「语法树步进不进 ToolSurface（扫描/发射逻辑）」由此满足。
+/// <b>空剖面短路（硬性前提）</b>：纯 HTTP 消费方（无剖面实现）下，候选谓词是 O(1) 语法判定，语义变换在
+/// <see cref="ProfileDiscovery.ResolveProfiles"/> 返回空集合后即返回 <see langword="null"/>——不进入任何扫描/发射逻辑，0 工具诊断、0 工具 AddSource（剖面存在性判定与解析缓存粒度见 <see cref="ProfileDiscovery"/>）。
 /// </para>
 /// <para>
-/// <b>故障隔离</b>：每条注册路径经 <see cref="Guard.WrapUnchecked{T}"/> 兜底；多剖面循环内
-/// 再按 profile 逐个 try/catch 上报 <c>{prefix}026</c>——单剖面异常不阻断其余剖面。
-/// SDKT002（缺槽剖面）路径无法拼 <c>{prefix}026</c>（缺 <c>DiagnosticPrefix</c> 正是其主题），
-/// 由 <see cref="Guard.WrapUnchecked{T}"/> 退化为日志兜底。
+/// <b>故障隔离</b>：每条注册路径经 <see cref="Guard.WrapUnchecked{T}"/> 兜底；多剖面循环内再按 profile 逐个 try/catch
+/// 上报 <c>{prefix}026</c>——单剖面异常不阻断其余剖面。SDKT002（缺槽剖面）路径无法拼 <c>{prefix}026</c>（缺 <c>DiagnosticPrefix</c> 正是其主题），由 <see cref="Guard.WrapUnchecked{T}"/> 退化为日志兜底。
 /// </para>
 /// </remarks>
 [Generator]
@@ -174,7 +158,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
                 return flags.ToImmutable();
             });
 
-        // 全部关闭时投影为常量 null（照搬上游 R4-9 增量纪律）——增量缓存据此判定「无变化」，
+        // 全部关闭时投影为常量 null——增量缓存据此判定「无变化」，
         // 下游不会随每次编辑重跑；任一剖面开启时才让 Compilation 进入输入。
         var catalogCompilation = context.CompilationProvider
             .Combine(catalogFlags)
@@ -206,7 +190,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         Func<string, Exception?>? faultInjection,
         CancellationToken cancellationToken)
     {
-        // P2-2：符号与剖面归属提升到 try 外——catch 据此把可归属异常折算为 {prefix}026 随流上报。
+        // 符号与剖面归属提升到 try 外——catch 据此把可归属异常折算为 {prefix}026 随流上报。
         INamedTypeSymbol? symbol = null;
         SdkToolProfileModel? attributedProfile = null;
         try
@@ -248,7 +232,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             GeneratorDebugLogger.LogError(nameof(ScanTool), ex);
-            // P2-2：异常可归属剖面时，构造「引擎内部错误」{prefix}026 随流上报——否则产物静默缺席而构建全绿。
+            // 异常可归属剖面时，构造「引擎内部错误」{prefix}026 随流上报——否则产物静默缺席而构建全绿。
             // 归属未知（符号/剖面解析阶段抛出）时无法拼动态 ID，退化为仅日志（profile 必填槽保证前缀非空，
             // 故 attributedProfile 非 null 即可安全拼 {prefix}026；此时 symbol 也必已解析，"!" 断言成立）。
             if (attributedProfile is null)
@@ -277,7 +261,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         Func<string, Exception?>? faultInjection,
         CancellationToken cancellationToken)
     {
-        // P2-2：剖面归属提升到 try 外（同 ScanTool）。
+        // 剖面归属提升到 try 外（同 ScanTool）。
         SdkToolProfileModel? attributedProfile = null;
         try
         {
@@ -313,7 +297,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             GeneratorDebugLogger.LogError(nameof(ScanHandler), ex);
-            // P2-2：异常可归属剖面时折算为 {prefix}026 随流上报；归属未知时退化为仅日志。
+            // 异常可归属剖面时折算为 {prefix}026 随流上报；归属未知时退化为仅日志。
             if (attributedProfile is null)
             {
                 return null;
@@ -620,7 +604,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
     }
 
     /// <summary>
-    /// 汇总输出 Schema 的截断情况并上报<b>单条</b>槽位 009（照搬上游 AT-B14 聚合纪律：
+    /// 汇总输出 Schema 的截断情况并上报<b>单条</b>槽位 009（聚合纪律：
     /// 逐处上报会被 SDK 中大量深层 DTO 淹没；截断本身不是缺陷，但必须构建期可见）。
     /// </summary>
     private static void ReportOutputSchemaTruncations(

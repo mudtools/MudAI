@@ -86,7 +86,7 @@ internal sealed class CapabilityParameter : IEquatable<CapabilityParameter?>
     /// <b>为什么进值键（<c>Equals</c>/<c>GetHashCode</c>）</b>：它决定
     /// <see cref="SchemaFragmentJson"/> 里的 <c>"enum":[…]</c>，属"影响产物的事实"。
     /// 漏掉它会让"增删闭集声明"不触发增量重算⇒ 描述符产物过期。
-    /// 上游已因同类问题漏字段 2 次（AT-B16），故由等值字段覆盖测试机械锁定"每个构造参数都参与相等性"。
+    /// 故由等值字段覆盖测试机械锁定"每个构造参数都参与相等性"。
     /// </para>
     /// <para>
     /// <b>为什么用全名（string）而不是 <c>INamedTypeSymbol</c></b>：本类型是 Roslyn 增量管线的
@@ -127,7 +127,7 @@ internal sealed class CapabilityParameter : IEquatable<CapabilityParameter?>
 
     public override bool Equals(object? obj) => Equals(obj as CapabilityParameter);
 
-    /// <summary>哈希覆盖 <see cref="Equals(CapabilityParameter?)"/> 的全部字段（AT-B16：原实现漏了文档描述）。</summary>
+    /// <summary>哈希覆盖 <see cref="Equals(CapabilityParameter?)"/> 的全部字段。</summary>
     public override int GetHashCode()
     {
         var comparer = StringComparer.Ordinal;

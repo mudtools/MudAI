@@ -13,12 +13,12 @@ using Mud.AI.Abstractions.Observability;
 namespace Mud.AI.Agent.Channels;
 
 /// <summary>
-/// 分片缓冲流式通道基类：增量缓冲达 <see cref="FeishuAgentOptions.MaxStreamChunkLength"/> <b>且</b>距上次下游更新 ≥
+/// 分片缓冲流式通道基类：增量缓冲达产品侧配置的分片长度阈值 <b>且</b>距上次下游更新 ≥
 /// <see cref="MinUpdateInterval"/>（常量 800ms，防飞书频率限制）才更新一次下游；<see cref="FlushAsync"/> 终态无条件落地。
 /// </summary>
 /// <remarks>
 /// <b>双阈值语义</b>：分片长度为「量」阈值、最小间隔为「率」阈值——长增量按分片更新；短增量连发被间隔钳制继续缓冲
-/// （牺牲字粒度，换频率安全）。两通道（<see cref="EditMessageChannel"/> / <see cref="CardStreamMessageChannel"/>）
+/// （牺牲字粒度，换频率安全）。两通道（编辑消息通道 / 卡片流通道）
 /// 缓冲语义同构，用例参数化覆盖。
 /// <para>
 /// <b>失败语义</b>（接口契约，子类共用）：<see cref="BeginAsync"/> 失败向上抛（调用方/降级链回退，模型尚未调用、零重复成本）；
@@ -34,7 +34,7 @@ namespace Mud.AI.Agent.Channels;
 /// </remarks>
 public abstract class BufferedMessageChannel : IMessageChannel
 {
-    /// <summary>两次下游更新的最小间隔（毫秒；P2D-2c 速率自适应，字面量常数）。</summary>
+    /// <summary>两次下游更新的最小间隔（毫秒；速率自适应调优值，字面量常数）。</summary>
     public const int MinUpdateIntervalMs = 800;
 
     /// <summary>默认最小更新间隔（测试可注入 0 恢复「仅分片阈值」语义）。</summary>
@@ -86,7 +86,7 @@ public abstract class BufferedMessageChannel : IMessageChannel
 
     /// <inheritdoc />
     /// <remarks>
-    /// <b>并发契约（R2-11）</b>：同一 <paramref name="messageId"/> 的写入与 <see cref="FlushAsync"/> 必须由调用方
+    /// <b>并发契约</b>：同一 <paramref name="messageId"/> 的写入与 <see cref="FlushAsync"/> 必须由调用方
     /// <b>顺序</b> <c>await</c>（事件处理器即如此），并发调用不在本接口契约内——<see cref="IMessageChannel"/> 已声明同款约束。
     /// </remarks>
     public async Task WriteStreamAsync(string tenantKey, string chatId, string messageId, string delta, CancellationToken cancellationToken = default)
@@ -200,14 +200,14 @@ public abstract class BufferedMessageChannel : IMessageChannel
         {
             // 有意静默（守卫白名单）：异常**不是**被吞掉，而是交给子类钩子 OnUpdateFailedAsync 记录
             // （子类各自记得更准的上下文：卡片流记 bizId、编辑通道记 messageId）。基类不重复记一遍。
-            // R3-12：降级路径指标化——通道更新失败补计数使可告警。
+            // 降级路径指标化——通道更新失败补计数使可告警。
             OnUpdateDegraded(tenantKey, messageId, ex);
             await OnUpdateFailedAsync(messageId, ex).ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// 单次更新失败的降级记录钩子（R3-12）：默认经 <see cref="IAgentTelemetry"/> 端口记一次
+    /// 单次更新失败的降级记录钩子：默认经 <see cref="IAgentTelemetry"/> 端口记一次
     /// （<see cref="DegradedReason"/> 文案）；产品子类覆写以补产品维度（如 app_key tag）——
     /// 迁移期产品指标因此逐字节不变（方案 v2 §5.3 C3 ②式）。
     /// </summary>

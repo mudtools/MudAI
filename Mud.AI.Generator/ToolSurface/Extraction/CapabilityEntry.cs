@@ -74,8 +74,8 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
     /// ② 驱动覆盖报告的 OutputSchemaRate 与截断告警（槽位 009）。
     /// </para>
     /// <para>
-    /// <b>不接线到运行时结果投影</b>：曾计划的运行期字段裁剪与各执行器的<b>有意策展投影</b>冲突——
-    /// 策展后的键名并不都在 output_schema 的顶层字段集内，接线会把结果裁成空对象（上游 R2-05 已实证并驳回）。
+    /// <b>不接线到运行时结果投影</b>：运行期字段裁剪与各执行器的<b>有意策展投影</b>冲突——
+    /// 策展后的键名并不都在 output_schema 的顶层字段集内，接线会把结果裁成空对象。
     /// </para>
     /// </remarks>
     public string? OutputSchemaJson { get; }
@@ -129,7 +129,7 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
     public override bool Equals(object? obj) => Equals(obj as CapabilityEntry);
 
     /// <summary>
-    /// 哈希必须覆盖 <see cref="Equals(CapabilityEntry?)"/> 认可的<b>全部</b>字段（AT-B16）。
+    /// 哈希必须覆盖 <see cref="Equals(CapabilityEntry?)"/> 认可的<b>全部</b>字段。
     /// </summary>
     /// <remarks>
     /// <para>

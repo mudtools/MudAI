@@ -33,13 +33,13 @@ namespace Mud.AI.Agent.Events;
 public sealed class ConversationalTurnOptions
 {
     /// <summary>
-    /// P4-4（outbox）：「已生成但未确认送达」的回复文本状态键（<b>产品事实</b>，与
+    /// 「已生成但未确认送达」的回复文本状态键（outbox 语义）（<b>产品事实</b>，与
     /// <see cref="PendingReplyTurnStateKey"/> 成对）。<see langword="null"/> ⇒ outbox 整体禁用。
     /// </summary>
     public string? PendingReplyStateKey { get; init; }
 
     /// <summary>
-    /// P4-4（outbox）：<see cref="PendingReplyStateKey"/> 所属轮次的标识状态键（<b>产品事实</b>）。
+    /// <see cref="PendingReplyStateKey"/> 所属轮次的标识状态键（outbox 语义，<b>产品事实</b>）。
     /// </summary>
     public string? PendingReplyTurnStateKey { get; init; }
 
@@ -59,7 +59,7 @@ public sealed class ConversationalTurnOptions
     public Func<ConversationRequest, CancellationToken, Task<string?>>? FindDeliveryBlockAsync { get; init; }
 
     /// <summary>
-    /// 流式回复目标解析（R5-3 两段式：通道解析器优先，回退 chat_id 解析）。
+    /// 流式回复目标解析（两段式：通道解析器优先，回退 chat_id 解析）。
     /// <see langword="null"/> ⇒ 管线内建默认。
     /// </summary>
     public Func<ConversationRequest, string?>? ResolveStreamTarget { get; init; }

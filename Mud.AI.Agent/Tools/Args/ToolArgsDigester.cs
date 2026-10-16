@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 //  作者：Mud Studio  版权所有 (c) Mud Studio 2026
 //  Mud.AI 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //  本项目主要遵循 MIT 许可证进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 文件。
@@ -12,7 +12,7 @@ using Mud.AI.Agent.Tools.Security;
 namespace Mud.AI.Agent.Tools.Args;
 
 /// <summary>
-/// 审计入参摘要器（AI-FD-D12 P1D-3b 脱敏责任）：SDK 侧把工具入参折叠为
+/// 审计入参摘要器（脱敏责任）：SDK 侧把工具入参折叠为
 /// 「参数名 + 值形态/长度」摘要，<b>敏感键名一律掩码</b>——宿主 sink 不接触原始参数，
 /// 防审计通道变成敏感数据泄漏面（模型 API Key/AppSecret 绝不入审计载荷）。
 /// </summary>
@@ -33,6 +33,7 @@ public static class ToolArgsDigester
     /// <summary>单参数摘要长度上限（含值长度描述）。</summary>
     private const int MaxDigestLength = 512;
 
+    /// <summary>把工具入参折叠为单行审计摘要（按键名 Ordinal 排序，超长截断）。</summary>
     public static string Digest(IReadOnlyDictionary<string, object?> arguments)
     {
         var builder = new StringBuilder();
@@ -70,7 +71,7 @@ public static class ToolArgsDigester
 
     /// <summary>值形态描述（审计摘要词汇：null/str/array/json/list/bool/num）。</summary>
     /// <remarks>
-    /// R-2：<c>JsonElement</c> 的形态判定经唯一认知入口（<see cref="ToolArgumentNormalizer.IsJsonString"/> /
+    /// <c>JsonElement</c> 的形态判定经唯一认知入口（<see cref="ToolArgumentNormalizer.IsJsonString"/> /
     /// <see cref="ToolArgumentNormalizer.IsJsonArray"/>）——本文件不再自带 <c>ValueKind</c> 字面量
     /// （由 <c>ToolArgumentShapeContractGuards</c> 机械锁定）。产出词汇（str/array/json…）是**审计摘要**
     /// 的表示法，与取值门面 <c>ToolArgs</c> 的强类型转换不同职责，故保留在本类型。

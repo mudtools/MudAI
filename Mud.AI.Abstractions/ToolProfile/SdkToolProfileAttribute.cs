@@ -11,18 +11,14 @@ namespace Mud.AI.Attributes;
 /// SDK 工具生成剖面数据载体：承载工具 Schema 生成引擎所需的<b>全部</b>编译期命名事实常量。
 /// </summary>
 /// <remarks>
-/// <b>命名空间即契约</b>：引擎（<c>ProfileContractGuard</c> / <c>SdkToolProfileModel</c>）以硬编码命名空间
-/// <c>Mud.AI.Attributes</c> 识别本特性——改名须同批改引擎常量；与 <see cref="ISdkToolProfile"/>
-/// （标记接口，命名空间 <c>Mud.AI</c>）成对使用（标了本特性就必须实现该接口，反之亦然，由诊断 <c>SDKT001</c> 强制）。
+/// <b>命名空间即契约</b>：引擎（<c>ProfileContractGuard</c> / <c>SdkToolProfileModel</c>）以硬编码命名空间 <c>Mud.AI.Attributes</c>
+/// 识别本特性——改名须同批改引擎常量；与 <see cref="ISdkToolProfile"/>（标记接口，命名空间 <c>Mud.AI</c>）成对使用
+/// （标了本特性就必须实现该接口，反之亦然，由诊断 <c>SDKT001</c> 强制）。<b>为什么全部是字符串常量</b>：源生成器运行在
+/// 编译器进程内，无法执行任何用户代码、只能读编译期常量 ⇒「策略」也只能表达为枚举值 + 分隔串标记表，而非委托。
 /// <para>
-/// <b>为什么全部是字符串常量</b>：源生成器运行在编译器进程内，无法执行任何用户代码、只能读编译期常量
-/// ⇒「策略」也只能表达为枚举值 + 分隔串标记表，而非委托。
-/// </para>
-/// <para>
-/// <b>有意不入槽的派生名</b>：凡能由 <see cref="ProductPrefix"/> / <see cref="ProductPluralPrefix"/> 完全推导的
-/// 产物名都不设槽（<c>{P}Schemas</c>、<c>{P}Names</c>、<c>{P}Contracts</c>、<c>{P}Args/*</c>、<c>{P}DomainRegistrars/*</c>、
-/// <c>{P}Guidance</c>、<c>{Plural}ServiceCollectionCoreExtensions</c>、<c>{P}CapabilityCatalog</c>）——消费方在源码中
-/// <b>硬引用</b>这些类型必须按派生名书写，否则 CS0103；完整槽清单与逐槽依据见本仓唯一剖面声明 <c>Mud.Feishu.AI.Tools.SdkProfile.FeishuToolProfile</c>。
+/// <b>有意不入槽的派生名</b>：凡能由 <see cref="ProductPrefix"/> / <see cref="ProductPluralPrefix"/> 完全推导的产物名都不设槽
+/// （<c>{P}Schemas</c>、<c>{P}Names</c>、<c>{P}Contracts</c>、<c>{P}Args/*</c>、<c>{P}DomainRegistrars/*</c>、<c>{P}Guidance</c>、
+/// <c>{Plural}ServiceCollectionCoreExtensions</c>、<c>{P}CapabilityCatalog</c>）——消费方在源码中<b>硬引用</b>这些类型必须按派生名书写，否则 CS0103；完整槽清单与逐槽依据见本仓唯一剖面声明 <c>Mud.Feishu.AI.Tools.SdkProfile.FeishuToolProfile</c>。
 /// </para>
 /// <example>
 /// <code>

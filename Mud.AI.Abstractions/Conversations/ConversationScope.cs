@@ -13,16 +13,12 @@ namespace Mud.AI.Abstractions.Conversations;
 /// <remarks>
 /// <para>
 /// <b>⚠️ 与 <c>Mud.Feishu.Abstractions.Conversations.ConversationScope</c> 同名同形是刻意为之，
-/// 不是可合并的重复类型 —— 下一位维护者请勿"顺手删掉一份"：</b>
-/// <list type="bullet">
-/// <item>飞书侧那一份是<b>已发布 SDK</b> 的公开契约（`Mud.Feishu.Abstractions` 是字节冻结包，
-/// 由 <c>CoreSdkProjects_ShouldNotDependOnMudAiFamily</c> 机械锁定"不得引用 Mud.AI.*"）；</item>
-/// <item>本中立包被 <c>Mud.AI.*</c> 独占，<b>不得</b>反向引用任何 <c>Mud.Feishu*</c>
-/// （由 <c>MudAiFamily_ShouldNotDependOnFeishuProjects</c> 锁定）。</item>
-/// </list>
-/// 两条方向性不变量同时成立 ⇒ <b>两者不可能合并为一个类型</b>。形状相同、生命周期与归属不同 ⇒
-/// 这是<b>有意的接缝</b>（与 <c>ISessionStore</c>/<c>IConversationStore</c> 同款定式，
-/// 见 P1-H3 的防腐层设计）。飞书侧的桥接点为
+/// 不是可合并的重复类型——下一位维护者请勿"顺手删掉一份"：</b>飞书侧那一份是<b>已发布 SDK</b> 的公开契约
+/// （<c>Mud.Feishu.Abstractions</c> 是字节冻结包，由 <c>CoreSdkProjects_ShouldNotDependOnMudAiFamily</c> 机械锁定
+/// "不得引用 Mud.AI.*"）；本中立包被 <c>Mud.AI.*</c> 独占，<b>不得</b>反向引用任何 <c>Mud.Feishu*</c>
+/// （由 <c>MudAiFamily_ShouldNotDependOnFeishuProjects</c> 锁定）。两条方向性不变量同时成立 ⇒
+/// <b>两者不可能合并为一个类型</b>。形状相同、生命周期与归属不同 ⇒ 这是<b>有意的接缝</b>
+/// （与 <c>ISessionStore</c>/<c>IConversationStore</c> 同款防腐层定式）；飞书侧的桥接点为
 /// <c>Mud.Feishu.AI.Conversations.ConversationScopeMapper</c>。
 /// </para>
 /// <para>

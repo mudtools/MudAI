@@ -12,7 +12,7 @@ namespace Mud.AI.Agent.Context;
 
 /// <summary>
 /// <see cref="IContextAssembler"/> → MAF <c>AIContextProvider</c> 的<b>桥接适配器</b>：让已写好的装配器族
-/// 可被 MAF 原生 <c>AIContextProvider</c> 组合消费——宿主可二选一：自有管线（<see cref="ConversationalTurnPipeline"/>，
+/// 可被 MAF 原生 <c>AIContextProvider</c> 组合消费——宿主可二选一：自有管线（<see cref="Events.ConversationalTurnPipeline"/>，
 /// 装配器在用户消息内联拼装）或 MAF 原生组合（本桥接器 + <c>ChatClientAgentOptions.AIContextProvider</c>）。
 /// </summary>
 /// <remarks>

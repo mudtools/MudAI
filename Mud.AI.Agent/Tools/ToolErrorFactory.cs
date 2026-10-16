@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>
-/// R-1 / B-2：<c>ToolError</c> 载荷的<b>唯一构造点</b>。
+/// <c>ToolError</c> 载荷的<b>唯一构造点</b>。
 /// </summary>
 /// <remarks>
 /// <para>

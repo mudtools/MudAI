@@ -13,7 +13,7 @@ using Mud.AI.Abstractions.Knowledge;
 namespace Mud.AI.Agent.Context;
 
 /// <summary>
-/// 知识检索上下文装配器（AI-FD-D12 P2D-4a，注入模式）的<b>中立实现</b>：把 <see cref="IRetriever"/>
+/// 知识检索上下文装配器（注入模式）的<b>中立实现</b>：把 <see cref="IRetriever"/>
 /// 召回切片以编号参考块形式注入 Prompt——「检索 → Prompt 注入桥」。
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ namespace Mud.AI.Agent.Context;
 /// 由构造参数注入——产品子类传入自有文案即保行为逐字节一致。
 /// </para>
 /// <para>
-/// <b>三级预算（R3-8，取值单一源 <see cref="RetrievalBudgets"/>）</b>：条数闸、总长闸、单条闸各自可达——
+/// <b>三级预算（取值单一源 <see cref="RetrievalBudgets"/>）</b>：条数闸、总长闸、单条闸各自可达——
 /// 短切片撞条数闸、长切片撞总预算、超长单条撞单条闸；每条以 <c>[n] source=&lt;来源&gt; 文本</c> 成对输出，
 /// 模型按编号引用时宿主可回链原文。
 /// </para>
@@ -93,7 +93,7 @@ public class RetrievalContextAssembler : IContextAssembler
             chunks = chunks.Where(c => !c.Score.HasValue || c.Score.Value >= threshold).ToList();
         }
 
-        // R3-8 ①：先按条数收敛（同时跳过空白切片）——条数与长度是两条独立的预算闸。
+        // ①先按条数收敛（同时跳过空白切片）——条数与长度是两条独立的预算闸。
         var adopted = new List<RetrievedChunk>();
         foreach (var chunk in chunks)
         {
@@ -117,7 +117,7 @@ public class RetrievalContextAssembler : IContextAssembler
         var builder = new System.Text.StringBuilder();
         builder.AppendLine(_header);
 
-        // R3-8 ②：总长度预算逐条扣减——每条先按单条闸截断，再按剩余预算截断。
+        // ②总长度预算逐条扣减——每条先按单条闸截断，再按剩余预算截断。
         var budget = RetrievalBudgets.TotalLength;
         for (var i = 0; i < adopted.Count && budget > 0; i++)
         {
@@ -129,7 +129,7 @@ public class RetrievalContextAssembler : IContextAssembler
 
             budget -= text.Length;
 
-            // R3-8 ③：编号与来源**成对**输出 ⇒ 模型引用 [n] 时宿主可回链原文（无来源时退化为纯编号）。
+            // ③编号与来源**成对**输出 ⇒ 模型引用 [n] 时宿主可回链原文（无来源时退化为纯编号）。
             builder.Append('[').Append((i + 1).ToString(CultureInfo.InvariantCulture)).Append("] ");
             if (!string.IsNullOrWhiteSpace(adopted[i].Source))
             {

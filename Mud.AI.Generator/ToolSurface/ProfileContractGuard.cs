@@ -25,13 +25,11 @@ namespace Mud.AI.ToolSurface;
 /// </list>
 /// <para>
 /// <b>为什么用「全名单字符串」判定而非 <c>typeof</c></b>：本程序集是编译器扩展，
-/// 设计纪律（§1.1 工程纪律 3）禁止引用任何 <c>Mud.*</c> 运行时程序集，故与组件仓
-/// HTTP 分析器（<c>TokenManagerLifetimeAnalyzer</c>）同例，按
+/// 设计纪律（§1.1 工程纪律 3）禁止引用任何 <c>Mud.*</c> 运行时程序集，故与组件仓 HTTP 分析器（<c>TokenManagerLifetimeAnalyzer</c>）同例，按
 /// <c>GetTypeByMetadataName</c> + 特性「简单名 + 命名空间」双重判定。
 /// </para>
 /// <para>
-/// 本分析器与 HTTP 分析器同程序集（复用「分析器并入 gen 程序集」先例），随
-/// <c>Mud.AI.Generator</c> 的 <c>analyzers/dotnet/cs</c> 路径分发。
+/// 本分析器随 <c>Mud.AI.Generator</c> 的 <c>analyzers/dotnet/cs</c> 路径分发。
 /// </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

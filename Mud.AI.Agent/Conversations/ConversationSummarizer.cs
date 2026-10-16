@@ -12,7 +12,7 @@ namespace Mud.AI.Agent.Conversations;
 
 /// <summary>
 /// 渐进式会话摘要器：历史越限时把「保留窗以外」的旧消息压成一条 system 纪要，替换原历史写回会话
-/// （<see cref="FeishuAgentOptions.SummaryThreshold"/> 与 <see cref="FeishuAgentOptions.MaxHistoryTokens"/> 的消费点）。
+/// （产品侧 Options 的摘要触发阈值与历史 token 上限的消费点）。
 /// </summary>
 /// <remarks>
 /// 四条不可破坏的约束（改动前先跑 <c>ConversationSummarizer*Tests</c>）：

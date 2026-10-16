@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 //  作者：Mud Studio  版权所有 (c) Mud Studio 2026
 //  Mud.AI 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //  本项目主要遵循 MIT 许可证进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 文件。
@@ -28,10 +28,10 @@ namespace Mud.AI.Agent.Tools.Args;
 public static class ToolArgumentNormalizer
 {
     /// <summary>
-    /// 形态判定原语（R-2）：值是否为 JSON <b>文本</b>元素，并给出文本。
+    /// 形态判定原语：值是否为 JSON <b>文本</b>元素，并给出文本。
     /// </summary>
     /// <remarks>
-    /// <b>为什么要有这两条原语（R-2 的收敛点）</b>：<c>JsonElement.ValueKind</c> 的形态判定
+    /// <b>为什么要有这两条原语（收敛点）</b>：<c>JsonElement.ValueKind</c> 的形态判定
     /// 散落在 6 处（<c>ToolArgs</c> 取值、<c>ToolPagination.TryReadBool/TryReadInt</c>、
     /// <c>ToolDryRun.IsRequested</c>、<c>ToolArgsDigester.Describe</c>、<c>ToolResultText.ToJsonNode</c>）。
     /// "同一入参在不同工具里被判成不同形态"是 S1 的同类根因，故把判定收进本类型
@@ -54,7 +54,7 @@ public static class ToolArgumentNormalizer
         return false;
     }
 
-    /// <summary>形态判定原语（R-2）：值是否为 JSON <b>数组</b>元素，并给出元素本身（取长度/遍历用）。</summary>
+    /// <summary>形态判定原语：值是否为 JSON <b>数组</b>元素，并给出元素本身（取长度/遍历用）。</summary>
     /// <param name="value">参数值。</param>
     /// <param name="array">命中时的数组元素。</param>
     /// <returns>是否为 JSON 数组元素。</returns>
@@ -77,7 +77,7 @@ public static class ToolArgumentNormalizer
     /// <param name="value">参数值（可能为 <c>null</c>/<c>string</c>/<c>JsonElement</c>/<c>IEnumerable&lt;string&gt;</c>）。</param>
     /// <returns>(路径, 文本值) 序列——只产出文本值，数值/布尔/null 被跳过。</returns>
     /// <remarks>
-    /// 形态判定一律经 <see cref="IsJsonString"/>/<see cref="IsJsonArray"/>（R-2）：
+    /// 形态判定一律经 <see cref="IsJsonString"/>/<see cref="IsJsonArray"/>：
     /// 本方法不再自带 <c>ValueKind</c> 字面量，避免"中心自己也另有一套判定"。
     /// 分支顺序与被取代的 <c>switch</c> <b>逐字同序</b>（行为等价性由既有用例兜底）。
     /// </remarks>

@@ -12,7 +12,7 @@ using Mud.AI.Abstractions.Conversations;
 namespace Mud.AI.Agent.Channels;
 
 /// <summary>
-/// 流式通道降级链（AI-FD-D12 P2D-2a）：<see cref="IMessageChannel"/> 复合实现——
+/// 流式通道降级链：<see cref="IMessageChannel"/> 复合实现——
 /// <see cref="BeginAsync"/> 按注册顺序尝试各子通道（首选卡片流，失败自动尝试编辑通道），
 /// 选中的子通道承载本轮 messageId 生命周期（<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 定向委托）。
 /// </summary>
@@ -26,7 +26,7 @@ namespace Mud.AI.Agent.Channels;
 /// 失败时抛最后一个异常——事件处理器回退非流式路径（模型尚未调用，零重复成本）。
 /// </para>
 /// <para>
-/// <b>归属契约（R3-15）</b>：<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 只接受本链 <see cref="BeginAsync"/>
+/// <b>归属契约</b>：<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 只接受本链 <see cref="BeginAsync"/>
 /// 返回的 messageId——未登记的 messageId 一律 fail-fast（不回退首选通道），杜绝「增量写到非归属子通道」的静默错投。
 /// </para>
 /// </remarks>
@@ -162,7 +162,7 @@ public sealed class StreamingChannelChain : IMessageChannel, IChannelTargetResol
         => _messageOwners.TryGetValue(messageId, out var owner)
             ? owner
             : throw new InvalidOperationException(
-                "流式消息未在本链登记——WriteStream/Flush 只能用于本链 BeginAsync 返回的 messageId（R3-15："
+                "流式消息未在本链登记——WriteStream/Flush 只能用于本链 BeginAsync 返回的 messageId（归属契约："
                 + "静默回退首选通道会把增量写到错误的子通道）");
 
     private string ResolveTarget(string messageId, string fallback)

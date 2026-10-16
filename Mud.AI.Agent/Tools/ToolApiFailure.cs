@@ -19,12 +19,9 @@ namespace Mud.AI.Agent.Tools;
 /// </param>
 /// <remarks>
 /// <para>
-/// <b>为什么读数由产品侧给出（而不是中立层自带码表）</b>：v2.3 P1-D 期间中立层自带一张产品码表
-/// （<c>ForbiddenApiCodes</c> / <c>RetryableApiCodes</c> / <c>ToolErrorCodeMeta</c>），后果有二：
-/// ① 独立产品线无法脱离该产品的码语义发布（P3 上游化时码表会被一并带走，且只能由"知道全部产品"
-/// 的中立包维护）；② 码表新增要改中立包的公开面。现在方向反过来——
-/// 产品在<b>自己读信封的那一处</b>（飞书侧 <c>FeishuApiResultReader</c>）完成读数，
-/// 中立层只消费已分类的结果。
+/// <b>为什么读数由产品侧给出（而不是中立层自带码表）</b>：中立层自带产品码表会让独立产品线无法脱离
+/// 该产品的码语义发布，且码表新增要改中立包的公开面。方向必须是：产品在<b>自己读信封的那一处</b>
+/// （飞书侧 <c>FeishuApiResultReader</c>）完成读数，中立层只消费已分类的结果。
 /// </para>
 /// <para>
 /// <b>默认值纪律</b>：产品未给读数（<see langword="null"/>）时使用 <see cref="Unclassified"/>

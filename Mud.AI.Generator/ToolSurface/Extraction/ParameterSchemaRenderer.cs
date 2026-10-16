@@ -68,12 +68,11 @@ internal static class ToolSurfaceSchemaResolver
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.ParameterSchemaRenderer</c>（设计文档 §2 判定：
-/// 纯机制，引擎持有）；泛化点仅为参数特性名（<c>ToolParameterAttribute</c> 硬编码 →
-/// 剖面槽 <see cref="SdkToolProfileModel.ParameterAttributeName"/>）与 resolver/JsonText 接缝。
+/// 泛化点仅为参数特性名（<c>ToolParameterAttribute</c> 硬编码 → 剖面槽
+/// <see cref="SdkToolProfileModel.ParameterAttributeName"/>）与 resolver/JsonText 接缝。
 /// </para>
 /// <para>
-/// 修掉的三条既有 Schema 质量缺陷（上游旧 MapJsonPrimitiveType 实现）：
+/// 三条既有 Schema 质量缺陷在此修复（不得回退）：
 /// </para>
 /// <list type="number">
 /// <item>数组参数 <c>items</c> 恒为 <c>{"type":"string"}</c>（<c>string[]</c> 之外的元素类型全错）；</item>
@@ -81,8 +80,7 @@ internal static class ToolSurfaceSchemaResolver
 /// <item>C# <c>enum</c> 无 <c>enum:[...]</c> 约束（模型自由发挥取值）。</item>
 /// </list>
 /// <para>
-/// 设计约束：<b>只从符号推导，不做字符串猜测</b>——类型一旦标注（含 <c>List&lt;T&gt;</c>、
-/// <c>T[]</c>、可空、枚举、<c>DateTimeOffset</c>）就产出对应的 JSON Schema 关键字。
+/// 设计约束：<b>只从符号推导，不做字符串猜测</b>——类型一旦标注（含 <c>List&lt;T&gt;</c>、<c>T[]</c>、可空、枚举、<c>DateTimeOffset</c>）就产出对应的 JSON Schema 关键字。
 /// </para>
 /// </remarks>
 internal static class ParameterSchemaRenderer
@@ -217,17 +215,14 @@ internal static class ParameterSchemaRenderer
     /// <remarks>
     /// <b>两类来源</b>：
     /// <list type="bullet">
-    /// <item><b>C# enum</b>：成员取 <c>GetMembers().OfType&lt;IFieldSymbol&gt;()</c>，
-    /// 以 <c>HasConstantValue</c> 过滤（滤掉 enum 的 <c>value__</c> 实例字段），
-    /// 渲染<b>成员名</b>（模型的自然语言契约）；</item>
-    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：同样过滤
-    /// <c>HasConstantValue</c>，渲染<b>常量名</b>而非数值——因为模型的入参是<b>字面量字符串</b>
-    /// （解包期按名字映射），渲染数值会让模型传"2"而解包只认"heading1"。</item>
+    /// <item><b>C# enum</b>：成员取 <c>GetMembers().OfType&lt;IFieldSymbol&gt;()</c>，以 <c>HasConstantValue</c> 过滤
+    /// （滤掉 enum 的 <c>value__</c> 实例字段），渲染<b>成员名</b>（模型的自然语言契约）；</item>
+    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：同样过滤 <c>HasConstantValue</c>，渲染<b>常量名</b>而非数值——
+    /// 模型的入参是<b>字面量字符串</b>（解包期按名字映射），渲染数值会让模型传"2"而解包只认"heading1"。</item>
     /// </list>
     /// 返回 <see langword="false"/> 表示"该类型无可用常量成员"⇒ 调用方回退到类型推导片段。
     /// <para>
-    /// ⚠️ 必须同时过滤非整型常量：只按 <c>HasConstantValue</c> 过滤会把 <c>const string</c>
-    /// 哨兵渲染进 enum 列表，使闭集多出模型无法使用的值（上游 R5 / F-2 实施期实测踩到）。
+    /// ⚠️ 必须同时过滤非整型常量：只按 <c>HasConstantValue</c> 过滤会把 <c>const string</c> 哨兵渲染进 enum 列表，使闭集多出模型无法使用的值。
     /// </para>
     /// </remarks>
     private static bool TryRenderClosedSet(INamedTypeSymbol closedSetType, out string fragment, out string members)
@@ -477,10 +472,7 @@ internal static class ParameterSchemaRenderer
             && string.Equals(name, parameter.Name, StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// 参数特性判定：按 <see cref="SdkToolProfileModel.ParameterAttributeName"/> 槽匹配
-    /// <c>Attribute</c> 后缀双形态（上游按硬编码简单名单形态判定，泛化后与工具特性同纪律）。
-    /// </summary>
+    /// <summary>参数特性判定：按 <see cref="SdkToolProfileModel.ParameterAttributeName"/> 槽匹配 <c>Attribute</c> 后缀双形态（与工具特性同纪律）。</summary>
     private static bool IsParameterAttribute(AttributeData attribute, SdkToolProfileModel profile)
     {
         var name = attribute.AttributeClass?.Name;
@@ -491,8 +483,7 @@ internal static class ParameterSchemaRenderer
     }
 
     /// <summary>
-    /// 取参数特性声明的参数名（意图源）：仅在<b>直接标注在参数上</b>且声明名与
-    /// C# 参数名不同时返回——该漂移由 L4 校验器升级为槽位 015（声明名 ≠ 渲染键 = 模型可见契约漂移）。
+    /// 取参数特性声明的参数名（意图源）：仅在<b>直接标注在参数上</b>且声明名与 C# 参数名不同时返回——该漂移由 L4 校验器升级为槽位 015（声明名 ≠ 渲染键 = 模型可见契约漂移）。
     /// 方法级回退匹配本身就要求声明名等于参数名，故恒无漂移，返回 <see langword="null"/>。
     /// </summary>
     private static string? GetDeclaredToolParameterName(IParameterSymbol parameter, AttributeData? attribute)
@@ -538,9 +529,6 @@ internal static class ParameterSchemaRenderer
             || name == "System.Collections.Generic.IReadOnlyDictionary<TKey, TValue>";
     }
 
-    /// <summary>
-    /// JSON 字符串字面量转义（含首尾引号）。Schema 层已移植，收敛为单一实现——
-    /// 委托 <see cref="Schema.JsonText.Quote"/>（与上游逐字节一致，无行为变化）。
-    /// </summary>
+    /// <summary>JSON 字符串字面量转义（含首尾引号）：收敛为单一实现，委托 <see cref="Schema.JsonText.Quote"/>（与上游逐字节一致，无行为变化）。</summary>
     private static string JsonQuote(string value) => Schema.JsonText.Quote(value);
 }

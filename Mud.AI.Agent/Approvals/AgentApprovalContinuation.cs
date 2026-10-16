@@ -11,29 +11,29 @@ using Mud.AI.Agent.Events;
 namespace Mud.AI.Agent.Approvals;
 
 /// <summary>
-/// 工具人工确认（HITL）的<b>批准回灌续跑</b>闭环（R5-11）：同键加载会话 → 取框架记录的原始审批请求 →
-/// 重建工具执行上下文 → 经框架绑定层续跑并落库。
+/// 工具人工确认（HITL）的<b>批准回灌续跑</b>闭环：同键加载会话 → 取框架记录的原始审批请求 → 重建工具执行上下文 → 经框架绑定层续跑并落库。
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>为什么必须代劳</b>：续跑轮不在工具执行上下文内（<c>AsyncLocal</c> 唯一建立点在事件层）——宿主即使正确回灌批准，工具仍会 100% 结构化拒绝。
-/// <b>参数注入而非构造注入</b>：依赖显式、构造面零变更；闸门经产品委托（<paramref name="acquireGate"/>）消费，中立侧不命名闸门类型，满额上抛的产品异常原样传播。
 /// </para>
 /// <para>
-/// <b>fail-closed 边界（全部显式抛错，绝不静默降级或凭空放行）</b>：<paramref name="scopeFactory"/> 为 <see langword="null"/> ⇒ 装配缺陷抛错；
-/// <paramref name="approval"/> 缺 <c>RequestId</c>/<c>ConversationKey</c>/<c>TenantKey</c> ⇒ <see cref="ArgumentException"/>；
-/// 框架已不再记录该 <c>RequestId</c> ⇒ <see cref="InvalidOperationException"/>（引导用户重新发起，绝不凭空构造批准响应）。
-/// </para>
-/// <para>
-/// <b>续跑轮可能再产出新审批请求</b>：经 <paramref name="approvalChannel"/> 再次提交宿主（通道缺席即只记 Warning）；
-/// <b>回复下发不在闭环内</b>——投递属派生事件处理器职责，本方法只负责模型轮次与会话落库。
+/// <b>续跑轮可能再产出新审批请求</b>：经审批通道再次提交宿主（通道缺席即只记 Warning）；<b>回复下发不在闭环内</b>——投递属派生事件处理器职责，本方法只负责模型轮次与会话落库。
 /// </para>
 /// </remarks>
 public static class AgentApprovalContinuation
 {
     /// <summary>
-    /// 回灌一次人工批准（或拒绝）并续跑同一会话（R5-11）。
+    /// 回灌一次人工批准（或拒绝）并续跑同一会话。
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>参数注入而非构造注入</b>：依赖显式、构造面零变更；闸门经产品委托 <paramref name="acquireGate"/> 消费，中立侧不命名闸门类型，满额上抛的产品异常原样传播。
+    /// </para>
+    /// <para>
+    /// <b>fail-closed 边界（全部显式抛错，绝不静默降级或凭空放行）</b>：<paramref name="scopeFactory"/> 为 null ⇒ 装配缺陷抛错；<paramref name="approval"/> 缺 <c>RequestId</c>/<c>ConversationKey</c>/<c>TenantKey</c> ⇒ 异常；框架已不再记录该 <c>RequestId</c> ⇒ 失效抛出（引导用户重新发起，绝不凭空构造批准响应）；<paramref name="approvalChannel"/> 缺席只记 Warning。
+    /// </para>
+    /// </remarks>
     /// <param name="agent">目标 Agent（须与发起确认时同一实例/同一会话存储）。</param>
     /// <param name="sessions">会话取/建/存端口（发起轮与续跑轮必须同键）。</param>
     /// <param name="scopeFactory">产品作用域端口（续跑轮必须重建租户上下文）。</param>
@@ -119,14 +119,14 @@ public static class AgentApprovalContinuation
             var pendingState = new PendingApprovalState(sessions.HistoryStateKey);
             if (!pendingState.TryFind(session, approval.RequestId!, out var pending) || pending is null)
             {
-                // 会话可能已被坏值自愈重建、该确认已被放弃（R5-12）、或已回灌过。
+                // 会话可能已被坏值自愈重建、该确认已进入放弃态、或已回灌过。
                 // 绝不凭空构造批准响应：那会把「人类批准过的调用」重新指向一个未被展示过的工具调用。
                 throw new InvalidOperationException(
                     $"待人工确认的工具调用已失效（requestId: {approval.RequestId}）——"
                         + "会话可能已被重建，或该确认已被放弃/已处理。请引导用户重新发起该操作（fail-closed，不凭空放行）");
             }
 
-            // R7 / C4a：快照幂等消费（仅在宿主装配了 IPendingApprovalStore 时生效）。
+            // 快照幂等消费（仅在宿主装配了 IPendingApprovalStore 时生效）。
             // 放在「框架记录已确认存在」之后：此时续跑必然发生，消费失败只可能是
             // 「不存在 / 已过期 / 已被消费」三种情形 —— 一律按「迟到的批准」丢弃（fail-closed，绝不重放）。
             if (pendingApprovalStore is not null)

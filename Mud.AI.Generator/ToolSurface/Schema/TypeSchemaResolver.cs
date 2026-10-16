@@ -10,40 +10,23 @@ using Mud.AI.ToolSurface.Extraction;
 namespace Mud.AI.ToolSurface.Schema;
 
 /// <summary>
-/// 类型 → JSON Schema 递归推导器（移植自上游 <c>Mud.Feishu.AI.Tools.Schema.TypeSchemaResolver</c>，
-/// 设计文档 §2 判定：纯机制引擎单元持有；§4.2 第 14 项：返回包装解包表改读剖面槽）。
+/// 类型 → JSON Schema 递归推导器（纯机制引擎单元；返回包装解包表读剖面槽）。
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>接缝注册</b>：本类实现 Extraction 层的 <see cref="IToolSurfaceTypeSchemaResolver"/>，
-/// 由<b>入口生成器（R-2b-5 批次）</b>在 <c>Initialize</c> 中注册
-/// <c>ToolSurfaceSchemaResolver.Factory = compilation =&gt; new TypeSchemaResolver(compilation, profile)</c>
-/// （多 profile 扇出时按当前输出路径的 profile 组装闭包）。Schema 层自身不做任何静态注册。
+/// <b>接缝注册</b>：实现 Extraction 层的 <see cref="IToolSurfaceTypeSchemaResolver"/>，由<b>入口生成器</b>在
+/// <c>Initialize</c> 中注册 <c>ToolSurfaceSchemaResolver.Factory = compilation =&gt; new TypeSchemaResolver(compilation, profile)</c>（多 profile 扇出时按当前输出路径的 profile 组装闭包）；Schema 层自身不做任何静态注册。
 /// </para>
 /// <para>
-/// <b>泛化点</b>（上游硬编码 → 剖面槽）：
-/// <c>Mud.Feishu.DataModels.FeishuApiResult&lt;T&gt;</c> 等 4 个泛型 + <c>FeishuNullDataApiResult</c>
-/// 的解包表 → <see cref="SdkToolProfileModel.OutputWrapperNamespace"/> +
-/// <see cref="SdkToolProfileModel.OutputWrapperTypeNames"/>（<c>|</c> 分隔清单，按
-/// 「命名空间全等 + 类型简单名全等」匹配）。
+/// <b>泛化点</b>（上游硬编码 → 剖面槽）：<c>FeishuApiResult&lt;T&gt;</c> 等 4 个泛型 + <c>FeishuNullDataApiResult</c> 的解包表 →
+/// <see cref="SdkToolProfileModel.OutputWrapperNamespace"/> + <see cref="SdkToolProfileModel.OutputWrapperTypeNames"/>（<c>|</c> 分隔清单，按「命名空间全等 + 类型简单名全等」匹配）。
 /// </para>
 /// <para>
-/// <b>解包行为统一规则</b>（上游对 4 个泛型有 3 种分支，泛化为一条结构规则）：
-/// 清单内的泛型包装类型 → 上溯基类链取 <c>Data</c> 属性类型（无 <c>Data</c> 时回退单泛型实参）；
-/// 清单内的非泛型类型（上游 <c>FeishuNullDataApiResult</c> 形态）→ 无载荷（<c>null</c>）。
-/// 对上游各类型：FeishuApiResult&lt;X&gt; 的 <c>Data</c> 即 X（与上游取 TypeArguments[0] 同结果）；
-/// PageList/PageListTotal 与上游 <c>FindDataPropertyType</c> 路径逐字节一致；
-/// NullData → <c>"{}"</c> 与上游一致。唯一已知行为差：<c>FeishuApiListResult&lt;T&gt;</c>
-/// 上游返回自身（信封 <c>code/msg/data</c> 进 Schema），统一规则返回 <c>Data</c> 类型
-/// （仅 <c>items</c>）——与 PageList 族的信封剥离口径一致，属上游三分支不一致的收敛，
-/// R-2c 零漂移比对时需知悉。
+/// <b>解包行为统一规则</b>（上游 4 个泛型 3 种分支的收敛）：清单内的泛型包装类型 → 上溯基类链取 <c>Data</c> 属性类型
+/// （无 <c>Data</c> 时回退单泛型实参）；清单内的非泛型类型 → 无载荷（<c>null</c>）。唯一已知行为差：<c>FeishuApiListResult&lt;T&gt;</c> 由返回信封改为返回 <c>Data</c> 类型（仅 <c>items</c>），与 PageList 族的信封剥离口径一致。
 /// </para>
 /// <para>
-/// 四条收敛规则（防 schema 爆炸，机制原样保留）：
-/// 1. 只发射带 [JsonPropertyName] 的属性；
-/// 2. 深度上限 <see cref="MaxOutputDepth"/> = 4；
-/// 3. 循环引用检测（以 OriginalDefinition 的完整元数据名入 HashSet 递归栈）；
-/// 4. required 不伪造（非可空引用 / 非 Nullable&lt;T&gt; 值类型 → required）。
+/// 四条收敛规则（防 schema 爆炸）：1. 只发射带 [JsonPropertyName] 的属性；2. 深度上限 <see cref="MaxOutputDepth"/> = 4；3. 循环引用检测（以 OriginalDefinition 的完整元数据名入 HashSet 递归栈）；4. required 不伪造（非可空引用 / 非 Nullable&lt;T&gt; 值类型 → required）。
 /// </para>
 /// </remarks>
 internal sealed class TypeSchemaResolver : IToolSurfaceTypeSchemaResolver

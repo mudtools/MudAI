@@ -8,33 +8,23 @@
 namespace Mud.AI.ToolSurface.Extraction;
 
 /// <summary>
-/// handler 特性（<c>[{ToolHandlerAttributeName}]</c>，名字/命名空间来自剖面槽）扫描器：
-/// 把「执行器方法 + 工具名」编译为 <see cref="ToolHandlerBinding"/>（含执行器构造器的 DI 依赖分类）。
+/// handler 特性（<c>[{ToolHandlerAttributeName}]</c>，名字/命名空间来自剖面槽）扫描器：把「执行器方法 + 工具名」编译为 <see cref="ToolHandlerBinding"/>（含执行器构造器的 DI 依赖分类）。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.ToolHandlerScanner</c>，泛化点（设计文档 §4.2）：
-/// <list type="bullet">
-/// <item><c>AttributeNamespace</c> 常量 → <see cref="SdkToolProfileModel.ToolHandlerAttributeNamespace"/>
-/// 第 12 槽（<b>注意与工具特性命名空间不同</b>，不得复用 <c>ToolAttributeNamespace</c>）；</item>
-/// <item><c>AttributeName</c> 常量 → <see cref="SdkToolProfileModel.ToolHandlerAttributeName"/> 槽；</item>
-/// <item>返回类型名 <c>FeishuToolResult</c> → <see cref="SdkToolProfileModel.ResultTypeName"/> 第 13 槽；</item>
-/// <item>软缺席命名空间判定 <c>Mud.Feishu*</c> → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/> 槽；</item>
-/// <item>诊断 MUDFT022/023/024/025 → factory 槽 22/23/24/25。</item>
-/// </list>
+/// 泛化点：<c>AttributeNamespace</c> 常量 → <see cref="SdkToolProfileModel.ToolHandlerAttributeNamespace"/>（<b>注意与工具特性命名空间不同</b>，不得复用 <c>ToolAttributeNamespace</c>）；
+/// <c>AttributeName</c> → <see cref="SdkToolProfileModel.ToolHandlerAttributeName"/>；返回类型名 → <see cref="SdkToolProfileModel.ResultTypeName"/>；
+/// 软缺席命名空间判定 → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>；诊断 MUDFT022/023/024/025 → factory 槽 22/23/24/25。
 /// </para>
 /// <para>
-/// <b>工具名来源</b>：handler 特性的 <c>typeof(工具接口)</c> 指向的接口自身的工具特性声明——
-/// <b>不</b>用 <c>{P}Names</c> 常量（源生成器看不到自己本趟的输出，特性实参会退化为错误常量）。
+/// <b>工具名来源</b>：handler 特性的 <c>typeof(工具接口)</c> 指向的接口自身的工具特性声明——<b>不</b>用 <c>{P}Names</c> 常量
+/// （源生成器看不到自己本趟的输出，特性实参会退化为错误常量）。
 /// </para>
 /// <para>
-/// <b>注册器分组 = 执行器类本身</b>：一枚方法级特性同时携带「工具名」（编译期常量）与
-/// 「执行器类型」（特性的宿主类），两类事实一次到位，无需类级声明、无需模块映射、无特例分支。
+/// <b>注册器分组 = 执行器类本身</b>：一枚方法级特性同时携带「工具名」（编译期常量）与「执行器类型」（特性的宿主类），两类事实一次到位，无需类级声明、无需模块映射、无特例分支。
 /// </para>
 /// <para>
-/// <b>无额外 CompilationProvider</b>：注册器需要执行器<b>构造签名</b>，而它落在
-/// <c>SemanticModel</c> 内即可完全解析（<see cref="ISymbol.ContainingType"/> 的实例构造器），
-/// 故本扫描器与 Tier C 同层同纪律（源不变则不重发）。
+/// <b>无额外 CompilationProvider</b>：注册器需要执行器<b>构造签名</b>，而它落在 <c>SemanticModel</c> 内即可完全解析（<see cref="ISymbol.ContainingType"/> 的实例构造器），故本扫描器与 Tier C 同层同纪律（源不变则不重发）。
 /// </para>
 /// </remarks>
 internal static class ToolHandlerScanner
@@ -44,7 +34,7 @@ internal static class ToolHandlerScanner
     /// <param name="profile">当前剖面。</param>
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
     /// <param name="faultInjection">
-    /// P2-2 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
+    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
     /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——曾用进程级静态字段，
     /// 而 xUnit 默认并行跑测试类 ⇒ 注入期内的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、
     /// 只剩一条 026），且只在负载下偶发。常态为 <see langword="null"/>，零开销。
@@ -105,7 +95,7 @@ internal static class ToolHandlerScanner
                         $"该接口未标注 [{profile.ToolAttributeName}]，推导不出工具名"));
             }
 
-            // 显式窄化到独立的非空局部变量（上游 R2-04 纪律：一次窄化同时消除 CS1717 与下游 CS8604）。
+            // 显式窄化到独立的非空局部变量（一次窄化同时消除 CS1717 与下游 CS8604）。
             var toolName = candidateName!;
 
             if (executor is null)
@@ -170,7 +160,7 @@ internal static class ToolHandlerScanner
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             GeneratorDebugLogger.LogError(nameof(ToolHandlerScanner), ex);
-            // P2-2：扫描体异常折算为 {prefix}026 随流上报——此前返回 null，执行器绑定静默消失且不可诊断。
+            // 扫描体异常折算为 {prefix}026 随流上报——就地返回 null 会让执行器绑定静默消失且不可诊断。
             // ToolName 记 null：绑定缺失，不参与「未绑定」误报抑制（发射器对 null 工具名惰性）。
             // OCE 是宿主取消语义，必须继续上抛。
             return ScannedHandler.Faulted(
@@ -188,7 +178,7 @@ internal static class ToolHandlerScanner
     /// 简单名匹配 <c>{ToolHandlerAttributeName}</c> 与 <c>…Attribute</c> 双形态）。
     /// </summary>
     /// <remarks>
-    /// P2-2：此处不再就地吞异常——吞掉会让 handler 以「非 handler」身份静默消失（不可诊断）；
+    /// 此处不得就地吞异常——吞掉会让 handler 以「非 handler」身份静默消失（不可诊断）；
     /// 异常上抛给 <see cref="Scan"/> 的 catch，折算为 <c>{prefix}026</c> 随流上报。
     /// </remarks>
     public static AttributeData? GetHandlerAttribute(IMethodSymbol method, SdkToolProfileModel profile)
@@ -221,11 +211,11 @@ internal static class ToolHandlerScanner
     /// <see cref="ToolDependencyKind"/> 的说明表）。
     /// </summary>
     /// <remarks>
-    /// <b>可空声明优先于命名空间（上游 R2-06 修正保留）</b>：参数的 <c>?</c> 就是"该依赖可缺席"的意图表达——
-    /// 此前非 SDK 命名空间的可空接口参数被误判为 <see cref="ToolDependencyKind.RequiredService"/>
-    /// （生成 <c>GetRequiredService&lt;T&gt;()</c>），于是"声明可空"与"解析必失败即崩"互相矛盾
+    /// <b>可空声明优先于命名空间</b>：参数的 <c>?</c> 就是"该依赖可缺席"的意图表达——
+    /// 可空的非 SDK 接口参数必须走 <see cref="ToolDependencyKind.OptionalService"/>（<c>GetService</c>，
+    /// 缺席返回 null）；若误判为 <see cref="ToolDependencyKind.RequiredService"/>（生成
+    /// <c>GetRequiredService&lt;T&gt;()</c>），"声明可空"与"解析必失败即崩"互相矛盾
     /// （典型：执行器为补日志而新增 <c>ILogger&lt;T&gt;? logger = null</c>）。
-    /// 现改为：可空 ⇒ <see cref="ToolDependencyKind.OptionalService"/>（<c>GetService</c>，缺席返回 null），
     /// 只有<b>非可空</b>的非 SDK 依赖才走 <c>GetRequiredService</c>（宿主必须提供的硬依赖，如 <c>IOptions&lt;T&gt;</c>）。
     /// </remarks>
     private static ToolDependencyKind ClassifyDependency(IParameterSymbol parameter, SdkToolProfileModel profile)

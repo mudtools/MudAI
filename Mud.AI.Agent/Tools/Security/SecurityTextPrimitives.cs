@@ -18,11 +18,11 @@ namespace Mud.AI.Agent.Tools.Security;
 ///   <item><b>出站脱敏键</b>（<see cref="CredentialKeys"/>）：JSON 键名精确匹配 + 非 JSON 形态（key=value）。
 ///   <b>不含</b> <c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c> 等标识类字段——
 ///   这些是飞书 API 响应的合法结构字段，掩码会让模型无法读取正常的分页/标识信息。</item>
-///   <item><b>入站审计键</b>（<see cref="ToolArgsDigester.SensitiveKeys"/>）：子串匹配（宁可多掩），
-///   属独立口径——本轮<b>不合并</b>，仅加交叉引用注释。</item>
+///   <item><b>入站审计键</b>（<see cref="Args.ToolArgsDigester.SensitiveKeys"/>）：子串匹配（宁可多掩），
+///   属独立口径（刻意不合并，仅交叉引用）。</item>
 /// </list>
-/// <para><b>控制字符判定</b>：出站剥离（<see cref="ToolResultSanitizer"/>）与入站拒绝
-/// （<see cref="ToolArgumentSanitizer"/>）共用同一判定表达式，但处置方向不同（有意保留差异）。</para>
+/// <para><b>控制字符判定</b>：出站剥离（<see cref="Results.ToolResultSanitizer"/>）与入站拒绝
+/// （<see cref="Args.ToolArgumentSanitizer"/>）共用同一判定表达式，但处置方向不同（有意保留差异）。</para>
 /// </remarks>
 public static class SecurityTextPrimitives
 {
@@ -44,7 +44,7 @@ public static class SecurityTextPrimitives
     /// </summary>
     /// <remarks>
     /// <para>在既有 13 项基础上新增 <c>api_key</c>/<c>apikey</c>/<c>credential</c>/<c>client_id</c>
-    /// ——这些在入站审计 <see cref="ToolArgsDigester.SensitiveKeys"/> 中已覆盖，出站侧须同样覆盖。</para>
+    /// ——这些在入站审计 <see cref="Args.ToolArgsDigester.SensitiveKeys"/> 中已覆盖，出站侧须同样覆盖。</para>
     /// <para><b>不含</b> <c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c>——
     /// 误伤会让模型无法读取正常的分页/标识信息。</para>
     /// </remarks>

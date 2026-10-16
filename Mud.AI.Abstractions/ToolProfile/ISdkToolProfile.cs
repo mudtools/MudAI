@@ -12,7 +12,6 @@ namespace Mud.AI;
 /// </summary>
 /// <remarks>
 /// <para>
-/// v2.3 随引擎进仓（原 <c>Mud.HttpUtils.ISdkToolProfile</c>，组件包 <c>Mud.HttpUtils.Abstractions</c>）：
 /// 引擎（<c>Mud.AI.Generator</c>）以<b>硬编码全名 <c>Mud.AI.ISdkToolProfile</c></b> 经
 /// <c>GetTypeByMetadataName</c> 发现剖面——命名空间即契约，改名须同批改引擎常量
 /// （<c>SdkToolProfileModel.ProfileInterfaceFullName</c> / <c>ProfileContractGuard</c> 两处）。
@@ -25,8 +24,7 @@ namespace Mud.AI;
 /// <para>
 /// <b>为什么是「空标记接口 + 数据特性」而非「接口带 get-only 属性」</b>：源生成器只能读
 /// <c>IFieldSymbol.ConstantValue</c> 或 <c>AttributeData</c>，<b>不能执行属性 getter</b>。
-/// 用特性承载常量 = 编译器可读 + 消费方可写 + 无运行时语义泄漏。
-/// 本接口因此没有任何成员，仅承担「类型即剖面」的编译期声明职责与守卫锚点。
+/// 用特性承载常量 = 编译器可读 + 消费方可写 + 无运行时语义泄漏；本接口因此没有任何成员，仅承担「类型即剖面」的编译期声明职责与守卫锚点。
 /// </para>
 /// </remarks>
 public interface ISdkToolProfile

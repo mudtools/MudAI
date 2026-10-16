@@ -11,33 +11,22 @@ using Mud.AI.ToolSurface.Schema;
 namespace Mud.AI.ToolSurface.Emit;
 
 /// <summary>
-/// Tier C 发射器：产出 <c>{P}Schemas.g.cs</c>（Schema 常量 + 名字注册表）、
-/// <c>{P}Names.g.cs</c>（工具名契约表）、<c>{P}Contracts.g.cs</c>（类型化契约表）
-/// 以及 golden 快照比对。
+/// Tier C 发射器：产出 <c>{P}Schemas.g.cs</c>（Schema 常量 + 名字注册表）、<c>{P}Names.g.cs</c>（工具名契约表）、
+/// <c>{P}Contracts.g.cs</c>（类型化契约表）以及 golden 快照比对。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Emit.SchemaEmitter</c>（设计文档 §5.1 前三条输出路径）。泛化点：
-/// <list type="bullet">
-/// <item>owner 门槛：上游 <c>ToolNamesOwnerAssembly = "Mud.Feishu.AI.FeishuTools"</c> 与
-/// <c>ToolArgsEmitter.NamespaceName</c> / <c>ToolRegistrarEmitter.CoreNamespace</c> 三处同值常量
-/// 收敛为单一剖面槽 <see cref="SdkToolProfileModel.OwnerAssembly"/>（§5.2-2 v2.1：门槛值<b>不是</b>
-/// ProductPrefix 推导——缺 <c>.AI.</c> 段、复数 <c>Tools</c>、无 <c>Tool</c> 后缀，推导即错误抽象）；</item>
-/// <item>产物命名空间：<c>{P}Schemas</c>/<c>{P}Contracts</c> → <see cref="SdkToolProfileModel.GeneratedNamespace"/>，
-/// <c>{P}Names</c> → <see cref="SdkToolProfileModel.ContractNamespace"/>（§4.2 第 10 项，勿与门槛值混淆）；</item>
-/// <item>契约记录里的风险枚举全名 → <see cref="SdkToolProfileModel.RiskEnumFullName"/>（§4.2 第 11 项）；</item>
-/// <item>golden 文件名 → <see cref="SdkToolProfileModel.GoldenFileName"/>（§5.2-3：全名匹配，非后缀匹配）。</item>
-/// </list>
+/// 泛化点：owner 门槛（上游三处同值常量）收敛为单一剖面槽 <see cref="SdkToolProfileModel.OwnerAssembly"/>——
+/// 门槛值<b>不是</b> ProductPrefix 推导（缺 <c>.AI.</c> 段、复数 <c>Tools</c>、无 <c>Tool</c> 后缀，推导即错误抽象）；
+/// 产物命名空间 <c>{P}Schemas</c>/<c>{P}Contracts</c> → <see cref="SdkToolProfileModel.GeneratedNamespace"/>、<c>{P}Names</c> → <see cref="SdkToolProfileModel.ContractNamespace"/>（勿与门槛值混淆）；风险枚举全名 → <see cref="SdkToolProfileModel.RiskEnumFullName"/>；golden 文件名 → <see cref="SdkToolProfileModel.GoldenFileName"/>（全名匹配，非后缀匹配）。
 /// </para>
 /// <para>
-/// <b>D2「单一真相源」落地</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定<b>不再手写</b>，
-/// 全部从工具特性派生——原先"特性表 + 名字常量表 + 数组清单"三处平行手写，
-/// 任何一处漏改都会静默漂移（名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"）。
+/// <b>D2「单一真相源」纪律</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定必须全部从工具特性派生，
+/// <b>不得</b>再手写任何平行清单——手写清单与特性表一旦漂移，名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"。
 /// </para>
 /// <para>
-/// <b>名字契约的所有者唯一</b>：工具名契约表只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/>
-/// 程序集（工具面的实现包）。其他引用本生成器的工程也可能声明工具特性样例接口，
-/// 若一并发射会同名类型冲突（CS0433）。
+/// <b>名字契约的所有者唯一</b>：工具名契约表只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/> 程序集（工具面的实现包）——
+/// 其他引用本生成器的工程也可能声明工具特性样例接口，若一并发射会同名类型冲突（CS0433）。
 /// </para>
 /// </remarks>
 internal static class SchemaEmitter

@@ -53,7 +53,7 @@ internal sealed class ScannedTool : IEquatable<ScannedTool?>
 
     public override bool Equals(object? obj) => Equals(obj as ScannedTool);
 
-    /// <summary>哈希覆盖 <see cref="Equals(ScannedTool?)"/> 的全部字段（AT-B16：原实现漏了诊断集合）。</summary>
+    /// <summary>哈希覆盖 <see cref="Equals(ScannedTool?)"/> 的全部字段。</summary>
     /// <remarks>
     /// 诊断集合是"是否需要重发"的一部分（诊断变化的接口必须让增量管线判定为已变更），
     /// 漏掉它会让"只改了诊断"的编辑被增量缓存吞掉。
