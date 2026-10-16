@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本规范](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 变更
+
+- 手写运行时层（`Mud.AI.Abstractions` / `Mud.AI.Agent` / `Mud.AI.Generator`）的 XML 文档注释全面压缩：多段 `<para>` 合并、`<returns>` 并入 `<summary>`、去除装饰性表述与过程性括注；读代码读不出的约束（守卫锁定点、AOT/TFM 例外、误报依据、失败语义与毒化链）全部保留。台账 `documents/comment-budget-baseline.json` 按同一判据重新固化（仅下压），注释守卫的扫描面地板随实测值同步调整。
+
 ## [1.0.1] - 2026-10-16
 
 ### 新增

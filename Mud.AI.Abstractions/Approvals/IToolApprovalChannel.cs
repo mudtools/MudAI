@@ -7,45 +7,34 @@
 
 namespace Mud.AI.Abstractions.Approvals;
 
-/// <summary>
-/// 工具人工确认（HITL）的<b>宿主批准通道</b>：SDK 把「待确认」事件的全部要素交给宿主，
-/// 由宿主在自有界面（卡片/工单/审批单）完成批准——<b>批准状态所有权归宿主授权器，SDK 不签发任何凭据</b>。
-/// </summary>
+/// <summary>工具人工确认（HITL）的<b>宿主批准通道</b>：SDK 把「待确认」事件的全部要素交给宿主，由宿主在自有界面
+/// （卡片/工单/审批单）完成批准——<b>批准状态所有权归宿主授权器，SDK 不签发任何凭据</b>。</summary>
 /// <remarks>
 /// <para>
-/// <b>三层分工</b>：
-/// 1. <b>框架审批管线</b>：写类工具的调用前拦截；批准只能来自宿主，模型侧不可自批复。
-/// 2. <b>宿主授权器</b>：批准状态的唯一所有者——首次收到待确认 → 记为挂起；
-///    经批准通道拿到摘要后建立「已批准」上下文；下次同 <c>(tool, argsDigest, tenantKey, userId)</c> 调用放行。
-/// 3. <b>SDK 执行链</b>：咨询授权器、通知宿主、<b>中性拒绝</b>（不含任何凭据）。
+/// <b>三层分工</b>：1. <b>框架审批管线</b>：写类工具的调用前拦截；批准只能来自宿主，模型侧不可自批复。
+/// 2. <b>宿主授权器</b>：批准状态的唯一所有者——首次收到待确认 → 记为挂起；经批准通道拿到摘要后建立「已批准」上下文；
+/// 下次同 <c>(tool, argsDigest, tenantKey, userId)</c> 调用放行。3. <b>SDK 执行链</b>：咨询授权器、通知宿主、
+/// <b>中性拒绝</b>（不含任何凭据）。
 /// </para>
 /// <para>
 /// <b>未注册 = 降级为「纯提示」</b>：模型只会收到「需要人工确认」，拿不到任何凭据，无法自批复（fail-closed）。
+/// SDK 只定契约、不内实现（与宿主授权器同款定位）。
 /// </para>
-/// <para>SDK 只定契约、不内实现（与宿主授权器同款定位）。</para>
 /// </remarks>
 public interface IToolApprovalChannel
 {
-    /// <summary>
-    /// 提交一次待人工确认的工具调用，返回宿主侧关联 ID（批准界面据此回填）。
-    /// </summary>
+    /// <summary>提交一次待人工确认的工具调用，返回宿主侧关联 ID（批准界面据此回填）。</summary>
     /// <param name="request">待确认要素（含已脱敏的参数摘要）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
-    /// <returns>
-    /// 宿主侧关联 ID；返回 <see langword="null"/> 表示宿主未生成关联号（仍按「已发起确认」处理）。
-    /// </returns>
-    /// <remarks>
-    /// 通道抛异常时执行链<b>降级为纯提示</b>并记日志，绝不把敏感信息写进任何回填模型的文本。
-    /// </remarks>
+    /// <returns>宿主侧关联 ID；返回 <see langword="null"/> 表示宿主未生成关联号（仍按「已发起确认」处理）。</returns>
+    /// <remarks>通道抛异常时执行链<b>降级为纯提示</b>并记日志，绝不把敏感信息写进任何回填模型的文本。</remarks>
     Task<string?> RequestApprovalAsync(ToolApprovalRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 提交一次<b>框架原生</b>待确认的工具调用（写工具经框架的审批包装后，
-    /// 框架在调用<b>之前</b>产出的审批请求）。
-    /// </summary>
+    /// <summary>提交一次<b>框架原生</b>待确认的工具调用（写工具经框架的审批包装后，框架在调用<b>之前</b>产出的审批请求）。</summary>
     /// <remarks>
-    /// 与 <see cref="RequestApprovalAsync"/> 的区别：本方法<b>不涉及确认令牌</b>——批准资格由框架的响应绑定保证，故无「令牌往返模型上下文」
-    /// 这条危险路径；会话语义上是<b>异步</b>的：宿主登记待确认项、在自有界面完成批准后<b>回灌续跑</b>，实现内不得阻塞或轮询等待人类操作。
+    /// 与 <see cref="RequestApprovalAsync"/> 的区别：本方法<b>不涉及确认令牌</b>——批准资格由框架的响应绑定保证，故无
+    /// 「令牌往返模型上下文」这条危险路径；会话语义上是<b>异步</b>的：宿主登记待确认项、在自有界面完成批准后<b>回灌续跑</b>，
+    /// 实现内不得阻塞或轮询等待人类操作。
     /// <para>
     /// <b>宿主续跑义务</b>（推荐直接用中立闭环 <c>Mud.AI.Agent.Approvals.AgentApprovalContinuation</c>；手工实现时四步缺一不可）：
     /// ① 用<b>同一个</b>会话键在<b>同一</b>会话上加载——框架的待审批记录驻留会话状态袋，框架记录即批准权威（换键/换实例即失配）；
@@ -56,7 +45,8 @@ public interface IToolApprovalChannel
     /// </para>
     /// <para>
     /// <b>未续跑 ≠ 无害</b>：发起确认那轮会把「待应答审批请求」写进会话历史，而框架对<b>整段入站历史</b>做审批配对校验，
-    /// 残留未应答项会让该会话后续每一轮直接抛异常。事件层已对该形态自愈（新用户轮次放弃待确认项并摘除孤儿审批），故「宿主从不续跑」只退化为「该次写操作被放弃」；通道抛异常同样 fail-closed——写工具保持未执行，绝不降级为「自动批准」。
+    /// 残留未应答项会让该会话后续每一轮直接抛异常。事件层已对该形态自愈（新用户轮次放弃待确认项并摘除孤儿审批），
+    /// 故「宿主从不续跑」只退化为「该次写操作被放弃」；通道抛异常同样 fail-closed——写工具保持未执行，绝不降级为「自动批准」。
     /// </para>
     /// </remarks>
     /// <param name="request">框架审批请求要素。</param>
@@ -67,25 +57,16 @@ public interface IToolApprovalChannel
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>
-/// 框架原生审批请求要素（由框架的审批内容投影而来；<b>不含确认令牌</b>——批准资格由框架绑定保证）。
-/// </summary>
-/// <param name="RequestId">
-/// 框架请求标识。回灌响应时必须带回该值，否则框架无法把响应绑定到原始请求 ⇒ 批准不生效。
-/// </param>
+/// <summary>框架原生审批请求要素（由框架的审批内容投影而来；<b>不含确认令牌</b>——批准资格由框架绑定保证）。</summary>
+/// <param name="RequestId">框架请求标识。回灌响应时必须带回该值，否则框架无法把响应绑定到原始请求 ⇒ 批准不生效。</param>
 /// <param name="ToolName">工具名（注册表契约名）。</param>
 /// <param name="ToolCallId">模型原始调用 ID（可空；排障用）。</param>
 /// <param name="TenantKey">租户/应用标识。</param>
 /// <param name="UserId">触发用户（可空）。</param>
 /// <param name="ConversationKey">会话键（可空）。</param>
-/// <param name="ArgumentsDigest">
-/// 入参摘要（可空；供审批界面展示——<b>不得</b>回灌给模型）。
-/// </param>
+/// <param name="ArgumentsDigest">入参摘要（可空；供审批界面展示——<b>不得</b>回灌给模型）。</param>
 /// <param name="RequiredScopes">工具声明的权限点（查不到目录时为空）。</param>
-/// <param name="ChatId">
-/// 触发会话的会话目标 ID（可空）。续跑轮重建工具执行上下文时使用——续跑不在事件流内，
-/// 宿主侧只有本投影可依。
-/// </param>
+/// <param name="ChatId">触发会话的会话目标 ID（可空）。续跑轮重建工具执行上下文时使用——续跑不在事件流内，宿主侧只有本投影可依。</param>
 public sealed record FrameworkToolApprovalRequest(
     string RequestId,
     string ToolName,

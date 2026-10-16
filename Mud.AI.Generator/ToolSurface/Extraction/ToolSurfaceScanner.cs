@@ -29,10 +29,9 @@ internal static class ToolSurfaceScanner
     /// <param name="profile">当前剖面。</param>
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
     /// <param name="faultInjection">
-    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
-    /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让
-    /// xUnit 并行跑的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、只剩一条 026），
-    /// 且只在负载下偶发、极难复现。常态为 <see langword="null"/>，零开销。
+    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在扫描体起点抛出。
+    /// <b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让 xUnit 并行跑的<b>并发测试</b>扫描
+    /// 一并被打挂（表现为产物静默缺席、只剩一条 026），且只在负载下偶发、极难复现；常态为 <see langword="null"/>，零开销。
     /// </param>
     /// <returns>扫描结果（模型 + 诊断）。</returns>
     public static ScannedTool Scan(
@@ -207,20 +206,12 @@ internal static class ToolSurfaceScanner
 
     // ────────── 校验 ──────────
 
-    /// <summary>
-    /// 读取并校验工具特性的 <c>AnyOf = ["a|b|c"]</c> 条件必填组。
-    /// </summary>
+    /// <summary>读取并校验工具特性的 <c>AnyOf = ["a|b|c"]</c> 条件必填组。</summary>
     /// <remarks>
-    /// <para>
-    /// <b>为什么在生成器侧校验</b>：组内参数名若拼错，渲染出的 <c>anyOf</c> 会指向不存在的字段，
-    /// 约束<b>永久失效且无任何症状</b>（构建通过、Schema 合法、只是约束了空气）。
-    /// 这类"静默失效"必须在构建期拦下，故报槽位 011（Error）。
-    /// </para>
-    /// <para>
-    /// <b>三条校验规则</b>：① 组内每个参数名必须存在于签名；② 组内不得含
-    /// <c>Required = true</c> 的参数（否则"至少一个"退化为"全部必填"，语义相反）；
-    /// ③ 单元素组无意义（等价于该参数必填，应改用 <c>Required</c>）。
-    /// </para>
+    /// <b>为什么在生成器侧校验</b>：组内参数名若拼错，渲染出的 <c>anyOf</c> 会指向不存在的字段，约束<b>永久失效且无任何
+    /// 症状</b>（构建通过、Schema 合法、只是约束了空气）——这类"静默失效"必须在构建期拦下，故报槽位 011（Error）。
+    /// <b>三条校验规则</b>：① 组内每个参数名必须存在于签名；② 组内不得含 <c>Required = true</c> 的参数（否则"至少一个"
+    /// 退化为"全部必填"，语义相反）；③ 单元素组无意义（等价于该参数必填，应改用 <c>Required</c>）。
     /// </remarks>
     private static IReadOnlyList<IReadOnlyList<string>> ReadAnyOfGroups(
         AttributeData attribute,
@@ -401,20 +392,15 @@ internal static class ToolSurfaceScanner
 
     // ────────── 辅助 ──────────
 
-    /// <summary>
-    /// 无 <c>Source</c> 声明（或声明未命中）时的缺省令牌身份。
-    /// </summary>
+    /// <summary>无 <c>Source</c> 声明（或声明未命中）时的缺省令牌身份。</summary>
     /// <remarks>
-    /// 上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（槽位清单无此项），
-    /// 为保持行为零漂移沿用同一枚举值（枚举槽本身平台无关，Tenant 语义 = 租户/企业级令牌）。
+    /// 上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（槽位清单无此项），为保持行为零漂移沿用同一枚举值
+    /// （枚举槽本身平台无关，Tenant 语义 = 租户/企业级令牌）。
     /// </remarks>
     private const ToolSurfaceTokenKind DefaultIdentity = ToolSurfaceTokenKind.Tenant;
 
-    /// <summary>
-    /// 从源接口的命名标记表推导令牌身份（泛化自上游 <c>StartsWith("IFeishuTenant")</c> 硬编码）。
-    /// 未命中任何标记（= 双令牌基接口形态）时报槽位 016：源指向无令牌的抽象基接口——
-    /// 该类接口不能从 DI 解析，执行链必然失败。
-    /// </summary>
+    /// <summary>从源接口的命名标记表推导令牌身份（泛化自上游 <c>StartsWith("IFeishuTenant")</c> 硬编码）；未命中任何标记
+    /// （= 双令牌基接口形态）时报槽位 016：源指向无令牌的抽象基接口——该类接口不能从 DI 解析，执行链必然失败。</summary>
     private static ToolSurfaceTokenKind DeriveIdentityFromSource(
         string sourceSimpleTypeName,
         string sourceTypeName,

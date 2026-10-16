@@ -10,24 +10,19 @@ using Microsoft.CodeAnalysis;
 
 namespace Mud.AI.ToolSurface;
 
-/// <summary>
-/// 工具面引擎的<b>动态诊断槽位表</b>（档位 2「引擎通用槽位」）。
-/// </summary>
+/// <summary>工具面引擎的<b>动态诊断槽位表</b>（档位 2「引擎通用槽位」）。</summary>
 /// <remarks>
 /// <para>
-/// 与静态 <c>DiagnosticIds.cs</c> 的边界：profile 注入的 ID 是<b>动态组装</b>
-/// （<c>{profile.DiagnosticPrefix}{槽位号:D3}</c>），不进静态常量表；
-/// 「槽位号 ↔ 语义 ↔ 上报点」的完全相等关系由本表 + <c>ToolSurfaceContractTests</c> 契约守卫锁定
+/// 与静态 <c>DiagnosticIds.cs</c> 的边界：profile 注入的 ID 是<b>动态组装</b>（<c>{profile.DiagnosticPrefix}{槽位号:D3}</c>），
+/// 不进静态常量表；「槽位号 ↔ 语义 ↔ 上报点」的完全相等关系由本表 + <c>ToolSurfaceContractTests</c> 契约守卫锁定
 /// （等同上游 <c>Diagnostics_ShouldNotDeclareUnreportedDiagnostics</c> 纪律）。
 /// </para>
 /// <para>
-/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），使上游 <c>MUDFT001..027</c> 与 zero-tolerance 基线可零漂移映射；微信侧得到 <c>MUDWX001..</c> 的同构但独立序列。
-/// </para>
-/// <para>
-/// <b>槽位表携带「是否零容忍」列</b>：上游零容忍集不含 009/018/021（Warning/Info），缺该列会让微信侧误把截断告警升级为构建阻断。
-/// </para>
-/// <para>
-/// <b>类别例外</b>：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c> 而非 <c>DiagnosticCategory</c>（上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
+/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），使上游 <c>MUDFT001..027</c>
+/// 与 zero-tolerance 基线可零漂移映射；微信侧得到 <c>MUDWX001..</c> 的同构但独立序列。
+/// <b>槽位表携带「是否零容忍」列</b>：上游零容忍集不含 009/018/021（Warning/Info），缺该列会让微信侧误把截断告警
+/// 升级为构建阻断。<b>类别例外</b>：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c> 而非 <c>DiagnosticCategory</c>
+/// （上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
 /// </para>
 /// </remarks>
 internal static class ToolSurfaceDiagnostics
@@ -147,9 +142,7 @@ internal static class ToolSurfaceDiagnostics
         public bool ZeroTolerance { get; }
     }
 
-    /// <summary>
-    /// 全部引擎通用槽位（与上游 <c>MUDFT</c> 描述符一一对应；本表只收录现存槽位）。
-    /// </summary>
+    /// <summary>全部引擎通用槽位（与上游 <c>MUDFT</c> 描述符一一对应；本表只收录现存槽位）。</summary>
     public static readonly ImmutableArray<SlotDefinition> Slots =
     [
         new(SlotMissingToolName, "工具缺少名称", "[{0}] 标注的接口 {1} 未提供工具名", DiagnosticSeverity.Error, true),
@@ -182,12 +175,10 @@ internal static class ToolSurfaceDiagnostics
         new(SlotAffordanceBudget, "per-tool affordance 资产超预算", "per-tool affordance 资产超预算：{0} 份（单资产上界 {1} 字符 / 单小节上界 {2} 字符）。样本：{3}", DiagnosticSeverity.Warning, false),
     ];
 
-    /// <summary>
-    /// 按剖面实例化描述符工厂：同一槽位号在不同 profile 下得到 <c>{prefix}{slot:D3}</c> 的独立 ID。
-    /// </summary>
+    /// <summary>按剖面实例化描述符工厂：同一槽位号在不同 profile 下得到 <c>{prefix}{slot:D3}</c> 的独立 ID。</summary>
     /// <remarks>
-    /// 描述符按 (profile, slot) 缓存于实例内——<see cref="DiagnosticDescriptor"/> 进入
-    /// <c>Diagnostic.Create</c> 后其 ID/category/级别即固化，缓存避免每条上报路径重复构造。
+    /// 描述符按 (profile, slot) 缓存于实例内——<see cref="DiagnosticDescriptor"/> 进入 <c>Diagnostic.Create</c> 后其
+    /// ID/category/级别即固化，缓存避免每条上报路径重复构造。
     /// </remarks>
     internal sealed class Factory
     {
@@ -258,10 +249,8 @@ internal static class ToolSurfaceDiagnostics
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<SdkToolProfileModel, Factory> ProfileFactories = new();
 
-    /// <summary>
-    /// 按剖面取共享工厂（描述符缓存跨扫描复用）：<c>SdkToolProfileModel</c> 是全字段值相等的不可变载体，
-    /// 可安全作字典键；剖面数量级为个位数，缓存无界风险不存在。
-    /// </summary>
+    /// <summary>按剖面取共享工厂（描述符缓存跨扫描复用）：<c>SdkToolProfileModel</c> 是全字段值相等的不可变载体，可安全作
+    /// 字典键；剖面数量级为个位数，缓存无界风险不存在。</summary>
     public static Factory For(SdkToolProfileModel profile)
         => ProfileFactories.GetOrAdd(profile, static p => new Factory(p));
 }
