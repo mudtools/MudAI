@@ -183,6 +183,8 @@ public class ToolSurfaceEmissionTests
                 public string[]? RequiredScopes { get; set; }
 
                 public string[]? AnyOf { get; set; }
+
+                public string? OutputSchema { get; set; }
             }
 
             [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Method)]
@@ -789,6 +791,37 @@ public class ToolSurfaceEmissionTests
             "只读工具在契约表中必须 IsWrite=false（与 ReadonlyAll 同源）");
         ContractsIsWrite(contracts, "TestToolContract BitableDeleteRecord { get; }").Should().BeTrue(
             "写工具在契约表中必须 IsWrite=true（与 WriteAll 同源）");
+    }
+
+    /// <summary>
+    /// 声明 <c>OutputSchema</c> 的工具：该属性是**权威覆盖**，需原样进入描述符
+    /// （跳过 Source 返回类型推导），且不得把推导截断计入输出契约覆盖统计。
+    /// </summary>
+    [Fact]
+    public void DeclaredOutputSchema_OverridesReturnTypeDerivation_Verbatim()
+    {
+        // 源方法返回 TestPayload（可推导），但工具真实结果是落盘元数据 —— 声明覆盖必须胜出。
+        const string declared = """{"type":"object","properties":{"local_path":{"type":"string"},"size":{"type":"integer"}}}""";
+        const string declaredLiteral = "@\"{\"\"type\"\":\"\"object\"\",\"\"properties\"\":{\"\"local_path\"\":{\"\"type\"\":\"\"string\"\"},\"\"size\"\":{\"\"type\"\":\"\"integer\"\"}}}\"";
+
+        var source = CuratedToolsSource.Replace(
+            "Source = \"ITestTenantV1Bitable.ListAsync\")]",
+            "Source = \"ITestTenantV1Bitable.ListAsync\", OutputSchema = " + declaredLiteral + ")]",
+            StringComparison.Ordinal);
+        source.Should().NotBe(CuratedToolsSource, "覆盖声明必须真的落到工具接口上，否则本用例恒成立");
+
+        var run = Run([ProfileSource, ConsumerSource, source]);
+
+        var schemas = Normalize(Source(run, "TestToolSchemas.g.cs"));
+        schemas.Should().Contain("\"output_schema\":" + declared,
+            "声明值必须原样嵌入（不得重新序列化或改写键顺序）");
+        schemas.Should().NotContain("app_token",
+            "覆盖后描述符不得混入返回类型推导的字段");
+
+        run.Result.Diagnostics.Should().NotContain(d => d.Id == "MUDTT004",
+            "声明覆盖不得触发「返回类型不可映射」（Source 仍参与槽位校验）");
+        run.Result.Diagnostics.Should().NotContain(d => d.Id == "MUDTT009",
+            "声明覆盖必须丢弃推导截断样本，不得把它计入返回契约截断统计");
     }
 
     /// <summary>

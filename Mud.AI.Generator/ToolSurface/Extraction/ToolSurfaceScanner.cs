@@ -84,6 +84,7 @@ internal static class ToolSurfaceScanner
             var scopes = GetNamedArray(attribute, "RequiredScopes");
             var isWrite = GetNamedBool(attribute, "IsWrite");
             var source = GetNamedString(attribute, "Source");
+            var declaredOutputSchema = GetNamedString(attribute, "OutputSchema");
 
             var parameters = ParameterSchemaRenderer.RenderParameters(symbol, compilation, profile);
             var anyOfGroups = ReadAnyOfGroups(attribute, toolName, parameters, factory, out var anyOfDiagnostics);
@@ -143,6 +144,15 @@ internal static class ToolSurfaceScanner
             }
 
             ValidateParameterExpansion(symbol.Name, parameters, diagnostics, factory);
+
+            // 显式 OutputSchema 属性是**权威覆盖**：原样采用，丢弃返回类型推导（连同其截断样本）。
+            // 适用场景：真实结果结构无法从 Source 返回类型推导（如字节流传给宿主暂存器，
+            // 工具实际回传的是落盘路径/大小/内容类型等元数据）。
+            if (!string.IsNullOrEmpty(declaredOutputSchema))
+            {
+                outputSchema = declaredOutputSchema;
+                outputSchemaTruncations = [];
+            }
 
             var firstMethod = symbol.GetMembers().OfType<IMethodSymbol>().FirstOrDefault();
             var docSummary = description;

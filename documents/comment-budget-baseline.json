@@ -27,7 +27,7 @@
     "Mud.AI.Abstractions/ToolProfile/SdkTokenKind.cs": {"lines": 73, "comments": 43, "maxBlock": 20},
     "Mud.AI.Abstractions/ToolProfile/SdkToolProfileAttribute.cs": {"lines": 212, "comments": 122, "maxBlock": 24},
     "Mud.AI.Abstractions/ToolProfile/TokenKindDerivationStrategy.cs": {"lines": 32, "comments": 19, "maxBlock": 9},
-    "Mud.AI.Abstractions/Tools/AgentToolAttribute.cs": {"lines": 88, "comments": 70, "maxBlock": 22},
+    "Mud.AI.Abstractions/Tools/AgentToolAttribute.cs": {"lines": 93, "comments": 73, "maxBlock": 22},
     "Mud.AI.Abstractions/Tools/Errors/ITransportFault.cs": {"lines": 36, "comments": 29, "maxBlock": 22},
     "Mud.AI.Abstractions/Tools/Handlers/ToolHandlerAttribute.cs": {"lines": 38, "comments": 30, "maxBlock": 23},
     "Mud.AI.Abstractions/Tools/ToolParameterAttribute.cs": {"lines": 52, "comments": 38, "maxBlock": 15},

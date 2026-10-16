@@ -2,6 +2,19 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本规范](https://semver.org/lang/zh-CN/)。
 
+## [1.0.1] - 2026-10-16
+
+### 新增
+
+- `Mud.AI.Abstractions`：`AgentToolAttribute.OutputSchema`（可空字符串）——返回结构 Schema 的**声明覆盖**。
+- `Mud.AI.Generator`：源生成器读取 `OutputSchema`；非空时**原样采用**并跳过 Source 返回类型推导（连同其截断样本）。
+
+### 说明
+
+- 适用场景：工具真实回传结果无法从 Source 返回类型推导时（如 SDK 返回字节流、由宿主暂存后回传落盘路径/大小/内容类型等元数据），可由策展接口显式声明输出契约。声明覆盖不参与「返回契约覆盖统计」（推导截断已丢弃），避免污染 `OutputSchemaCoveredToolCount` 口径。
+
+[1.0.1]: https://github.com/mudtools/Mud.AI/releases/tag/v1.0.1
+
 ## [1.0.0] - 2026-10-16
 
 Mud.AI 家族自飞书仓（原 `MudFeishu`）按「P3 上游化」独立后的首个正式版本，与飞书仓全局版本线解耦，自 1.0.0 起步。

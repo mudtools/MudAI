@@ -85,4 +85,9 @@ public sealed class AgentToolAttribute(string name) : Attribute
     /// </code>
     /// </remarks>
     public string[] AnyOf { get; set; } = [];
+
+    /// <summary>
+    /// 返回结构 Schema 覆盖（JSON 文本；可空）：声明后源生成器<b>原样采用</b>，跳过 Source 返回类型推导。
+    /// </summary>
+    public string? OutputSchema { get; set; }
 }
