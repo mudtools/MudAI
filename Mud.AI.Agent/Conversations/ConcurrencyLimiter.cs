@@ -8,16 +8,16 @@
 
 namespace Mud.AI.Agent.Conversations;
 
-/// <summary>
-/// 全局削峰引擎（第八式「中立引擎返回中立结果，外壳决定异常语义」）：限制进程内在途并发数，满额时按调用方选择等待空位或立即返回，队列等待另有超时。
-/// </summary>
+/// <summary>全局削峰引擎（第八式「中立引擎返回中立结果，外壳决定异常语义」）：限制进程内在途并发数，满额时按调用方选择等待空位或立即返回，队列等待另有超时。</summary>
 /// <remarks>
 /// <para>
-/// <b>零业务异常 + 超时显式建模</b>：以 <see langword="null"/> 表达"这次没拿到"（满额或队列超时），业务异常由宿主外壳翻译；取消按 .NET 通用语义原样穿透（它不是业务异常）。
-/// 超时用 <see cref="SemaphoreSlim"/> 的超时等待重载（返回 <see langword="false"/> 即超时）——<b>不用</b> <c>CancelAfter</c> ＋ 取消标志反推：那种写法无法区分"外部取消"与"队列超时"，两者并发触发时超时诉求会被静默吞掉。
+/// <b>零业务异常 + 超时显式建模</b>：以 <see langword="null"/> 表达"这次没拿到"（满额或队列超时），业务异常由宿主外壳翻译；取消按
+/// .NET 通用语义原样穿透（它不是业务异常）。超时用 <see cref="SemaphoreSlim"/> 的超时等待重载（返回 <see langword="false"/> 即超时）
+/// ——<b>不用</b> <c>CancelAfter</c> ＋ 取消标志反推：那种写法无法区分"外部取消"与"队列超时"，两者并发触发时超时诉求会被静默吞掉。
 /// </para>
 /// <para>
-/// <b>不做许可预检</b>：<c>FailFast</c> 的满额检查与取许可之间存在竞态，但该竞态只在满额时改变结果（先到者拿许可、后到者得 <see langword="null"/>），不产生超发；引擎正确性不依赖该检查的原子性。
+/// <b>不做许可预检</b>：<c>FailFast</c> 的满额检查与取许可之间存在竞态，但该竞态只在满额时改变结果（先到者拿许可、后到者得
+/// <see langword="null"/>），不产生超发；引擎正确性不依赖该检查的原子性。
 /// </para>
 /// </remarks>
 public sealed class ConcurrencyLimiter
@@ -62,9 +62,7 @@ public sealed class ConcurrencyLimiter
     /// <summary>当前在途数（<see cref="MaxConcurrency"/> 减去可用许可）。</summary>
     public int InFlight => _maxConcurrency - _semaphore.CurrentCount;
 
-    /// <summary>
-    /// 尝试取得一个在途许可；成功返回释放器（Dispose 即归还，幂等于重复 Dispose）。
-    /// </summary>
+    /// <summary>尝试取得一个在途许可；成功返回释放器（Dispose 即归还，幂等于重复 Dispose）。</summary>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>许可释放器；<see langword="null"/> = 未取得（满额 <c>FailFast</c> 或队列超时）。</returns>
     /// <exception cref="OperationCanceledException">等待期间被取消（.NET 通用语义，原样穿透）。</exception>

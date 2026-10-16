@@ -9,16 +9,10 @@ namespace Mud.AI.Attributes;
 
 /// <summary>SDK 工具生成剖面数据载体：承载工具 Schema 生成引擎所需的<b>全部</b>编译期命名事实常量。</summary>
 /// <remarks>
-/// <b>命名空间即契约</b>：引擎以硬编码命名空间 <c>Mud.AI.Attributes</c> 识别本特性——改名须同批改引擎常量；
-/// 与 <see cref="ISdkToolProfile"/>（标记接口，命名空间 <c>Mud.AI</c>）成对使用，由诊断 <c>SDKT001</c> 强制。
-/// <b>为什么全部是字符串常量</b>：源生成器运行在编译器进程内，不执行用户代码、只读编译期常量 ⇒「策略」只能
-/// 表达为枚举值 + 分隔串标记表，而非委托。
-/// <b>有意不入槽的派生名</b>：凡能由 <see cref="ProductPrefix"/> / <see cref="ProductPluralPrefix"/> 完全推导的
-/// 产物名都不设槽（<c>{P}Schemas</c>、<c>{P}Names</c>、<c>{P}Contracts</c>、<c>{P}Args/*</c>、
-/// <c>{P}DomainRegistrars/*</c>、<c>{P}Guidance</c>、<c>{Plural}ServiceCollectionCoreExtensions</c>、
-/// <c>{P}CapabilityCatalog</c>）——消费方硬引用这些类型时必须按派生名书写，否则 <c>CS0103</c>。
-/// <example><c>[SdkToolProfile("Feishu", ProductPrefix = "FeishuTool", DiagnosticPrefix = "MUDFT")]</c> 标注
-/// <c>public sealed class FeishuToolProfile : ISdkToolProfile { }</c>。</example>
+/// <b>命名空间即契约</b>：引擎以硬编码命名空间 <c>Mud.AI.Attributes</c> 识别本特性——改名须同批改引擎常量；与 <see cref="ISdkToolProfile"/>（标记接口，命名空间 <c>Mud.AI</c>）成对使用，由诊断 <c>SDKT001</c> 强制。
+/// <b>为什么全部是字符串常量</b>：源生成器运行在编译器进程内，不执行用户代码、只读编译期常量 ⇒「策略」只能表达为枚举值 + 分隔串标记表，而非委托。
+/// <b>有意不入槽的派生名</b>：凡能由 <see cref="ProductPrefix"/> / <see cref="ProductPluralPrefix"/> 完全推导的产物名都不设槽（<c>{P}Schemas</c>、<c>{P}Names</c>、<c>{P}Contracts</c>、<c>{P}Args/*</c>、<c>{P}DomainRegistrars/*</c>、<c>{P}Guidance</c>、<c>{Plural}ServiceCollectionCoreExtensions</c>、<c>{P}CapabilityCatalog</c>）——消费方硬引用这些类型时必须按派生名书写，否则 <c>CS0103</c>。
+/// <example><c>[SdkToolProfile("Feishu", ProductPrefix = "FeishuTool", DiagnosticPrefix = "MUDFT")]</c> 标注 <c>public sealed class FeishuToolProfile : ISdkToolProfile { }</c>。</example>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class SdkToolProfileAttribute : Attribute
@@ -49,8 +43,7 @@ public sealed class SdkToolProfileAttribute : Attribute
     /// <summary>执行器特性简单名（如 <c>ToolHandler</c>）。</summary>
     public string ToolHandlerAttributeName { get; set; } = string.Empty;
 
-    /// <summary>执行器特性所在命名空间。<b>不得复用 <see cref="ToolAttributeNamespace"/></b>：引擎靠
-    /// (命名空间, 特性名) 二元组区分「声明面」与「执行器绑定面」，塌陷为同值即失去可寻址性。</summary>
+    /// <summary>执行器特性所在命名空间。<b>不得复用 <see cref="ToolAttributeNamespace"/></b>：引擎靠 (命名空间, 特性名) 二元组区分「声明面」与「执行器绑定面」，塌陷为同值即失去可寻址性。</summary>
     public string ToolHandlerAttributeNamespace { get; set; } = string.Empty;
 
     /// <summary>参数特性简单名（如 <c>ToolParameter</c>）。</summary>
@@ -61,15 +54,10 @@ public sealed class SdkToolProfileAttribute : Attribute
     /// <summary>SDK 根命名空间（<c>Mud.Feishu</c> / <c>Mud.Wechat</c>），用于 <c>Source</c> 挂钩的类型名解析。</summary>
     public string SdkNamespaceRoot { get; set; } = string.Empty;
 
-    /// <summary>额外「可软缺席」命名空间根（<c>|</c> 分隔，如 <c>Mud.Feishu|Mud.AI</c>），用于执行器构造参数的
-    /// DI 依赖分类。</summary>
+    /// <summary>额外「可软缺席」命名空间根（<c>|</c> 分隔，如 <c>Mud.Feishu|Mud.AI</c>），用于执行器构造参数的 DI 依赖分类。</summary>
     /// <remarks>
-    /// <b>为什么必须与 <see cref="SdkNamespaceRoot"/> 分开</b>：后者承担三种语义——<c>Source</c> 挂钩的类型名解析、
-    /// SDK 程序集定位（按程序集名 == 根名）与<b>软缺席判定</b>；而中立契约（如
-    /// <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）也要表达「该能力域缺席 → 该域工具不进注册表」——
-    /// 把根放宽到 <c>Mud</c> 会同时破坏前两种语义（程序集定位会去找名为 <c>Mud</c> 的程序集）。
-    /// <b>判定规则（引擎侧）</b>：命中 <see cref="SdkNamespaceRoot"/> 或本槽任一根的接口参数 ⇒ 软缺席候选；
-    /// 未设置本槽等价于只认 <see cref="SdkNamespaceRoot"/>。
+    /// <b>为什么必须与 <see cref="SdkNamespaceRoot"/> 分开</b>：后者承担三种语义——<c>Source</c> 挂钩的类型名解析、SDK 程序集定位（按程序集名 == 根名）与<b>软缺席判定</b>；而中立契约（如 <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）也要表达「该能力域缺席 → 该域工具不进注册表」——把根放宽到 <c>Mud</c> 会同时破坏前两种语义（程序集定位会去找名为 <c>Mud</c> 的程序集）。
+    /// <b>判定规则（引擎侧）</b>：命中 <see cref="SdkNamespaceRoot"/> 或本槽任一根的接口参数 ⇒ 软缺席候选；未设置本槽等价于只认 <see cref="SdkNamespaceRoot"/>。
     /// </remarks>
     public string SoftAbsentNamespaceRoots { get; set; } = string.Empty;
 
@@ -83,12 +71,9 @@ public sealed class SdkToolProfileAttribute : Attribute
     /// <summary>令牌身份推导策略（前缀 / 后缀 / 中缀）。</summary>
     public TokenKindDerivationStrategy TokenKindStrategy { get; set; } = TokenKindDerivationStrategy.Unspecified;
 
-    /// <summary>「标记串=<see cref="SdkTokenKind"/> 成员名」表，以 <c>;</c> 分隔。例：飞书
-    /// <c>"IFeishuTenant=Tenant;IFeishuUser=User"</c>；微信 <c>"_Provider=ThirdParty;_ThirdParty=ThirdParty;_Internal=Internal"</c>。</summary>
+    /// <summary>「标记串=<see cref="SdkTokenKind"/> 成员名」表，以 <c>;</c> 分隔。例：飞书 <c>"IFeishuTenant=Tenant;IFeishuUser=User"</c>；微信 <c>"_Provider=ThirdParty;_ThirdParty=ThirdParty;_Internal=Internal"</c>。</summary>
     /// <remarks>
-    /// <b>适用面（引擎对两侧都查）</b>：标记表既用于 <b>SDK 接口</b>（<c>Source</c> 挂钩的目标），也用于
-    /// <b>工具的承载接口</b>（声明 <c>[AgentTool]</c> 方法的那个接口）——把「工具声明的 identity」与「承载接口名
-    /// 按本表推导出的令牌类型」比对，不一致即 Error ⇒ <b>承载接口名自身必须携带标记串</b>。
+    /// <b>适用面（引擎对两侧都查）</b>：标记表既用于 <b>SDK 接口</b>（<c>Source</c> 挂钩的目标），也用于 <b>工具的承载接口</b>（声明 <c>[AgentTool]</c> 方法的那个接口）——把「工具声明的 identity」与「承载接口名按本表推导出的令牌类型」比对，不一致即 Error ⇒ <b>承载接口名自身必须携带标记串</b>。
     /// </remarks>
     public string TokenKindMarkers { get; set; } = string.Empty;
 
@@ -117,8 +102,7 @@ public sealed class SdkToolProfileAttribute : Attribute
     /// <summary>描述符信封的厂商扩展键（<c>x-feishu</c> / <c>x-wechat</c>）。<see cref="SchemaExtensionKey"/> 进逐字节 golden。</summary>
     public string SchemaExtensionKey { get; set; } = string.Empty;
 
-    /// <summary>名字契约 / Contracts / Args / DomainRegistrars 四族产物的 owner 程序集名（如 <c>Mud.Feishu.AI.Tools</c>）。
-    /// <b>不可由 <see cref="ProductPrefix"/> 推导</b>。</summary>
+    /// <summary>名字契约 / Contracts / Args / DomainRegistrars 四族产物的 owner 程序集名（如 <c>Mud.Feishu.AI.Tools</c>）。<b>不可由 <see cref="ProductPrefix"/> 推导</b>。</summary>
     public string OwnerAssembly { get; set; } = string.Empty;
 
     /// <summary>Schemas / Contracts 产物命名空间（如 <c>Mud.Feishu.AI.Tools.Generated</c>）。</summary>
@@ -164,13 +148,9 @@ public sealed class SdkToolProfileAttribute : Attribute
     /// <summary>guidance 资产目录片段（如 <c>/Guidance/</c>，AdditionalFiles 路径匹配）。</summary>
     public string GuidanceDirectory { get; set; } = string.Empty;
 
-    /// <summary>per-tool affordance 资产目录片段（如 <c>/Affordance/</c>，AdditionalFiles 路径匹配）。空串（默认）=
-    /// 该剖面<b>不启用</b>本特性 ⇒ 描述符不发射 affordance 子块，既有 golden 逐字节不变。</summary>
+    /// <summary>per-tool affordance 资产目录片段（如 <c>/Affordance/</c>，AdditionalFiles 路径匹配）。空串（默认）= 该剖面<b>不启用</b>本特性 ⇒ 描述符不发射 affordance 子块，既有 golden 逐字节不变。</summary>
     /// <remarks>
-    /// <b>资产形态</b>：<c>{AffordanceDirectory}{契约工具名}.md</c>，文件名去掉 <c>.md</c> 后必须<b>逐字符等于</b>
-    /// 契约工具名，否则资产不会生效（引擎 Error 诊断机械拦下）。<b>与 <see cref="GuidanceDirectory"/> 的分工</b>：
-    /// guidance 是<b>域级/跨工具</b>的工作流与路由，affordance 是<b>单工具</b>的选型与前置条件；同一结论不得
-    /// 在两处给出互斥表述。
+    /// <b>资产形态</b>：<c>{AffordanceDirectory}{契约工具名}.md</c>，文件名去掉 <c>.md</c> 后必须<b>逐字符等于</b>契约工具名，否则资产不会生效（引擎 Error 诊断机械拦下）。<b>与 <see cref="GuidanceDirectory"/> 的分工</b>：guidance 是<b>域级/跨工具</b>的工作流与路由，affordance 是<b>单工具</b>的选型与前置条件；同一结论不得在两处给出互斥表述。
     /// </remarks>
     public string AffordanceDirectory { get; set; } = string.Empty;
 }

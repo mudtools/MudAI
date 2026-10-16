@@ -38,8 +38,7 @@ public enum ToolErrorCategory
     ContentSafety,
 }
 
-/// <summary>工具错误子类常量：与 <see cref="ToolErrorCategory"/> 配对使用，提供更细粒度的错误原因；新增常量须评审
-/// + 守卫断言（消费方按字符串匹配，改动即破坏契约）。</summary>
+/// <summary>工具错误子类常量：与 <see cref="ToolErrorCategory"/> 配对使用，提供更细粒度的错误原因；新增常量须评审 + 守卫断言（消费方按字符串匹配，改动即破坏契约）。</summary>
 public static class ToolErrorSubtype
 {
     // Validation
@@ -64,10 +63,7 @@ public static class ToolErrorSubtype
     /// <summary>写工具被策略拒绝（命中 Deny glob 或未列明于 Allow；与只读拒绝区分，便于宿主定位）。</summary>
     public const string WriteNotAllowed = "write_not_allowed";
 
-    // ⚠️ **不得**新增 `risk_not_annotated`（官方 taxonomy 有、本仓不适用）：所有工具的风险都由生成器
-    //    产出（产品侧 Profile 的危险词注解 + 人工注解），不存在"无注解的工具"这一形态——
-    //    补一个永不产出的常量就是幽灵子类（本仓明文禁止）；若将来出现"运行期动态注册的工具"，
-    //    再补该码并附产出点。
+    // ⚠️ **不得**新增 `risk_not_annotated`（官方 taxonomy 有、本仓不适用）：所有工具的风险都由生成器产出（产品侧 Profile 的危险词注解 + 人工注解），不存在"无注解的工具"这一形态——补一个永不产出的常量就是幽灵子类（本仓明文禁止）；若将来出现"运行期动态注册的工具"，再补该码并附产出点。
 
     /// <summary>本轮工具调用预算已用尽——不可重试，模型应基于已有信息直接回答。</summary>
     public const string ToolBudgetExceeded = "tool_budget_exceeded";
@@ -81,9 +77,7 @@ public static class ToolErrorSubtype
     /// <summary>用户令牌续期失败：下游 401 且 TokenRecoveryExecutor 恢复后仍失败——探测漏网路径的兜底出口。</summary>
     public const string UserTokenRefreshFailed = "user_token_refresh_failed";
 
-    // ⚠️ 此处**不得**新增 `missing_scope`（平台权限未开通）：全仓无产出点，且平台侧无可靠判据——
-    //    权限段的同一业务码在工具层/WebSocket 层/Abstractions 层解释不同，拿它当"控制台未开通权限"是猜测。
-    //    依据与复评条件（需实证样本 + 生产者守卫）见 documents/AIAgent/工具错误契约.md 的「子类」表。
+    // ⚠️ 此处**不得**新增 `missing_scope`（平台权限未开通）：全仓无产出点，且平台侧无可靠判据——权限段的同一业务码在工具层/WebSocket 层/Abstractions 层解释不同，拿它当"控制台未开通权限"是猜测。依据与复评条件（需实证样本 + 生产者守卫）见 documents/AIAgent/工具错误契约.md 的「子类」表。
 
     // Confirmation
     /// <summary>需要用户人工确认后才能执行的写操作——模型应转告用户，不得重试或改道。</summary>
@@ -105,22 +99,17 @@ public static class ToolErrorSubtype
     /// <summary>引擎内部未分类异常——分类器的兜底出口，出现即应补分类分支。</summary>
     public const string Unexpected = "unexpected";
 
-    // ⚠️ 此处**不得**新增 `sanitizer_rejected`：出站净化只有"整形/截断/标注"
-    //    （`ToolResultSanitizer` / `ToolResultContentSafety`），不存在"净化器拒绝"路径；
-    //    等内容安全轴真的出现硬拒绝时再新增（须附产出点）。依据见 documents/AIAgent/工具错误契约.md。
+    // ⚠️ 此处**不得**新增 `sanitizer_rejected`：出站净化只有"整形/截断/标注"（`ToolResultSanitizer` / `ToolResultContentSafety`），不存在"净化器拒绝"路径；等内容安全轴真的出现硬拒绝时再新增（须附产出点）。依据见 documents/AIAgent/工具错误契约.md。
 
     // ContentSafety
     /// <summary>入站内容被判定为提示注入并阻断——模型应放弃该来源的输入。</summary>
     public const string InjectedContentBlocked = "injected_content_blocked";
 }
 
-/// <summary>工具错误分类器：纯函数——从异常类型 / 传输故障状态码（中立端口 <see cref="ITransportFault"/>）映射到
-/// <see cref="ToolErrorCategory"/> 与 <see cref="ToolErrorSubtype"/>，无配置，<b>不认识任何产品的码表</b>。</summary>
+/// <summary>工具错误分类器：纯函数——从异常类型 / 传输故障状态码（中立端口 <see cref="ITransportFault"/>）映射到 <see cref="ToolErrorCategory"/> 与 <see cref="ToolErrorSubtype"/>，无配置，<b>不认识任何产品的码表</b>。</summary>
 /// <remarks>
 /// <b>授权拒绝与参数错误必须可区分</b>——这是模型自我修正（重试 or 换参数 or 放弃）的前提。
-/// <b>产品业务码不在这里（独立产品线纪律）</b>：产品码 → 段位的映射<b>由产品侧</b>在读取自家信封时完成（读数载体 =
-/// <see cref="ToolApiFailure"/>），中立层只消费已分类的结果；本类<b>不持有任何产品码表</b>——否则中立包被上游化时
-/// 码表会被一并带走，且只能由"知道全部产品"的中立包维护。
+/// <b>产品业务码不在这里（独立产品线纪律）</b>：产品码 → 段位的映射<b>由产品侧</b>在读取自家信封时完成（读数载体 = <see cref="ToolApiFailure"/>），中立层只消费已分类的结果；本类<b>不持有任何产品码表</b>——否则中立包被上游化时码表会被一并带走，且只能由"知道全部产品"的中立包维护。
 /// </remarks>
 public static class ToolErrorClassifier
 {
@@ -128,11 +117,7 @@ public static class ToolErrorClassifier
     /// <param name="exception">被分类的异常。</param>
     /// <param name="transportFault">传输层故障（产品中立端口）：由产品适配层把自身的传输异常适配后传入；<see langword="null"/> 表示该异常不携带传输层语义。</param>
     /// <remarks>
-    /// <b>为什么状态码经端口传入、而不是判定异常类型</b>：本类住在产品中立的 <c>Mud.AI.Agent</c>，独立产品线纪律
-    /// 要求它<b>不得认识任何具体 HTTP 组件的异常类型</b>（判定具体 HTTP 客户端异常类型即违反该纪律）；"状态码"
-    /// 是唯一的跨产品事实，故经 <see cref="ITransportFault"/> 由适配层供给。<b>漏接适配的后果</b>：传输异常会落到
-    /// <see cref="System.Net.Http.HttpRequestException"/> 兜底分支（<c>retryable/transient</c>）——403 会被误判为
-    /// 可重试，故该接线由消费方的端到端用例锁定（不是靠这里的注释）。
+    /// <b>为什么状态码经端口传入、而不是判定异常类型</b>：本类住在产品中立的 <c>Mud.AI.Agent</c>，独立产品线纪律要求它<b>不得认识任何具体 HTTP 组件的异常类型</b>（判定具体 HTTP 客户端异常类型即违反该纪律）；"状态码"是唯一的跨产品事实，故经 <see cref="ITransportFault"/> 由适配层供给。<b>漏接适配的后果</b>：传输异常会落到 <see cref="System.Net.Http.HttpRequestException"/> 兜底分支（<c>retryable/transient</c>）——403 会被误判为可重试，故该接线由消费方的端到端用例锁定（不是靠这里的注释）。
     /// </remarks>
     public static (ToolErrorCategory Category, string Subtype) Classify(
         Exception exception, ITransportFault? transportFault = null)

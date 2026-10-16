@@ -10,16 +10,12 @@ using Mud.AI.Abstractions.Observability;
 
 namespace Mud.AI.Agent.Conversations;
 
-/// <summary>渐进式会话摘要器：历史越限时把「保留窗以外」的旧消息压成一条 system 纪要写回会话（产品侧 Options
-/// 的摘要触发阈值与历史 token 上限的消费点）。</summary>
+/// <summary>渐进式会话摘要器：历史越限时把「保留窗以外」的旧消息压成一条 system 纪要写回会话（产品侧 Options 的摘要触发阈值与历史 token 上限的消费点）。</summary>
 /// <remarks>
 /// 四条不可破坏的约束（改动前先跑 <c>ConversationSummarizer*Tests</c>）：
 /// <list type="number">
-/// <item>切片起点不得落在工具调用组内：assistant 的 <c>FunctionCallContent</c> 必须与其后的
-/// <c>FunctionResultContent</c> 成对保留，否则下发 400（tool 消息缺少前驱 tool_calls）且会话保存失败，
-/// 重投递再次摘要、再次 400 ⇒ 会话永久不可用。</item>
-/// <item>重建后必须低于 token 预算，否则每轮重复摘要：保留窗起点取条数窗与 token 预算窗的较晚者；仍越限则
-/// 从保留窗头部整组回退；单条即超预算时收缩到「摘要 + 最后一条」即停。</item>
+/// <item>切片起点不得落在工具调用组内：assistant 的 <c>FunctionCallContent</c> 必须与其后的 <c>FunctionResultContent</c> 成对保留，否则下发 400（tool 消息缺少前驱 tool_calls）且会话保存失败，重投递再次摘要、再次 400 ⇒ 会话永久不可用。</item>
+/// <item>重建后必须低于 token 预算，否则每轮重复摘要：保留窗起点取条数窗与 token 预算窗的较晚者；仍越限则从保留窗头部整组回退；单条即超预算时收缩到「摘要 + 最后一条」即停。</item>
 /// <item>摘要模型调用失败或超时只记日志并跳过本轮压缩，绝不中断主对话。</item>
 /// <item>会话历史读写走 MAF <c>TryGetInMemoryChatHistory/SetInMemoryChatHistory</c>（源生成序列化，AOT 安全）。</item>
 /// </list>
@@ -28,10 +24,7 @@ namespace Mud.AI.Agent.Conversations;
 public sealed class ConversationSummarizer
 {
     /// <summary>摘要提示词的<b>中立默认值</b>（不含任何生态专有名词）。</summary>
-    /// <remarks>
-    /// 产品侧若要保留自己的表述（如「涉及的飞书资源」），经构造参数 <c>summaryInstruction</c> 覆盖：
-    /// 中立侧给可用的默认，产品侧负责自己的词汇。
-    /// </remarks>
+    /// <remarks>产品侧若要保留自己的表述（如「涉及的飞书资源」），经构造参数 <c>summaryInstruction</c> 覆盖：中立侧给可用的默认，产品侧负责自己的词汇。</remarks>
     public const string DefaultSummaryInstruction =
         "你是会话纪要助手。把下面的对话历史压缩成一份简洁的中文要点纪要：保留用户的目标、已确认的事实、"
         + "涉及的资源标识（各类对象 ID 等）与未完成的待办；不要评论、不要回答问题，只输出纪要正文。";
@@ -60,13 +53,9 @@ public sealed class ConversationSummarizer
     /// <param name="historyStateKey">会话历史在 MAF 状态袋内的状态键（产品事实，由宿主注入）。</param>
     /// <param name="telemetry">遥测端口（可空 ⇒ 空实现，不采集）。</param>
     /// <param name="summaryInstruction">摘要提示词（可空 ⇒ <see cref="DefaultSummaryInstruction"/>）。</param>
-    /// <param name="idKeys">
-    /// 工具轨迹中「保留值」的标识类参数键白名单（可空 ⇒ 空集：所有参数值都不回填）。
-    /// 词汇是产品事实（如 <c>app_token</c>/<c>chat_id</c>），故由宿主注入。
-    /// </param>
+    /// <param name="idKeys">工具轨迹中「保留值」的标识类参数键白名单（可空 ⇒ 空集：所有参数值都不回填）。词汇是产品事实（如 <c>app_token</c>/<c>chat_id</c>），故由宿主注入。</param>
     /// <param name="logger">日志（可空）。</param>
-    /// <exception cref="ArgumentNullException"><paramref name="chatClient"/>、<paramref name="options"/> 或
-    /// <paramref name="historyStateKey"/> 为 null。</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="chatClient"/>、<paramref name="options"/> 或 <paramref name="historyStateKey"/> 为 null。</exception>
     public ConversationSummarizer(
         IChatClient chatClient,
         AgentRuntimeOptions options,
@@ -103,9 +92,7 @@ public sealed class ConversationSummarizer
         _logger = logger;
     }
 
-    /// <summary>
-    /// 会话历史是否越限（条数与 token 双窗口，先触发者生效；阈值 ≤0 视为该项禁用）。
-    /// </summary>
+    /// <summary>会话历史是否越限（条数与 token 双窗口，先触发者生效；阈值 ≤0 视为该项禁用）。</summary>
     /// <param name="historyCount">历史消息条数。</param>
     /// <param name="historyTokens">历史消息 token 总量（<see cref="ChatTokenCounter"/>）。</param>
     /// <returns>需要摘要返回 <see langword="true"/>。</returns>
@@ -113,9 +100,7 @@ public sealed class ConversationSummarizer
         => (_summaryThreshold > 0 && historyCount >= _summaryThreshold)
            || (_maxHistoryTokens > 0 && historyTokens >= _maxHistoryTokens);
 
-    /// <summary>
-    /// 按需压缩会话历史（阈值未触发时为无副作用 no-op）。
-    /// </summary>
+    /// <summary>按需压缩会话历史（阈值未触发时为无副作用 no-op）。</summary>
     /// <param name="session">MAF 会话（历史以 <c>InMemoryChatHistoryProvider</c> 状态驻留其中）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>是否发生了摘要重建。</returns>
@@ -274,14 +259,8 @@ public sealed class ConversationSummarizer
         return true;
     }
 
-    /// <summary>
-    /// 按 token 预算求保留窗起点：从最新一条向前累加，取「token 量 &lt; 预算」的后缀的<b>最早</b>起点。
-    /// </summary>
-    /// <remarks>
-    /// 起点后移会让保留窗变小（更多旧消息交给摘要），不会变大：调用方以
-    /// <c>Math.Max(条数起点, 本方法结果)</c> 合并，故保留窗 token 量天然 &lt; 预算。
-    /// 返回值钳制在 <c>[0, count-1]</c>：至少保留最后一条。
-    /// </remarks>
+    /// <summary>按 token 预算求保留窗起点：从最新一条向前累加，取「token 量 &lt; 预算」的后缀的<b>最早</b>起点。</summary>
+    /// <remarks>起点后移会让保留窗变小（更多旧消息交给摘要），不会变大：调用方以 <c>Math.Max(条数起点, 本方法结果)</c> 合并，故保留窗 token 量天然 &lt; 预算。返回值钳制在 <c>[0, count-1]</c>：至少保留最后一条。</remarks>
     /// <param name="history">会话历史。</param>
     /// <returns>预算维度的保留窗起点。</returns>
     private int ResolveStartByTokenBudget(IReadOnlyList<ChatMessage> history)
@@ -325,10 +304,7 @@ public sealed class ConversationSummarizer
             : retain;
     }
 
-    /// <summary>
-    /// 一次模型调用生成要点纪要，输入含工具轨迹压缩行（结果正文与参数值一律不入摘要输入）；工具调用压缩为
-    /// <c>[tool] name(标识类键) → 结果长度</c>，使摘要后「做过什么」可追溯。
-    /// </summary>
+    /// <summary>一次模型调用生成要点纪要，输入含工具轨迹压缩行（结果正文与参数值一律不入摘要输入）；工具调用压缩为 <c>[tool] name(标识类键) → 结果长度</c>，使摘要后「做过什么」可追溯。</summary>
     private async Task<string?> SummarizeCoreAsync(IReadOnlyList<ChatMessage> older, CancellationToken cancellationToken)
     {
         var transcript = new StringBuilder();
@@ -373,11 +349,7 @@ public sealed class ConversationSummarizer
         return response.Text;
     }
 
-    /// <summary>
-    /// 从 assistant 消息的 <c>FunctionCallContent</c> 生成压缩工具轨迹行（<c>[tool] name(标识类键=值) → 结果长度</c>，
-    /// 每行上限 <see cref="ToolTraceLineLimit"/> 字符）。不回填结果正文（防大结果灌进摘要调用）与参数值；只保留
-    /// 标识类键的值（构造参数 <c>idKeys</c> 注入的白名单），其余键名保留、值省略。
-    /// </summary>
+    /// <summary>从 assistant 消息的 <c>FunctionCallContent</c> 生成压缩工具轨迹行（<c>[tool] name(标识类键=值) → 结果长度</c>，每行上限 <see cref="ToolTraceLineLimit"/> 字符）。不回填结果正文（防大结果灌进摘要调用）与参数值；只保留标识类键的值（构造参数 <c>idKeys</c> 注入的白名单），其余键名保留、值省略。</summary>
     private string? BuildToolTraceLines(ChatMessage message)
     {
         var functionCalls = message.Contents.OfType<FunctionCallContent>().ToList();

@@ -9,24 +9,18 @@ using System.Text;
 
 namespace Mud.AI.Agent.Tools;
 
-/// <summary>
-/// 写操作预演（<c>dry_run</c>）：返回"将下发什么"，但<b>不调用下游</b>。
-/// </summary>
+/// <summary>写操作预演（<c>dry_run</c>）：返回"将下发什么"，但<b>不调用下游</b>。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么在执行器里实现而不是在执行链拦截</b>：
-/// <c>method</c>/<c>path</c>/<c>body</c> 只有执行器知道（执行链看到的只是
-/// <c>IReadOnlyDictionary</c> 入参与一个已投影的结果）。若在执行链拦截，就必须新增
-/// "执行器预先声明请求形状"的契约——执行器内实现只需一次前置判断，且天然与真实请求构造同源（不会出现"预演与实发不一致"）。
+/// <b>为什么在执行器里实现而不是在执行链拦截</b>：<c>method</c>/<c>path</c>/<c>body</c> 只有执行器知道（执行链看到的只是
+/// <c>IReadOnlyDictionary</c> 入参与一个已投影的结果）。若在执行链拦截，就必须新增"执行器预先声明请求形状"的契约——执行器内实现
+/// 只需一次前置判断，且天然与真实请求构造同源（不会出现"预演与实发不一致"）。
 /// </para>
 /// <para>
-/// <b>摘要不回原文（安全约束，有测试断言）</b>：正文类字段（<c>text</c>/<c>fields</c>/<c>form</c>）
-/// 只回<b>字段名与长度</b>，不回值。否则 <c>dry_run</c> 会变成一条"绕过出站净化与内容安全的回显通道"
-/// ——用户在预演里塞什么，模型就能原样读回什么。
-/// </para>
-/// <para>
-/// <b>路由用 Schema 里的模板字面量</b>（如 <c>/open-apis/im/v1/messages</c>），不代入实际
-/// token——模板是 golden 锁定的稳定契约，也不泄露调用现场的标识。
+/// <b>摘要不回原文（安全约束，有测试断言）</b>：正文类字段（<c>text</c>/<c>fields</c>/<c>form</c>）只回<b>字段名与长度</b>，不回值。
+/// 否则 <c>dry_run</c> 会变成一条"绕过出站净化与内容安全的回显通道"——用户在预演里塞什么，模型就能原样读回什么。
+/// <b>路由用 Schema 里的模板字面量</b>（如 <c>/open-apis/im/v1/messages</c>），不代入实际 token——模板是 golden 锁定的稳定契约，
+/// 也不泄露调用现场的标识。
 /// </para>
 /// </remarks>
 public static class ToolDryRun

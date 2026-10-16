@@ -11,41 +11,21 @@ using Mud.AI.ToolSurface.Schema;
 
 namespace Mud.AI.ToolSurface;
 
-/// <summary>
-/// 工具面 Schema 生成引擎入口：把 <c>[SdkToolProfile]</c> 剖面驱动的工具特性接口编译为「模型可调用工具」的
-/// 全部编译期产物。
-/// </summary>
+/// <summary>工具面 Schema 生成引擎入口：把 <c>[SdkToolProfile]</c> 剖面驱动的工具特性接口编译为「模型可调用工具」的全部编译期产物。</summary>
 /// <remarks>
-/// <b>管道（L1 → L2 → L4）</b>：抽取（<see cref="ToolSurfaceScanner"/> / <see cref="ToolHandlerScanner"/>）→
-/// 渲染（<see cref="SchemaWriter"/> + Emit 家族）→ 校验（<see cref="DescriptorValidator"/>）。
-/// <b>剖面扇出</b>：一个编译可含 0/1/N 个 <c>ISdkToolProfile</c> 实现；剖面集合经 <c>CompilationProvider</c> 解析
-/// 并按 <see cref="SdkToolProfileModel.Name"/> 排序，每条输出路径对每个 profile 各跑一遍，hintName 由
-/// <c>{ProductPrefix}</c> 天然隔离；工具接口按「哪个剖面的特性名槽命中」归属唯一剖面，互不串味。
-/// <b>空剖面短路（硬性前提）</b>：纯 HTTP 消费方下候选谓词是 O(1) 语法判定，
-/// <see cref="ProfileDiscovery.ResolveProfiles"/> 返回空集合后即返回 <see langword="null"/>——不进入任何扫描/
-/// 发射逻辑，0 工具诊断、0 工具 AddSource。
-/// <b>故障隔离</b>：每条注册路径经 <see cref="Guard.WrapUnchecked{T}"/> 兜底，多剖面循环内再按 profile 逐个
-/// try/catch 上报 <c>{prefix}026</c>；SDKT002（缺槽剖面）路径无法拼 <c>{prefix}026</c>（缺 <c>DiagnosticPrefix</c>
-/// 正是其主题），退化为日志兜底。
+/// <b>管道（L1 → L2 → L4）</b>：抽取（<see cref="ToolSurfaceScanner"/> / <see cref="ToolHandlerScanner"/>）→ 渲染（<see cref="SchemaWriter"/> + Emit 家族）→ 校验（<see cref="DescriptorValidator"/>）。
+/// <b>剖面扇出</b>：一个编译可含 0/1/N 个 <c>ISdkToolProfile</c> 实现；剖面集合经 <c>CompilationProvider</c> 解析并按 <see cref="SdkToolProfileModel.Name"/> 排序，每条输出路径对每个 profile 各跑一遍，hintName 由 <c>{ProductPrefix}</c> 天然隔离；工具接口按「哪个剖面的特性名槽命中」归属唯一剖面，互不串味。
+/// <b>空剖面短路（硬性前提）</b>：纯 HTTP 消费方下候选谓词是 O(1) 语法判定，<see cref="ProfileDiscovery.ResolveProfiles"/> 返回空集合后即返回 <see langword="null"/>——不进入任何扫描/发射逻辑，0 工具诊断、0 工具 AddSource。
+/// <b>故障隔离</b>：每条注册路径经 <see cref="Guard.WrapUnchecked{T}"/> 兜底，多剖面循环内再按 profile 逐个 try/catch 上报 <c>{prefix}026</c>；SDKT002（缺槽剖面）路径无法拼 <c>{prefix}026</c>（缺 <c>DiagnosticPrefix</c> 正是其主题），退化为日志兜底。
 /// </remarks>
 [Generator]
 public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
 {
-    /// <summary>
-    /// 工具扫描的故障注入钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常
-    /// 即在扫描体起点抛出，用于驱动 <c>{prefix}026</c> 兜底路径。
-    /// </summary>
-    /// <remarks>
-    /// <b>必须是实例槽而不是进程级静态字段</b>：xUnit 默认并行执行测试类，静态字段的作用域是整个测试进程 ⇒
-    /// 注入期内的并发测试扫描被一并打挂（产物静默缺席、诊断只剩一条 026，affordance 资产从 028 退化为 029），
-    /// 表现为与被测行为无关的用例偶发红；实例槽使作用域收敛为「本生成器实例 ⇒ 本次 driver 运行 ⇒ 本测试」，
-    /// 跨测试串味在结构上不可达。
-    /// </remarks>
+    /// <summary>工具扫描的故障注入钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在扫描体起点抛出，用于驱动 <c>{prefix}026</c> 兜底路径。</summary>
+    /// <remarks><b>必须是实例槽而不是进程级静态字段</b>：xUnit 默认并行执行测试类，静态字段的作用域是整个测试进程 ⇒ 注入期内的并发测试扫描被一并打挂（产物静默缺席、诊断只剩一条 026，affordance 资产从 028 退化为 029），表现为与被测行为无关的用例偶发红；实例槽使作用域收敛为「本生成器实例 ⇒ 本次 driver 运行 ⇒ 本测试」，跨测试串味在结构上不可达。</remarks>
     internal Func<string, Exception?>? ScanFaultInjectionForTests { get; set; }
 
-    /// <summary>
-    /// 执行器扫描的故障注入钩子（语义同 <see cref="ScanFaultInjectionForTests"/>，命中 <c>ScanHandler</c> 路径）。
-    /// </summary>
+    /// <summary>执行器扫描的故障注入钩子（语义同 <see cref="ScanFaultInjectionForTests"/>，命中 <c>ScanHandler</c> 路径）。</summary>
     internal Func<string, Exception?>? HandlerFaultInjectionForTests { get; set; }
 
     /// <inheritdoc />
@@ -173,10 +153,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
     private static bool IsHandlerCandidate(SyntaxNode node, CancellationToken _)
         => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 };
 
-    /// <summary>
-    /// 工具接口扫描：解析剖面 → 找到「工具特性命中」的唯一剖面 → 扫描。
-    /// 空剖面 / 无命中 / 缺槽剖面（SDKT002 已接管）一律返回 <see langword="null"/>。
-    /// </summary>
+    /// <summary>工具接口扫描：解析剖面 → 找到「工具特性命中」的唯一剖面 → 扫描。空剖面 / 无命中 / 缺槽剖面（SDKT002 已接管）一律返回 <see langword="null"/>。</summary>
     /// <param name="context">语法上下文。</param>
     /// <param name="faultInjection">故障注入钩子（实例级；见 <see cref="ScanFaultInjectionForTests"/>）。</param>
     /// <param name="cancellationToken">取消令牌（CA1068：须为末位参数）。</param>
@@ -539,10 +516,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
     }
 
     /// <summary>把 affordance 条目按工具名归为查找表（供 <see cref="SchemaEmitter"/> 逐工具取用）。</summary>
-    /// <remarks>
-    /// 空集合返回空字典（非 <see langword="null"/>）：<c>SchemaWriter</c> 只需"取不到即不发射"，不区分"未启用"
-    /// 与"启用了但没写资产"——两者对描述符的影响一致。
-    /// </remarks>
+    /// <remarks>空集合返回空字典（非 <see langword="null"/>）：<c>SchemaWriter</c> 只需"取不到即不发射"，不区分"未启用"与"启用了但没写资产"——两者对描述符的影响一致。</remarks>
     private static IReadOnlyDictionary<string, AffordanceEntry> ToLookup(ImmutableArray<AffordanceEntry> entries)
     {
         var lookup = new Dictionary<string, AffordanceEntry>(entries.Length, StringComparer.Ordinal);
@@ -571,10 +545,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
     }
 
     /// <summary>槽位 014 的「重新固化」提示（消息第二实参）。</summary>
-    /// <remarks>
-    /// <c>GoldenUpdatePropertyName</c> 是<b>非必填槽</b>：未声明时直接拼串会产出 <c>-p:=true</c> 这种不可执行的
-    /// 提示文本，故缺槽时改为明确话术。
-    /// </remarks>
+    /// <remarks><c>GoldenUpdatePropertyName</c> 是<b>非必填槽</b>：未声明时直接拼串会产出 <c>-p:=true</c> 这种不可执行的提示文本，故缺槽时改为明确话术。</remarks>
     private static string GoldenUpdateHint(SdkToolProfileModel profile)
         => profile.GoldenUpdatePropertyName.Length > 0
             ? "-p:" + profile.GoldenUpdatePropertyName + "=true"
@@ -594,10 +565,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         return null;
     }
 
-    /// <summary>
-    /// 汇总输出 Schema 的截断情况并上报<b>单条</b>槽位 009（聚合纪律：
-    /// 逐处上报会被 SDK 中大量深层 DTO 淹没；截断本身不是缺陷，但必须构建期可见）。
-    /// </summary>
+    /// <summary>汇总输出 Schema 的截断情况并上报<b>单条</b>槽位 009（聚合纪律：逐处上报会被 SDK 中大量深层 DTO 淹没；截断本身不是缺陷，但必须构建期可见）。</summary>
     private static void ReportOutputSchemaTruncations(
         SourceProductionContext context,
         ImmutableArray<ToolSchemaModel> models,

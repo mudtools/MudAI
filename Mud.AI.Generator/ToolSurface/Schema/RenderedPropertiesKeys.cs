@@ -7,33 +7,25 @@
 
 namespace Mud.AI.ToolSurface.Schema;
 
-/// <summary>
-/// 从<b>渲染后的参数 Schema 文本</b>中提取 <c>properties</c> 段的顶层键（独立于参数意图模型的第二个比对来源）。
-/// </summary>
+/// <summary>从<b>渲染后的参数 Schema 文本</b>中提取 <c>properties</c> 段的顶层键（独立于参数意图模型的第二个比对来源）。</summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.RenderedPropertiesKeys</c>（纯机制直搬，
-/// 无 SDK 命名事实）。
-/// </para>
-/// <para>
-/// <b>为什么解析文本而不是复用对象模型</b>：<c>required</c> 与 <c>properties</c> 若取自同一份
-/// <c>entry.Parameters</c>，比对条件恒假（假门禁）。要构成真实约束，第二个来源必须是<b>产物</b>
-/// （模型最终看到的 JSON 文本）——否则无法检出"渲染期丢键/重复键/转义不一致"这类真实缺陷。
+/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.RenderedPropertiesKeys</c>（纯机制直搬，无 SDK 命名事实）。
+/// <b>为什么解析文本而不是复用对象模型</b>：<c>required</c> 与 <c>properties</c> 若取自同一份 <c>entry.Parameters</c>，比对条件
+/// 恒假（假门禁）。要构成真实约束，第二个来源必须是<b>产物</b>（模型最终看到的 JSON 文本）——否则无法检出"渲染期丢键/重复键/
+/// 转义不一致"这类真实缺陷。
 /// </para>
 /// <para>
 /// <b>解析范围刻意最小</b>：只处理 <see cref="SchemaWriter.WriteInputSchema"/> 的既有输出形状
-/// （<c>{"type":"object","properties":{…}}</c>），遇到任何非预期结构即返回失败并让上层报诊断
-/// （fail-closed）。<b>不</b>引入通用 JSON 解析器——生成器工程为 <c>netstandard2.0</c> 且刻意零依赖
-/// （<see cref="JsonText"/> 就是同一取舍的产物）。
+/// （<c>{"type":"object","properties":{…}}</c>），遇到任何非预期结构即返回失败并让上层报诊断（fail-closed）。<b>不</b>引入通用
+/// JSON 解析器——生成器工程为 <c>netstandard2.0</c> 且刻意零依赖（<see cref="JsonText"/> 就是同一取舍的产物）。
 /// </para>
 /// </remarks>
 internal static class RenderedPropertiesKeys
 {
     private const string PropertiesMarker = "\"properties\":";
 
-    /// <summary>
-    /// 提取渲染产物中 <c>properties</c> 段的顶层键集（含重复项计数——重复键正是要检出的缺陷）。
-    /// </summary>
+    /// <summary>提取渲染产物中 <c>properties</c> 段的顶层键集（含重复项计数——重复键正是要检出的缺陷）。</summary>
     /// <param name="renderedSchemaJson"><c>SchemaWriter.WriteInputSchema</c> 的产物。</param>
     /// <param name="keys">提取到的键（可含重复项，按出现顺序）。</param>
     /// <param name="failure">失败原因（成功时为 <see langword="null"/>）。</param>

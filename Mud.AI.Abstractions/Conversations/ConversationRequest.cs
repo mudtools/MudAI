@@ -9,24 +9,17 @@ using Mud.AI.Abstractions.Context;
 
 namespace Mud.AI.Abstractions.Conversations;
 
-/// <summary>
-/// 由外部事件规范化出的「会话请求」：Agent 管线（会话键 → 上下文装配 → Run → 回复）的统一输入。
-/// </summary>
+/// <summary>由外部事件规范化出的「会话请求」：Agent 管线（会话键 → 上下文装配 → Run → 回复）的统一输入。</summary>
 /// <remarks>
 /// <para>
-/// Prompt 统一由 <c>IContextAssembler</c> 装配，本记录只携带结构化事实（发送者、会话主体、
-/// 触发文本），不冗余携带最终用户消息文本。
+/// Prompt 统一由 <c>IContextAssembler</c> 装配，本记录只携带结构化事实（发送者、会话主体、触发文本），不冗余携带最终用户消息文本。
+/// <see cref="Scope"/> 用本包的<b>中立副本</b> <see cref="ConversationScope"/>（刻意接缝，理由见该类型注释）；<see cref="EventFacts"/> 元素
+/// 类型为中立 <see cref="EventFact"/>；事件族判别键（<see cref="EventKey"/>）是<b>产品事实</b>——中立侧只承载字符串，取值单一源留在产品侧。
 /// </para>
 /// <para>
-/// <see cref="Scope"/> 用本包的<b>中立副本</b> <see cref="ConversationScope"/>（刻意接缝，理由见该类型注释）；
-/// <see cref="EventFacts"/> 元素类型为中立 <see cref="EventFact"/>；事件族判别键（<see cref="EventKey"/>）是<b>产品事实</b>
-/// ——中立侧只承载字符串，取值单一源留在产品侧。
-/// </para>
-/// <para>
-/// <b>为什么 <see cref="AppKey"/> 不改名 <c>TenantKey</c></b>：它是「租户/应用维度标识」这一通用概念的属性名
-/// （非产品商标词汇），且被下游约 19 个文件消费，改名只增加改动面、不产生上游化收益。真正的产品词汇
-/// （<c>feishu.*</c> 命名面、<c>x-feishu.*</c> 词汇、飞书实测预算值）由中立性守卫严格锁定；端口<b>参数</b>层
-/// 仍按定式统一为 <c>tenantKey</c>（参数名不影响二进制兼容，改造成本为零）。
+/// <b>为什么 <see cref="AppKey"/> 不改名 <c>TenantKey</c></b>：它是「租户/应用维度标识」这一通用概念的属性名（非产品商标词汇），且被下游约
+/// 19 个文件消费，改名只增加改动面、不产生上游化收益。真正的产品词汇（<c>feishu.*</c> 命名面、<c>x-feishu.*</c> 词汇、飞书实测预算值）由
+/// 中立性守卫严格锁定；端口<b>参数</b>层仍按定式统一为 <c>tenantKey</c>（参数名不影响二进制兼容，改造成本为零）。
 /// </para>
 /// </remarks>
 /// <param name="AppKey">租户/应用维度标识（进入会话键）。</param>

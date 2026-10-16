@@ -7,16 +7,11 @@
 
 namespace Mud.AI.Abstractions.Media;
 
-/// <summary>
-/// 媒体转写契约：把图片/音频/文件转成可注入 prompt 的文本。
-/// </summary>
+/// <summary>媒体转写契约：把图片/音频/文件转成可注入 prompt 的文本。</summary>
 /// <remarks>
 /// <para>
-/// <b>软缺席</b>：宿主未注册时，消费方（媒体上下文装配器）降级为占位文本（不阻断对话）。
-/// </para>
-/// <para>
-/// <b>安全约束</b>：实现方不得将原始 base64 / 转写文本写入日志或 Metrics tag；
-/// 返回的 <see cref="MediaTranscription.Text"/> 经消费方截断后注入 prompt。
+/// <b>软缺席</b>：宿主未注册时，消费方（媒体上下文装配器）降级为占位文本（不阻断对话）。<b>安全约束</b>：实现方不得将原始
+/// base64 / 转写文本写入日志或 Metrics tag；返回的 <see cref="MediaTranscription.Text"/> 经消费方截断后注入 prompt。
 /// </para>
 /// </remarks>
 public interface IMediaTranscriber
@@ -30,9 +25,7 @@ public interface IMediaTranscriber
     Task<MediaTranscription?> TranscribeAsync(MediaTranscriptionRequest request, CancellationToken cancellationToken = default);
 }
 
-/// <summary>
-/// 媒体转写请求。
-/// </summary>
+/// <summary>媒体转写请求。</summary>
 /// <param name="TenantKey">租户/应用标识。</param>
 /// <param name="MessageId">消息 ID。</param>
 /// <param name="FileKey">文件键（平台侧资源键）。</param>
@@ -40,9 +33,7 @@ public interface IMediaTranscriber
 /// <param name="FileName">文件名（可空）。</param>
 public sealed record MediaTranscriptionRequest(string TenantKey, string MessageId, string FileKey, string MediaKind, string? FileName);
 
-/// <summary>
-/// 媒体转写结果。
-/// </summary>
+/// <summary>媒体转写结果。</summary>
 /// <param name="Text">转写文本。</param>
 /// <param name="Kind">转写类型（ocr / stt / metadata）。</param>
 /// <param name="Truncated">是否被截断。</param>

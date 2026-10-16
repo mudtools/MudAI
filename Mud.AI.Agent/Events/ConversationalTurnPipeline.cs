@@ -20,13 +20,9 @@ namespace Mud.AI.Agent.Events;
 /// <summary>中立回合管线：外部事件 → 会话键 → 会话 → 上下文装配 → 模型轮次 → 落库 → 回复 的<b>机制唯一归属</b>。</summary>
 /// <remarks>
 /// <b>11 阶段次序（一条不许"顺手优化"）</b>：请求准入校验 → 会话键 → 遥测作用域 → 会话闸门 → 取/建会话 →
-/// outbox 补发 → 孤儿审批放弃 → 下发可行性前置判定 → 工具上下文/预算作用域 → 上下文装配 → Run/RunStreaming
-/// （含流式补偿收尾）→ 落库 → 回复；逐步语义与四类补偿路径见 documents/decisions/ADR-0003-turn-pipeline-compensation.md。
-/// <b>三铁律（改动前必读 ADR）</b>：补偿 Flush 与「流式成功/补发成功后的落库」一律用 <see cref="CancellationToken.None"/>；
-/// 失败路径<b>不</b>落库；四类补偿路径不得合并或删减。
-/// <b>产品策略零内建</b>（<c>TurnPipeline_ShouldNotHardcodeProductPolicy</c>）：多租户分级等政策经
-/// <see cref="ConversationalTurnOptions.ValidateRequestPolicies"/> 委托注入；闸门经委托消费（本类不命名闸门类型）；
-/// <b>审批判定先于空回复守卫</b>收在 <c>RunNonStreamingTurnAsync</c>；内建装配把触发文本放在最前。
+/// outbox 补发 → 孤儿审批放弃 → 下发可行性前置判定 → 工具上下文/预算作用域 → 上下文装配 → Run/RunStreaming（含流式补偿收尾）→ 落库 → 回复；逐步语义与四类补偿路径见 documents/decisions/ADR-0003-turn-pipeline-compensation.md。
+/// <b>三铁律（改动前必读 ADR）</b>：补偿 Flush 与「流式成功/补发成功后的落库」一律用 <see cref="CancellationToken.None"/>；失败路径<b>不</b>落库；四类补偿路径不得合并或删减。
+/// <b>产品策略零内建</b>（<c>TurnPipeline_ShouldNotHardcodeProductPolicy</c>）：多租户分级等政策经 <see cref="ConversationalTurnOptions.ValidateRequestPolicies"/> 委托注入；闸门经委托消费（本类不命名闸门类型）；<b>审批判定先于空回复守卫</b>收在 <c>RunNonStreamingTurnAsync</c>；内建装配把触发文本放在最前。
 /// </remarks>
 public sealed class ConversationalTurnPipeline
 {
@@ -391,9 +387,7 @@ public sealed class ConversationalTurnPipeline
 
     /// <summary>非流式单轮 Run：「审批判定先于空回复守卫」纪律的<b>唯一点</b>。</summary>
     /// <remarks>
-    /// 流式 <c>BeginAsync</c> 失败的回退路径共用本方法——「每条路径都得记得补审批三行」正是机制缺失。后果：
-    /// 模型已产出审批请求（工具未执行）、回退路径却把空文本当普通回复 ⇒ 命中空回复守卫后按「已消费」收尾，
-    /// <b>用户收不到确认提示、宿主批准通道收不到回调、写工具静默挂起</b>。
+    /// 流式 <c>BeginAsync</c> 失败的回退路径共用本方法——「每条路径都得记得补审批三行」正是机制缺失。后果：模型已产出审批请求（工具未执行）、回退路径却把空文本当普通回复 ⇒ 命中空回复守卫后按「已消费」收尾，<b>用户收不到确认提示、宿主批准通道收不到回调、写工具静默挂起</b>。
     /// </remarks>
     /// <returns>（模型最终回答文本, 是否已经流式送达）——本路径恒为 <see langword="false"/>。</returns>
     private async Task<(string ResponseText, bool Streamed)> RunNonStreamingTurnAsync(
@@ -424,9 +418,7 @@ public sealed class ConversationalTurnPipeline
 
     /// <summary>取出并<b>摘除</b>本轮待补发条目（状态键未注入 ⇒ outbox 禁用，恒 miss）。</summary>
     /// <remarks>
-    /// 轮次不匹配 ⇒ 陈旧条目丢弃（用户已发新消息）；无论命中与否都先摘除（调用方随后都会落库，陈旧条目不会无限
-    /// 驻留）。<b>轮次标识必须先读再摘除</b>（摘除后再读恒为 null，同一轮次会被误判为陈旧）；读取必须 catch 收口
-    /// （状态袋值是惰性反序列化，损坏载荷只在首次类型化读取时抛；取消原样传播）。
+    /// 轮次不匹配 ⇒ 陈旧条目丢弃（用户已发新消息）；无论命中与否都先摘除（调用方随后都会落库，陈旧条目不会无限驻留）。<b>轮次标识必须先读再摘除</b>（摘除后再读恒为 null，同一轮次会被误判为陈旧）；读取必须 catch 收口（状态袋值是惰性反序列化，损坏载荷只在首次类型化读取时抛；取消原样传播）。
     /// </remarks>
     private bool TryTakePendingReply(AgentSession session, ConversationRequest request, out string? pendingReply)
     {
@@ -535,9 +527,7 @@ public sealed class ConversationalTurnPipeline
 
     /// <summary>解析流式回复目标：通道实现 <see cref="IChannelTargetResolver"/> 时按其语义解析（卡片流 = 接收用户 open_id）；否则回退目标会话 ID 解析。策略委托优先。</summary>
     /// <remarks>
-    /// <b>两段式解析</b>：解析返回 <see langword="null"/> <b>不是</b>「放弃流式」，而是回退目标会话 ID 的默认解析值，作为
-    /// <c>BeginAsync</c> 的<b>入参兜底目标</b>；「本通道对本次事件不适用」由<b>第二段</b>承接——链内各子通道在 <c>BeginAsync</c> 阶段
-    /// 按 <see cref="StreamingRequestContext"/> 环境量二次重解析自身目标，全部不适用时抛错 ⇒ 回退非流式。
+    /// <b>两段式解析</b>：解析返回 <see langword="null"/> <b>不是</b>「放弃流式」，而是回退目标会话 ID 的默认解析值，作为 <c>BeginAsync</c> 的<b>入参兜底目标</b>；「本通道对本次事件不适用」由<b>第二段</b>承接——链内各子通道在 <c>BeginAsync</c> 阶段按 <see cref="StreamingRequestContext"/> 环境量二次重解析自身目标，全部不适用时抛错 ⇒ 回退非流式。
     /// </remarks>
     private string? StreamTarget(ConversationRequest request)
         => _turnOptions.ResolveStreamTarget is not null
