@@ -10,31 +10,24 @@ using Mud.AI.Abstractions.Configuration;
 
 namespace Mud.AI.Agent.Tools.Errors;
 
-/// <summary>
-/// 工具重试策略（限流退避）：对只读工具的 retryable 错误自动重试，写工具默认零重试。
-/// </summary>
+/// <summary>工具重试策略（限流退避）：对只读工具的 retryable 错误自动重试，写工具默认零重试。</summary>
 /// <remarks>
-/// <para><b>安全优先</b>语义：</para>
-/// <list type="bullet">
-/// <item>只读工具：遇 category=retryable（429/5xx/超时）自动重试；</item>
-/// <item>写工具：默认零重试（防重复副作用）；仅当 AllowWriteRetry=true 且幂等键存在时重试；</item>
-/// <item>dry_run=true：不下发请求，无重试意义；</item>
-/// <item>授权/策略拒绝：确定性失败，重试无意义。</item>
-/// </list>
 /// <para>
-/// <b>退避策略</b>：<c>delay = min(MaxDelay, BaseDelay * 2^attempt) * jitter(0.5~1.5)</c>；
-/// 若上游拿到 <c>retry_after_seconds</c> 则优先采用（取 max(delay, retry_after)）。
+/// <b>安全优先</b>语义：只读工具遇 category=retryable（429/5xx/超时）自动重试；写工具默认零重试（防重复副作用），仅当
+/// AllowWriteRetry=true 且幂等键存在时重试；dry_run=true 不下发请求、无重试意义；授权/策略拒绝是确定性失败，重试无意义。
 /// </para>
-/// <para><b>禁止墙钟上界断言</b>：并发负载下必然抖动，重试延迟只允许用假时钟或调用次数断言。</para>
+/// <para>
+/// <b>退避策略</b>：<c>delay = min(MaxDelay, BaseDelay * 2^attempt) * jitter(0.5~1.5)</c>；若上游拿到
+/// <c>retry_after_seconds</c> 则优先采用（取 max(delay, retry_after)）。
+/// <b>禁止墙钟上界断言</b>：并发负载下必然抖动，重试延迟只允许用假时钟或调用次数断言。
+/// </para>
 /// </remarks>
 public sealed class ToolRetryPolicy
 {
     private readonly ToolRetryOptions _options;
     private readonly Func<long> _tickCountProvider;
 
-    /// <summary>
-    /// 初始化重试策略。
-    /// </summary>
+    /// <summary>初始化重试策略。</summary>
     /// <param name="options">重试配置（由调用方从自身配置投影后传入）。</param>
     /// <param name="tickCountProvider">时钟（Ticks；可注入假时钟用于测试；默认 <see cref="DateTimeOffset.UtcNow"/>）。</param>
     public ToolRetryPolicy(ToolRetryOptions options, Func<long>? tickCountProvider = null)
@@ -45,14 +38,10 @@ public sealed class ToolRetryPolicy
 
     private static long DefaultTickCountProvider() => DateTimeOffset.UtcNow.Ticks;
 
-    /// <summary>
-    /// 是否已启用重试。
-    /// </summary>
+    /// <summary>是否已启用重试。</summary>
     public bool IsEnabled => _options.Enabled && _options.MaxAttempts > 0;
 
-    /// <summary>
-    /// 判定是否应该重试。
-    /// </summary>
+    /// <summary>判定是否应该重试。</summary>
     /// <param name="error">上次执行的错误载荷（null = 成功）。</param>
     /// <param name="isWrite">是否写工具。</param>
     /// <param name="isDryRun">是否 dry_run 模式。</param>

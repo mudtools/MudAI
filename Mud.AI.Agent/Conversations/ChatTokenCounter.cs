@@ -7,42 +7,28 @@
 
 namespace Mud.AI.Agent.Conversations;
 
-/// <summary>
-/// 会话历史 token 计数器：net8+ 经<b>显式声明</b>的 <c>Microsoft.ML.Tokenizers</c>
-/// （Tiktoken BPE，离线计数、无网络依赖）精确计数；初始化失败或低版本 TFM 回退字符估算
-/// （降级路径：行为差异仅影响触发时机精度，不影响正确性）。估算比区分 CJK 与其他字符。
-/// </summary>
+/// <summary>会话历史 token 计数器：net8+ 经<b>显式声明</b>的 <c>Microsoft.ML.Tokenizers</c>（Tiktoken BPE，离线计数、
+/// 无网络依赖）精确计数；初始化失败或低版本 TFM 回退字符估算（降级路径：行为差异仅影响触发时机精度，不影响正确性）。
+/// 估算比区分 CJK 与其他字符。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么是 public</b>：本类型是<b>产品中立</b>的可复用能力（token 预算判定与任何生态无关），
-/// 由产品侧的摘要器与 Agent 薄壳消费。用 <c>InternalsVisibleTo</c> 会把产品程序集名焊进包族契约，
-/// 故整类公开（公开面的消费理由由反射式契约守卫保障）。
-/// </para>
-/// <para>
-/// <b>为什么不引入 <c>ILogger</c></b>：本类型是 <c>static</c>，拿不到 logger。初始化失败原因写入
+/// <b>为什么是 public</b>：本类型是<b>产品中立</b>的可复用能力（token 预算判定与任何生态无关），由产品侧的摘要器与
+/// Agent 薄壳消费；用 <c>InternalsVisibleTo</c> 会把产品程序集名焊进包族契约，故整类公开（公开面的消费理由由反射式
+/// 契约守卫保障）。
+/// <b>为什么不引入 <c>ILogger</c></b>：本类型是 <c>static</c>，拿不到 logger；初始化失败原因写入
 /// <see cref="InitializationFailure"/>，由持有 logger 的宿主构造期读取并告警一次——可观测性由那条告警承载。
-/// </para>
 /// </remarks>
 public static class ChatTokenCounter
 {
     /// <summary>编码器锚定模型（BPE 词表近似通用，仅估算精度差异）。</summary>
     private const string EncoderModel = "gpt-4o";
 
-    /// <summary>
-    /// 编码器初始化失败原因（成功为 <see langword="null"/>）。
-    /// </summary>
+    /// <summary>编码器初始化失败原因（成功为 <see langword="null"/>）——「token 预算实际走字符估算」这一依赖不匹配
+    /// 由此可观测；宿主构造期据此告警，用例据此断言。</summary>
     /// <remarks>
-    /// <para>
-    /// 可观测面：编码器初始化失败（词表资源缺失等）会在此暴露原因——否则「token 预算实际走字符估算」
-    /// 这一依赖不匹配完全不可见。宿主构造期据此告警，用例据此断言。
-    /// </para>
-    /// <para>
-    /// <b>为什么本属性跨 TFM 声明（而非 <c>#if</c> 包裹）</b>：公开面门禁（RS0016/RS0017）
-    /// 按 <c>PublicAPI.Unshipped.txt</c> 单一清单比对，TFM 条件成员在低 TFM 上会被判为
-    /// 「已声明但不存在」（RS0017）——那需要引入 per-TFM 清单文件这一新约定。
-    /// 本属性在低 TFM 上恒为 <see langword="null"/>（该 TFM 根本没尝试初始化编码器，"无失败"是诚实取值），
-    /// 与同样跨 TFM 的 <see cref="IsExactCount"/> 保持同形。
-    /// </para>
+    /// <b>为什么本属性跨 TFM 声明（而非 <c>#if</c> 包裹）</b>：公开面门禁（RS0016/RS0017）按
+    /// <c>PublicAPI.Unshipped.txt</c> 单一清单比对，TFM 条件成员在低 TFM 上会被判为「已声明但不存在」（RS0017）——
+    /// 那需要引入 per-TFM 清单文件这一新约定。本属性在低 TFM 上恒为 <see langword="null"/>（该 TFM 根本没尝试初始化
+    /// 编码器，"无失败"是诚实取值），与同样跨 TFM 的 <see cref="IsExactCount"/> 保持同形。
     /// </remarks>
     public static string? InitializationFailure { get; private set; }
 
@@ -112,24 +98,19 @@ public static class ChatTokenCounter
         return total;
     }
 
-    /// <summary>
-    /// 估算 token 数（编码器不可用时的回退路径）：CJK 表意文字按 ~1 token/字符，
-    /// 其余字符按 4 字符/token。
-    /// </summary>
+    /// <summary>估算 token 数（编码器不可用时的回退路径）：CJK 表意文字按 ~1 token/字符，其余字符按 4 字符/token。</summary>
     /// <param name="text">待估算文本（非空）。</param>
     /// <returns>估算 token 数。</returns>
     /// <remarks>
     /// <para>
-    /// 中文密度校正：整体按「4 字符/token」会把中文 token 量低估约 3-4 倍（cl100k 词表下常用汉字接近
-    /// 1 token/字），导致中文会话的 token 维度摘要窗口迟迟不触发——校正方向是更接近真实 token 量。
-    /// </para>
-    /// <para>
+    /// 中文密度校正：整体按「4 字符/token」会把中文 token 量低估约 3-4 倍（cl100k 词表下常用汉字接近 1 token/字），
+    /// 导致中文会话的 token 维度摘要窗口迟迟不触发——校正方向是更接近真实 token 量。
     /// <b>估算口径单一源</b>：估算逻辑收敛到中立 <c>Mud.AI.Agent.Knowledge.TokenEstimator</c>（联合字符集）——
     /// 含中文标点的文本估算值略高于旧口径（标点计 1 token 而非 1/4），属刻意接受的估算差。
     /// </para>
     /// <para>
-    /// <b>为什么公开</b>：net8+ 且编码器可用时 <see cref="Count"/> 恒走精确路径，估算分支在生产路径上不可达——
-    /// 故本方法必须可直接单测（与 <see cref="IsExactCount"/> 同属可断言面），否则"中文密度校正"会失去回归防线。
+    /// <b>为什么公开</b>：net8+ 且编码器可用时 <see cref="Count"/> 恒走精确路径，估算分支在生产路径上不可达——故本方法
+    /// 必须可直接单测（与 <see cref="IsExactCount"/> 同属可断言面），否则"中文密度校正"会失去回归防线。
     /// </para>
     /// </remarks>
     public static int Estimate(string text)

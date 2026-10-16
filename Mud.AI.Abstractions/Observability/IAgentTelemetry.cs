@@ -47,9 +47,9 @@ public interface IAgentTelemetry
 
     /// <summary>开启一次「会话历史摘要」阶段作用域（命名面由产品实现决定）。</summary>
     /// <remarks>
-    /// <b>为什么不复用 <see cref="StartTurn"/></b>：摘要是<b>嵌套在回合内</b>的子阶段（回合 → 摘要 → 模型调用），
-    /// 产品侧的 Span 名与标签集合都不同（条数标签 + 「是否已摘要」「是否不可收敛」两个结果标记）——复用回合作用域
-    /// 会把子阶段语义塞进父 Span，宿主再也分不出「这一轮到底摘要了没有」。
+    /// <b>为什么不复用 <see cref="StartTurn"/></b>：摘要是<b>嵌套在回合内</b>的子阶段（回合 → 摘要 → 模型调用），产品侧的
+    /// Span 名与标签集合都不同（条数标签 + 「是否已摘要」「是否不可收敛」两个结果标记）——复用回合作用域会把子阶段语义
+    /// 塞进父 Span，宿主再也分不出「这一轮到底摘要了没有」。
     /// </remarks>
     /// <param name="summarizedCount">被压缩的旧消息条数。</param>
     /// <param name="retainedCount">保留的最近消息条数。</param>
@@ -57,10 +57,7 @@ public interface IAgentTelemetry
     IDisposable? StartSummarize(int summarizedCount, int retainedCount);
 
     /// <summary>收口一次摘要作用域。</summary>
-    /// <remarks>
-    /// <b>为什么结果要经回调而不是让调用方自己写标签</b>：标签名是产品资产（如 <c>feishu.agent.summarized_unconverged</c>），
-    /// 中立侧不得知道；调用方只回答"收敛了吗"。
-    /// </remarks>
+    /// <remarks><b>为什么结果要经回调而不是让调用方自己写标签</b>：标签名是产品资产（如 <c>feishu.agent.summarized_unconverged</c>），中立侧不得知道；调用方只回答"收敛了吗"。</remarks>
     /// <param name="scope"><see cref="StartSummarize"/> 返回的作用域（可空）。</param>
     /// <param name="converged">重建后是否已收敛到 token 预算内（<see langword="false"/> = 「单条消息即超预算」，产品侧应标记出来以区分它与"摘要失效"）。</param>
     void SummarizeCompleted(IDisposable? scope, bool converged);

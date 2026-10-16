@@ -10,14 +10,11 @@ namespace Mud.AI.Agent.Tools;
 // 归属与依赖：本类型与 ToolResultJson 的依赖是<b>单向</b>的（TruncateJson → ToolResultJson.ToText），
 // 不构成循环协作；"出站文本截断"与 FeishuApiResultReader（"API 结果解包"）是两件事，勿合并。
 
-/// <summary>
-/// 工具结果文本工具：白名单投影（JsonNode 构建，AOT 安全——无反射序列化）与超长截断。
-/// </summary>
+/// <summary>工具结果文本工具：白名单投影（JsonNode 构建，AOT 安全——无反射序列化）与超长截断。</summary>
 /// <remarks>
-/// 本类型是<b>底层机制</b>：不经它直接回填模型——所有出站都走
-/// <c>ToolResultPipeline</c>（唯一出口，负责预算与截断标记）。直接
-/// <c>ToolResult.FromText(ToolResultText.Truncate…)</c> 由
-/// <c>TruncationVisibilityContractGuards</c> 机械拦截（手拼信封的根因形态）。
+/// 本类型是<b>底层机制</b>：不经它直接回填模型——所有出站都走 <c>ToolResultPipeline</c>（唯一出口，负责预算与截断标记）；
+/// 直接 <c>ToolResult.FromText(ToolResultText.Truncate…)</c> 由 <c>TruncationVisibilityContractGuards</c> 机械拦截
+/// （手拼信封的根因形态）。
 /// </remarks>
 public static class ToolResultText
 {
@@ -47,9 +44,8 @@ public static class ToolResultText
 
     /// <summary>按宿主选项的 <c>MaxToolResultLength</c> 截断并追加标记。</summary>
     /// <remarks>
-    /// <paramref name="text"/> 可空：投影函数常把"该字段本来就没有值"（如无文本块）直传进来，
-    /// 若在此抛 <see cref="NullReferenceException"/>，失败会以**未处理异常**的形式冒到工具层，
-    /// 而不是一个可读的空值 —— 定位成本远高于容忍一个 null。
+    /// <paramref name="text"/> 可空：投影函数常把"该字段本来就没有值"（如无文本块）直传进来；若在此抛
+    /// <see cref="NullReferenceException"/>，失败会以<b>未处理异常</b>冒到工具层而不是可读空值——定位成本远高于容忍一个 null。
     /// </remarks>
     public static string Truncate(string? text, int maxLength)
     {
@@ -72,24 +68,19 @@ public static class ToolResultText
             + $"{TruncatedMarker}: 长度 {text.Length.ToString(CultureInfo.InvariantCulture)} 超过上限 {maxLength.ToString(CultureInfo.InvariantCulture)}，请缩小查询范围或用 page_token 翻页]";
     }
 
-    /// <summary>
-    /// JSON 感知截断（默认行为）：对 JSON 文本按数组属性
-    /// （<c>items</c>/<c>values</c>/<c>metas</c>/<c>blocks</c> 等）删除尾部条目直至长度达标，追加
-    /// <c>truncated</c>/<c>hint</c> 标记——截断不落在 JSON 结构中间，模型拿到的是合法 JSON；
-    /// 解析失败（纯文本/非法 JSON）或无数组属性时退回字符截断（<see cref="Truncate"/>，既有行为）。
-    /// </summary>
+    /// <summary>JSON 感知截断（默认行为）：对 JSON 文本按数组属性（<c>items</c>/<c>values</c>/<c>metas</c>/<c>blocks</c> 等）
+    /// 删除尾部条目直至长度达标，追加 <c>truncated</c>/<c>hint</c> 标记——截断不落在 JSON 结构中间，模型拿到的是合法 JSON；
+    /// 解析失败（纯文本/非法 JSON）或无数组属性时退回字符截断（<see cref="Truncate"/>，既有行为）。</summary>
     /// <remarks>
     /// <para>
     /// 开销为一次 JSON 解析（结果投影路径上，AOT 安全）；仅剩 1 条仍超限时保持合法 JSON 返回（不落到字符截断破坏结构，结构完整性优先于硬上限）。
+    /// <b>处理<b>全部</b>数组属性而不仅是第一个</b>：有的信封天然带两个同长的大数组（典型 <c>docx.import_markdown</c> 的
+    /// <c>first_level_block_ids</c> + <c>blocks</c>）；只剪第一个会留下另一个照样超标——而 <c>truncated</c> 标记还会告诉
+    /// 调用方"已经处理过了"，即"看起来守住了上限，实际没有"，比不截断更危险。
     /// </para>
     /// <para>
-    /// <b>处理<b>全部</b>数组属性而不仅是第一个</b>：有的信封天然带两个同长的大数组
-    /// （典型 <c>docx.import_markdown</c> 的 <c>first_level_block_ids</c> + <c>blocks</c>）。
-    /// 只剪第一个会留下另一个照样超标——而 <c>truncated</c> 标记还会告诉调用方"已经处理过了"，即"看起来守住了上限，实际没有"，比不截断更危险。
-    /// </para>
-    /// <para>
-    /// 删除按<b>成批（每次约一半）</b>进行：逐条删除时每删 1 条都要重新序列化整棵树，
-    /// 双大数组信封会退化成 O(n²) 的字符串重排；成批把迭代次数降到 O(log n)。
+    /// 删除按<b>成批（每次约一半）</b>进行：逐条删除时每删 1 条都要重新序列化整棵树，双大数组信封会退化成 O(n²) 的
+    /// 字符串重排；成批把迭代次数降到 O(log n)。
     /// </para>
     /// </remarks>
     public static string TruncateJson(string text, int maxLength)
