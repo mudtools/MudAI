@@ -9,23 +9,18 @@ using Mud.AI.Abstractions.Knowledge;
 
 namespace Mud.AI.Agent.Knowledge;
 
-/// <summary>
-/// RAG 检索器：向量召回 → <b>预算裁剪</b> → <see cref="RetrievedChunk"/>。
-/// </summary>
+/// <summary>RAG 检索器：向量召回 → <b>预算裁剪</b> → <see cref="RetrievedChunk"/>。</summary>
 /// <remarks>
 /// <para>
-/// <b>中立化说明</b>：自产品适配层原样迁入——端口（<c>IRetriever</c>）与值类型
-/// （<c>RetrievedChunk</c>）均已在 Abstractions 下沉；默认值改引中立 <c>RetrievalBudgets</c>（单一源）。
+/// <b>中立化说明</b>：自产品适配层原样迁入——端口（<c>IRetriever</c>）与值类型（<c>RetrievedChunk</c>）均已在
+/// Abstractions 下沉；默认值改引中立 <c>RetrievalBudgets</c>（单一源）。<b>与托管问答（产品侧知识 Provider）的关系</b>：
+/// 两者都实现 <c>IRetriever</c>，宿主<b>二选一</b>（DI 用 <c>TryAddSingleton</c> ⇒ 先注册者生效）；自建检索<b>不改变</b>
+/// 托管问答的任何默认行为。
 /// </para>
 /// <para>
-/// <b>与托管问答（产品侧知识 Provider）的关系</b>：两者都实现 <c>IRetriever</c>，宿主<b>二选一</b>
-/// （DI 用 <c>TryAddSingleton</c> ⇒ 先注册者生效）。自建检索<b>不改变</b>托管问答的任何默认行为。
-/// </para>
-/// <para>
-/// <b>为什么这里也做预算裁剪</b>：知识装配器有权威的三级闸，但它在<b>召回之后</b>才裁剪——
-/// 若宿主接了个"什么都返回"的向量库，一轮就会把上万字塞进拼接过程。检索器侧按条数/单条/总长
-/// <b>先</b>裁一刀，是纵深防御（不是重复职责：两处闸的阈值与目的不同，检索器省的是
-/// "传输与拼接"，装配器守的是"进 prompt 的最终形态"）。
+/// <b>为什么这里也做预算裁剪</b>：知识装配器有权威的三级闸，但它在<b>召回之后</b>才裁剪——若宿主接了个"什么都返回"的
+/// 向量库，一轮就会把上万字塞进拼接过程。检索器侧按条数/单条/总长<b>先</b>裁一刀，是纵深防御（不是重复职责：两处闸的
+/// 阈值与目的不同，检索器省的是"传输与拼接"，装配器守的是"进 prompt 的最终形态"）。
 /// </para>
 /// </remarks>
 public sealed class VectorRetriever : IRetriever
@@ -38,9 +33,7 @@ public sealed class VectorRetriever : IRetriever
     private readonly int _maxChunkLength;
     private readonly int _maxTotalLength;
 
-    /// <summary>
-    /// 构造。
-    /// </summary>
+    /// <summary>构造。</summary>
     /// <param name="store">向量存储（宿主实现，必填）。</param>
     /// <param name="topK">召回条数上限。</param>
     /// <param name="maxChunkLength">单条长度上限（默认取 <see cref="RetrievalBudgets.ChunkPreviewLength"/>）。</param>
@@ -119,13 +112,10 @@ public sealed class VectorRetriever : IRetriever
     }
 }
 
-/// <summary>
-/// RAG 索引管线：<see cref="ICorpusSource"/> → <see cref="DocumentChunker"/> → <see cref="IVectorStore"/>。
-/// </summary>
+/// <summary>RAG 索引管线：<see cref="ICorpusSource"/> → <see cref="DocumentChunker"/> → <see cref="IVectorStore"/>。</summary>
 /// <remarks>
-/// <b>为什么提供它</b>：只有契约而没有编排，等于把"拉取→切片→写入"的顺序与幂等语义
-/// 留给每个宿主各写一遍（且大概率写出三种）。本类把这三步的<b>确定顺序</b>与
-/// "空语料不写库"的语义固定下来。
+/// <b>为什么提供它</b>：只有契约而没有编排，等于把"拉取→切片→写入"的顺序与幂等语义留给每个宿主各写一遍
+/// （且大概率写出三种）。本类把这三步的<b>确定顺序</b>与"空语料不写库"的语义固定下来。
 /// </remarks>
 public sealed class CorpusIndexer(
     ICorpusSource source,
@@ -135,9 +125,7 @@ public sealed class CorpusIndexer(
     private readonly ICorpusSource _source = source ?? throw new ArgumentNullException(nameof(source));
     private readonly IVectorStore _store = store ?? throw new ArgumentNullException(nameof(store));
 
-    /// <summary>
-    /// 执行一次索引（拉取 → 切片 → 写入）。
-    /// </summary>
+    /// <summary>执行一次索引（拉取 → 切片 → 写入）。</summary>
     /// <returns>写入的切片总数（空语料返回 0，且<b>不</b>调用向量库）。</returns>
     public async Task<int> IndexAsync(CancellationToken cancellationToken = default)
     {

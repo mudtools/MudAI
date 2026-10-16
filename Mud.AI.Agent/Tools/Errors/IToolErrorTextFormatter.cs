@@ -7,21 +7,13 @@
 
 namespace Mud.AI.Agent.Tools.Errors;
 
-/// <summary>
-/// <b>窄接缝</b>：把「工具名 + 原因」渲染为<b>结构化错误文本</b>（首行 JSON 载荷 + 人类可读正文）
-/// 的唯一公开入口。
-/// </summary>
+/// <summary><b>窄接缝</b>：把「工具名 + 原因」渲染为<b>结构化错误文本</b>（首行 JSON 载荷 + 人类可读正文）的唯一公开入口。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么需要它</b>：周边包（MCP 协议层）在"未预期异常"分支要回填一条与执行链同构的错误文本，
-/// <b>不得</b>直接调用 <c>ToolErrorText.StructuredError</c>——该类型是实现细节
-/// （含授权/审计/重试/上下文切换的完整执行链），被下游当工具函数用会让它无法 <c>internal</c> 化。
-/// </para>
-/// <para>
-/// <b>为什么不让调用方自己拼 JSON</b>：错误载荷的字段集（<c>category</c>/<c>subtype</c>/<c>retryable</c>/
-/// <c>api_code</c>/<c>attempts</c>/<c>trace</c>/<c>tool</c>）是<b>模型可见契约</b>，由
-/// <c>ToolErrorFactory</c> 单点构造。让 MCP 手拼会立刻产生第二份契约（与"错误出口唯一"直接冲突）。
-/// </para>
+/// <b>为什么需要它</b>：周边包（MCP 协议层）在"未预期异常"分支要回填一条与执行链同构的错误文本，<b>不得</b>直接调用
+/// <c>ToolErrorText.StructuredError</c>——该类型是实现细节（含授权/审计/重试/上下文切换的完整执行链），被下游当工具
+/// 函数用会让它无法 <c>internal</c> 化。<b>为什么不让调用方自己拼 JSON</b>：错误载荷的字段集（<c>category</c>/
+/// <c>subtype</c>/<c>retryable</c>/<c>api_code</c>/<c>attempts</c>/<c>trace</c>/<c>tool</c>）是<b>模型可见契约</b>，由
+/// <c>ToolErrorFactory</c> 单点构造；手拼会立刻产生第二份契约（与"错误出口唯一"直接冲突）。
 /// </remarks>
 public interface IToolErrorTextFormatter
 {
@@ -33,28 +25,22 @@ public interface IToolErrorTextFormatter
     /// <returns>可直接回填模型的错误文本。</returns>
     string Format(string toolName, string reason);
 
-    /// <summary>
-    /// <b>渲染"下一步做什么"的一行恢复提示</b>（<c>internal/recovery/hint.go</c> 的本地等价物）。
-    /// </summary>
+    /// <summary><b>渲染"下一步做什么"的一行恢复提示</b>（<c>internal/recovery/hint.go</c> 的本地等价物）。</summary>
     /// <param name="error">结构化错误载荷（分类 + 子类 + scope 事实 + 码表命中决定提示内容）。</param>
     /// <returns>
-    /// 一行中文指引（含 <c>[next]</c> 前缀、<b>不含换行</b>）；
-    /// 任何分类都产出非空行——空提示会把消费者退回"解析正文"，等于该能力不存在。
+    /// 一行中文指引（含 <c>[next]</c> 前缀、<b>不含换行</b>）；任何分类都产出非空行——空提示会把消费者退回
+    /// "解析正文"，等于该能力不存在。
     /// </returns>
     /// <remarks>
-    /// 与 <see cref="Format"/> 的分工：<c>Format</c> 产"是什么错了"（载荷 + 正文），
-    /// 本方法产"接下来怎么做"（模型可零解析成本消费）。协议层在"未预期异常"分支也用它，
-    /// 从而与执行链共用同一份提示口径（不造第二份文案）。
+    /// 与 <see cref="Format"/> 的分工：<c>Format</c> 产"是什么错了"（载荷 + 正文），本方法产"接下来怎么做"（模型可零解析
+    /// 成本消费）。协议层在"未预期异常"分支也用它，从而与执行链共用同一份提示口径（不造第二份文案）。
     /// </remarks>
     string RenderHint(ToolError error);
 }
 
-/// <summary>
-/// <see cref="IToolErrorTextFormatter"/> 的默认实现（<c>internal</c>：实现细节不进公开面）。
-/// </summary>
+/// <summary><see cref="IToolErrorTextFormatter"/> 的默认实现（<c>internal</c>：实现细节不进公开面）。</summary>
 /// <remarks>
-/// 实现只有一行转发——接缝的价值不在"多一层"，而在把<b>契约</b>（本接口）与<b>实现</b>
-/// （执行链类型）解耦，使后者可以退出公开面。
+/// 实现只有一行转发——接缝的价值不在"多一层"，而在把<b>契约</b>（本接口）与<b>实现</b>（执行链类型）解耦，使后者可以退出公开面。
 /// </remarks>
 public sealed class ToolErrorTextFormatter : IToolErrorTextFormatter
 {

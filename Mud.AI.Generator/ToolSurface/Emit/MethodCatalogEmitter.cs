@@ -10,12 +10,10 @@ using Mud.AI.ToolSurface.Schema;
 
 namespace Mud.AI.ToolSurface.Emit;
 
-/// <summary>
-/// 方法级目录发射期中间数据（纯值，不参与增量管线，无需值相等）。
-/// </summary>
+/// <summary>方法级目录发射期中间数据（纯值，不参与增量管线，无需值相等）。</summary>
 /// <remarks>
-/// 由 <see cref="CapabilityCatalogEmitter"/> 在遍历 SDK 接口时逐方法产出，
-/// 由 <see cref="MethodCatalogEmitter"/> 渲染为 <c>{P}MethodCatalog</c> 编译期常量。
+/// 由 <see cref="CapabilityCatalogEmitter"/> 在遍历 SDK 接口时逐方法产出，由 <see cref="MethodCatalogEmitter"/> 渲染为
+/// <c>{P}MethodCatalog</c> 编译期常量。
 /// </remarks>
 internal sealed class MethodCatalogEntryData
 {
@@ -92,24 +90,19 @@ internal sealed class MethodCatalogEntryData
     public bool Curated => CuratedTool is not null;
 }
 
-/// <summary>
-/// 方法级目录发射器：把 <see cref="MethodCatalogEntryData"/> 渲染为 <c>{P}MethodCatalog</c> 编译期常量。
-/// </summary>
+/// <summary>方法级目录发射器：把 <see cref="MethodCatalogEntryData"/> 渲染为 <c>{P}MethodCatalog</c> 编译期常量。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么是"轻量元数据"而非完整 Schema</b>（与 <see cref="CapabilityCatalogEmitter"/> 的粒度纪律一致）：
-/// 逐方法发射完整 JSON Schema 会把编译期成本与产物体积推高一个量级，而运行时 schema 自省
-/// （<c>feishu.schema_read</c>）与万能兜底（<c>feishu.api_call</c>）真正需要的只是「方法名 + HTTP + 路由 +
-/// 参数位置与类型名 + 令牌身份 + 域 + 风险」这些<b>符号层可直接提取</b>的事实——不需要类型 Schema 解析。
+/// <b>为什么是"轻量元数据"而非完整 Schema</b>（与 <see cref="CapabilityCatalogEmitter"/> 的粒度纪律一致）：逐方法发射完整
+/// JSON Schema 会把编译期成本与产物体积推高一个量级，而运行时 schema 自省（<c>feishu.schema_read</c>）与万能兜底
+/// （<c>feishu.api_call</c>）真正需要的只是「方法名 + HTTP + 路由 + 参数位置与类型名 + 令牌身份 + 域 + 风险」这些
+/// <b>符号层可直接提取</b>的事实——不需要类型 Schema 解析。
 /// </para>
 /// <para>
-/// <b>与 {@link CapabilityCatalogEmitter} 的分工</b>：后者产出<b>聚合</b>事实（方法数 / 分组分布 / 覆盖率），
-/// 本发射器产出<b>单元</b>事实（逐方法签名）。二者共享同一开关
-/// （<c>build_property.{CapabilityCatalogPropertyName}</c>）与同一遍历，只增一条渲染路径。
-/// </para>
-/// <para>
-/// <b>方法归属纪律</b>：沿用能力目录的「自身声明」粒度——方法在哪个接口声明就归属哪个接口，
-/// 派生接口的继承方法不重复发射（否则同一方法被每个派生接口重复计数，破坏"目录与方法一一对应"）。
+/// <b>与 {@link CapabilityCatalogEmitter} 的分工</b>：后者产出<b>聚合</b>事实（方法数 / 分组分布 / 覆盖率），本发射器产出
+/// <b>单元</b>事实（逐方法签名）。二者共享同一开关（<c>build_property.{CapabilityCatalogPropertyName}</c>）与同一遍历，
+/// 只增一条渲染路径。<b>方法归属纪律</b>：沿用能力目录的「自身声明」粒度——方法在哪个接口声明就归属哪个接口，派生接口的
+/// 继承方法不重复发射（否则同一方法被每个派生接口重复计数，破坏"目录与方法一一对应"）。
 /// </para>
 /// </remarks>
 internal static class MethodCatalogEmitter

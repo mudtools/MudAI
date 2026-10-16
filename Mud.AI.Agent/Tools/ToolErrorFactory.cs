@@ -7,18 +7,11 @@
 
 namespace Mud.AI.Agent.Tools;
 
-/// <summary>
-/// <c>ToolError</c> 载荷的<b>唯一构造点</b>。
-/// </summary>
+/// <summary><c>ToolError</c> 载荷的<b>唯一构造点</b>。</summary>
 /// <remarks>
-/// <para>
-/// 载荷模板只允许在这里存在：多处逐字复制时，任何契约演进（新增字段、改 <c>Attempts</c> 语义）
-/// 都要同步多处，且漏改不会被编译发现（副本间的差异只有 <c>Trace</c> 这类隐蔽项）。
-/// </para>
-/// <para>
-/// <b>不变量</b>：<c>Retryable</c> 由 <c>category</c> 派生（不得由调用方各写一份判断）；
-/// <c>Category</c> 经 <c>ToolErrorText.CategoryLiteral</c> 单源映射。
-/// </para>
+/// 载荷模板只允许在这里存在：多处逐字复制时，任何契约演进（新增字段、改 <c>Attempts</c> 语义）都要同步多处，且漏改不会被
+/// 编译发现（副本间的差异只有 <c>Trace</c> 这类隐蔽项）。<b>不变量</b>：<c>Retryable</c> 由 <c>category</c> 派生（不得由
+/// 调用方各写一份判断）；<c>Category</c> 经 <c>ToolErrorText.CategoryLiteral</c> 单源映射。
 /// </remarks>
 public static class ToolErrorFactory
 {
@@ -29,17 +22,14 @@ public static class ToolErrorFactory
     /// <param name="apiCode">产品业务 code（可空；进载荷 <c>api_code</c>）。</param>
     /// <param name="trace">追踪号（可空）。</param>
     /// <param name="attempts">尝试次数（默认 1）。</param>
-    /// <param name="suggestions">
-    /// 恢复候选（可空）。<b>码级候选由产品侧随读数给出</b>
-    /// （见 <see cref="ToolApiFailure.Suggestions"/>），本工厂不查任何码表。
-    /// </param>
+    /// <param name="suggestions">恢复候选（可空）。<b>码级候选由产品侧随读数给出</b>（见
+    /// <see cref="ToolApiFailure.Suggestions"/>），本工厂不查任何码表。</param>
     /// <param name="requiredScopes">工具声明的所需权限（仅授权类拒绝路径传入；可空）。</param>
     /// <param name="retryAfterSeconds">建议等待秒数（见 <see cref="ToolError.RetryAfterSeconds"/> 的语义说明）。</param>
     /// <returns>错误载荷。</returns>
     /// <remarks>
-    /// <b>本工厂不持有任何产品码语义</b>（独立产品线纪律）：码表在产品适配层，码级候选随
-    /// <c>suggestions</c> 形参传入。本工厂只做<b>空集归一</b>——空数组会被模型读成"有建议但为空"，
-    /// 故归一为 <see langword="null"/>。
+    /// <b>本工厂不持有任何产品码语义</b>（独立产品线纪律）：码表在产品适配层，码级候选随 <c>suggestions</c> 形参传入。
+    /// 本工厂只做<b>空集归一</b>——空数组会被模型读成"有建议但为空"，故归一为 <see langword="null"/>。
     /// </remarks>
     public static ToolError Create(
         string toolName,
@@ -63,16 +53,14 @@ public static class ToolErrorFactory
             Suggestions: suggestions is { Count: > 0 } ? suggestions : null,
             RequiredScopes: requiredScopes);
 
-    /// <summary>
-    /// 拼装"首行结构化 JSON 载荷 + 恢复提示行 + 人类可读正文"。
-    /// </summary>
+    /// <summary>拼装"首行结构化 JSON 载荷 + 恢复提示行 + 人类可读正文"。</summary>
     /// <param name="payload">错误载荷。</param>
     /// <param name="humanReadable">人类可读正文（<c>[tool_error] …</c> 形态）。</param>
     /// <returns>组合文本（未净化、未截断）。</returns>
     /// <remarks>
-    /// hint 行插在载荷之后、正文之前——模型与宿主都<b>不需要解析载荷结构</b>
-    /// 就能拿到"下一步做什么"（<c>internal/recovery/hint.go</c> 的本地等价物）。
-    /// 该插入点唯一，故"新增错误路径自动带 hint"与"载荷 ≤512 字节首行"两个不变量同时成立。
+    /// hint 行插在载荷之后、正文之前——模型与宿主都<b>不需要解析载荷结构</b>就能拿到"下一步做什么"
+    /// （<c>internal/recovery/hint.go</c> 的本地等价物）。该插入点唯一，故"新增错误路径自动带 hint"与
+    /// "载荷 ≤512 字节首行"两个不变量同时成立。
     /// </remarks>
     public static string Compose(ToolError payload, string humanReadable)
         => ToolErrorPayloadSerializer.Serialize(payload)

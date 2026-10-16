@@ -11,21 +11,16 @@ using System.Text.Json;
 
 namespace Mud.AI.Agent.Tools.Errors;
 
-/// <summary>
-/// 将 <see cref="ToolError"/> 序列化为紧凑 JSON 首行（≤ 512 字节）。
-/// </summary>
+/// <summary>将 <see cref="ToolError"/> 序列化为紧凑 JSON 首行（≤ 512 字节）。</summary>
 /// <remarks>
 /// <para>
-/// 手工拼接 JSON（不使用 <c>JsonSerializer</c> 反射重载——AOT 安全，对齐 IL2026/IL3050 = 0 纪律）。
-/// 载荷字段为闭集枚举 + 数字 + 短字符串，无凭据面，出站净化不作用于载荷本身。
+/// 手工拼接 JSON（不使用 <c>JsonSerializer</c> 反射重载——AOT 安全，对齐 IL2026/IL3050 = 0 纪律）；载荷字段为闭集枚举
+/// + 数字 + 短字符串，无凭据面，出站净化不作用于载荷本身。<b>截断保护</b>：载荷 ≤ 512 字节且置于首行，正文截断不得
+/// 吃掉载荷（守卫断言）。
 /// </para>
 /// <para>
-/// <b>截断保护</b>：载荷 ≤ 512 字节且置于首行，正文截断不得吃掉载荷（守卫断言）。
-/// </para>
-/// <para>
-/// <b>恢复字段的预算优先级</b>：<c>suggestions</c> 是自由文本、长度不可控，
-/// 若它把载荷推过 512 上界，则<b>先丢 suggestions、再丢 trace</b>——
-/// <c>category</c>/<c>subtype</c>/<c>retryable</c> 这三个"模型可分支的最小集"恒被保留。
+/// <b>恢复字段的预算优先级</b>：<c>suggestions</c> 是自由文本、长度不可控，若它把载荷推过 512 上界，则<b>先丢
+/// suggestions、再丢 trace</b>——<c>category</c>/<c>subtype</c>/<c>retryable</c> 这三个"模型可分支的最小集"恒被保留。
 /// 该取舍是<b>单向的</b>：不得为了塞进建议而牺牲分类字段（分类没了，建议也无从解读）。
 /// </para>
 /// </remarks>
@@ -43,13 +38,11 @@ public static class ToolErrorPayloadSerializer
     /// <summary>权限清单条数上界（scope 是短标识符，条数上界即长度上界）。</summary>
     public const int MaxScopeCount = 6;
 
-    /// <summary>
-    /// 将 <see cref="ToolError"/> 序列化为紧凑 JSON 行（无换行符）。
-    /// </summary>
+    /// <summary>将 <see cref="ToolError"/> 序列化为紧凑 JSON 行（无换行符）。</summary>
     /// <remarks>
-    /// <b>降级顺序（单向不可逆）</b>：完整 → 丢 <c>suggestions</c> → 丢 <c>required_scopes</c>
-    /// → 丢 <c>trace</c>。三级降级都不触碰 <c>category</c>/<c>subtype</c>/<c>retryable</c>——
-    /// 它们是"模型可分支的最小集"（没有分类，建议与权限清单也无从解读）。
+    /// <b>降级顺序（单向不可逆）</b>：完整 → 丢 <c>suggestions</c> → 丢 <c>required_scopes</c> → 丢 <c>trace</c>。
+    /// 三级降级都不触碰 <c>category</c>/<c>subtype</c>/<c>retryable</c>——它们是"模型可分支的最小集"
+    /// （没有分类，建议与权限清单也无从解读）。
     /// </remarks>
     public static string Serialize(ToolError error)
     {
@@ -135,9 +128,8 @@ public static class ToolErrorPayloadSerializer
     /// 追加字符串数组字段（条数与单条长度均上界化；<b>必然转义</b>）。
     /// </summary>
     /// <remarks>
-    /// 与其它字段不同，建议与 scope 清单里的值都可能是<b>自由文本/外部输入</b>，
-    /// 故必须经 <see cref="JsonEncodedText"/> 转义（引号/反斜杠/控制字符），不能沿用直拼。
-    /// <c>suggestions</c> 与 <c>required_scopes</c> 共用本实现——两处口径不会漂移。
+    /// 与其它字段不同，建议与 scope 清单里的值都可能是<b>自由文本/外部输入</b>，故必须经 <see cref="JsonEncodedText"/>
+    /// 转义（引号/反斜杠/控制字符），不能沿用直拼。<c>suggestions</c> 与 <c>required_scopes</c> 共用本实现——两处口径不会漂移。
     /// </remarks>
     private static void AppendStringArray(
         StringBuilder sb, string key, IReadOnlyList<string> values, int maxCount)

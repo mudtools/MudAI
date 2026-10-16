@@ -7,25 +7,17 @@
 
 namespace Mud.AI.Agent.Tools;
 
-/// <summary>
-/// <b>工具名 glob 匹配器</b>（宿主策略配置 <c>FeishuAgent:ToolPolicy</c> 的词汇与判定）。
-/// </summary>
+/// <summary><b>工具名 glob 匹配器</b>（宿主策略配置 <c>FeishuAgent:ToolPolicy</c> 的词汇与判定）。</summary>
 /// <remarks>
 /// <b>语法（闭集，刻意小）</b>：模式 = 点分<b>段</b>；段内只允许小写字母、数字、下划线与 <c>*</c>（<c>*</c> 匹配段内
 /// <b>任意长度</b>（含空）的字符序列，<b>不跨段</b>）；模式与工具名的<b>段数必须相同</b>；唯一例外是单段模式 <c>*</c>（等价"全部工具"）。
-/// <para>
-/// <b>为什么不支持任意正则/跨段通配</b>：策略面是宿主写错代价很高的配置（写错即"全拒"），词汇越小越容易在 <c>Validate()</c> 期
-/// 做<b>完全</b>校验（<see cref="IsLegal"/> 是纯函数，可被测试穷举）；正则表达能力在"工具名"这个只有两段的域上收益几乎为零。
-/// </para>
-/// <para>
-/// <b>职责边界</b>：本类型只负责<b>匹配</b>；拒绝语义（<c>reason_code</c>）在 <c>FeishuToolBinding</c> 的策略轴，
-/// 该轴同官方一致为「工具名模式 + 域」双轨。
-/// </para>
-/// <para>
+/// <b>为什么不支持任意正则/跨段通配</b>：策略面是宿主写错代价很高的配置（写错即"全拒"），词汇越小越容易在
+/// <c>Validate()</c> 期做<b>完全</b>校验（<see cref="IsLegal"/> 是纯函数，可被测试穷举）；正则表达能力在"工具名"这个只有
+/// 两段的域上收益几乎为零。<b>职责边界</b>：本类型只负责<b>匹配</b>；拒绝语义（<c>reason_code</c>）在
+/// <c>FeishuToolBinding</c> 的策略轴，该轴同官方一致为「工具名模式 + 域」双轨。
 /// <b>合法</b>：<c>bitable.*</c>（域）、<c>im.get_*</c>（前缀）、<c>drive.transfer_owner</c>（精确）、
 /// <c>*.delete_*</c>（跨域危险动词）、<c>*</c>（全部）；<b>非法</b>（<see cref="IsLegal"/> 为 false）：空串、含空段
 /// （<c>a..b</c>、<c>.a</c>、<c>a.</c>）、大写或非法字符（<c>Bitable.*</c>、<c>bitable.*-x</c>）、段内连续星号（<c>a.**</c>）。
-/// </para>
 /// </remarks>
 public static class ToolNamePattern
 {
@@ -33,9 +25,7 @@ public static class ToolNamePattern
     private static bool IsLegalSegmentChar(char ch)
         => (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' || ch == '*';
 
-    /// <summary>
-    /// 模式是否合法（<b>fail-closed 的唯一判据</b>：装配期 <c>Validate()</c> 用它与宿主配置对账）。
-    /// </summary>
+    /// <summary>模式是否合法（<b>fail-closed 的唯一判据</b>：装配期 <c>Validate()</c> 用它与宿主配置对账）。</summary>
     /// <param name="pattern">模式字面量（可空）。</param>
     /// <returns>合法返回 <see langword="true"/>。</returns>
     public static bool IsLegal(string? pattern)
@@ -82,17 +72,14 @@ public static class ToolNamePattern
         return true;
     }
 
-    /// <summary>
-    /// 判断工具名是否命中模式。
-    /// </summary>
+    /// <summary>判断工具名是否命中模式。</summary>
     /// <param name="pattern">模式（调用方须先经 <see cref="IsLegal"/> 校验；非法模式此处返回 false）。</param>
     /// <param name="toolName">契约工具名（<c>域.动作</c> 形态）。</param>
     /// <returns>命中返回 <see langword="true"/>。</returns>
     /// <remarks>
-    /// <b>非法模式返回 <c>false</c>（而非抛）</b>：匹配器是热路径上的纯函数，<b>抛异常会让一次
-    /// 配置笔误变成运行期 500</b>；正确形态是"装配期 fail-fast（<c>Validate()</c> 拒绝非法模式）
-    /// + 运行期按不命中处理"——后者与 fail-closed 一致：非法 Deny 不命中 ⇒ 不额外拒绝，
-    /// 而真正的安全仍由产品的启用白名单与授权门禁承担。
+    /// <b>非法模式返回 <c>false</c>（而非抛）</b>：匹配器是热路径上的纯函数，<b>抛异常会让一次配置笔误变成运行期 500</b>；
+    /// 正确形态是"装配期 fail-fast（<c>Validate()</c> 拒绝非法模式）+ 运行期按不命中处理"——后者与 fail-closed 一致：
+    /// 非法 Deny 不命中 ⇒ 不额外拒绝，而真正的安全仍由产品的启用白名单与授权门禁承担。
     /// </remarks>
     public static bool IsMatch(string? pattern, string? toolName)
     {
@@ -127,8 +114,8 @@ public static class ToolNamePattern
 
     /// <summary>段内匹配：<c>*</c> 匹配任意长度（含空）字符序列；无 <c>*</c> 时要求完全相等。</summary>
     /// <remarks>
-    /// 朴素贪心回溯：段长度很小（工具名段通常 &lt; 32 字符），不需要 KMP 之类的优化；
-    /// 此处<b>刻意</b>用可读实现换掉正则（正则的转义/回溯语义正是策略面最容易踩的坑）。
+    /// 朴素贪心回溯：段长度很小（工具名段通常 &lt; 32 字符），不需要 KMP 之类的优化；此处<b>刻意</b>用可读实现换掉正则
+    /// （正则的转义/回溯语义正是策略面最容易踩的坑）。
     /// </remarks>
     private static bool SegmentMatches(string patternSegment, string valueSegment)
     {

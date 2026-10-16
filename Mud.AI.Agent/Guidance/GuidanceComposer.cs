@@ -27,24 +27,18 @@ public sealed record GuidanceResult(
     IReadOnlyList<string> IncludedDomains,
     IReadOnlyList<string> OmittedDomains);
 
-/// <summary>
-/// 域级 guidance 装配器：把"已启用工具所属域"的 guidance 追加到宿主指令之后。
-/// </summary>
+/// <summary>域级 guidance 装配器：把"已启用工具所属域"的 guidance 追加到宿主指令之后。</summary>
 /// <remarks>
-/// <b>为什么是纯字符串函数（依赖方向）</b>：guidance 真相源由产品侧源生成器发射进工具面实现包，而本类型位于
-/// <b>产品中立</b>的 AI 运行期包（工具包单向依赖运行期，不可反向）⇒ 工具包经自家工具源把<b>已启用域</b>的
-/// guidance 传进来，本类只做装配与截断：零反向依赖，截断逻辑可独立单测。
+/// <b>为什么是纯字符串函数（依赖方向）</b>：guidance 真相源由产品侧源生成器发射进工具面实现包，而本类型位于<b>产品中立</b>的
+/// AI 运行期包（工具包单向依赖运行期，不可反向）⇒ 工具包经自家工具源把<b>已启用域</b>的 guidance 传进来，本类只做装配与
+/// 截断：零反向依赖，截断逻辑可独立单测。<b>顺序语义</b>：宿主 <c>Instructions</c> 恒在 guidance <b>之前</b>（宿主指令优先，
+/// 域 guidance 只是补充；反过来会让域资产覆盖宿主的语气与边界设定）。
 /// <para>
-/// <b>顺序语义</b>：宿主 <c>Instructions</c> 恒在 guidance <b>之前</b>（宿主指令优先，域 guidance 只是补充；
-/// 反过来会让域资产覆盖宿主的语气与边界设定）。
-/// </para>
-/// <para>
-/// <b>预算为什么是参数而不是常量</b>：额度值是<b>产品语义</b>（由该产品域资产实测长度与余量策略推出），
-/// 把常量搬进中立包等于把某个产品的预算焊进包族底层（违背「共享结构、不共享语义」）⇒ 本类只接收
-/// <c>maxGuidanceLength</c>，由产品侧（如 <c>FeishuGuidanceBudget.MaxGuidanceLength</c>）声明自己的额度；这也是本类型的"零配置键"纪律：不做可选项、不做默认值。
-/// </para>
-/// <para>
-/// <b>超限策略</b>：按<b>输入顺序</b>整域丢弃尾部域，<see cref="GuidanceResult"/> 给出 <c>Truncated</c> 与丢弃清单；失败方式本身静默（无日志无异常），故调用方<b>必须</b>消费返回值上的信号。
+/// <b>预算为什么是参数而不是常量</b>：额度值是<b>产品语义</b>（由该产品域资产实测长度与余量策略推出），把常量搬进中立包
+/// 等于把某个产品的预算焊进包族底层（违背「共享结构、不共享语义」）⇒ 本类只接收 <c>maxGuidanceLength</c>，由产品侧
+/// （如 <c>FeishuGuidanceBudget.MaxGuidanceLength</c>）声明自己的额度；这也是本类型的"零配置键"纪律：不做可选项、
+/// 不做默认值。<b>超限策略</b>：按<b>输入顺序</b>整域丢弃尾部域，<see cref="GuidanceResult"/> 给出 <c>Truncated</c> 与丢弃
+/// 清单；失败方式本身静默（无日志无异常），故调用方<b>必须</b>消费返回值上的信号。
 /// </para>
 /// </remarks>
 public static class GuidanceComposer
@@ -52,9 +46,7 @@ public static class GuidanceComposer
     /// <summary>块间分隔符。</summary>
     private const string Separator = "\n\n";
 
-    /// <summary>
-    /// 装配最终指令：宿主指令 +（已启用域的）guidance。
-    /// </summary>
+    /// <summary>装配最终指令：宿主指令 +（已启用域的）guidance。</summary>
     /// <param name="hostInstructions">宿主指令（可空/空串）。</param>
     /// <param name="blocks">已启用工具所属域的 guidance（可空/空集 = 不注入任何域资产）。</param>
     /// <param name="maxGuidanceLength">guidance 本体的总长硬上限（字符数；由产品侧声明，必须为正）。</param>
