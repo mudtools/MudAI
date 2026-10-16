@@ -37,7 +37,7 @@ internal sealed class ToolSchemaModel : IEquatable<ToolSchemaModel?>
     /// <remarks>
     /// 读写分类的<b>唯一</b>事实源是 <see cref="CapabilityEntry.Risk"/>（已含特性声明与 SDK 源推导的
     /// 升级结果）——本类型不再另设 <c>IsWrite</c> 字段，避免"声明标志 vs 风险派生"两处口径
-    /// 在 <c>{P}Names</c> 与 <c>{P}Contracts</c> 之间漂移（设计文档 §2 的"单一真相源"纪律）。
+    /// 在 <c>{P}Names</c> 与 <c>{P}Contracts</c> 之间漂移（"单一真相源"纪律）。
     /// </remarks>
     public CapabilityEntry Entry { get; }
 

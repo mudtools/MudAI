@@ -13,8 +13,8 @@ namespace Mud.AI;
 /// 生成代码上标注的常量文本（<c>[CompilerGenerated]</c> / <c>[GeneratedCode]</c>）。
 /// </summary>
 /// <remarks>
-/// Mud.AI.Generator 只承载工具面竖井（v2.3 自组件仓 Mud.HttpUtils.Generator 迁入），
-/// 故仅保留生成器基座需要的两个标记常量；HTTP 生成族的 using 清单与特性文本随竖井外部分留组件仓。
+/// Mud.AI.Generator 只承载工具面竖井，故仅保留生成器基座需要的两个标记常量；
+/// HTTP 生成族的 using 清单与特性文本属竖井外部，留组件仓。
 /// </remarks>
 internal static class GeneratedCodeConsts
 {

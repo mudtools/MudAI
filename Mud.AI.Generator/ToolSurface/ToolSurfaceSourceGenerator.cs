@@ -12,7 +12,7 @@ using Mud.AI.ToolSurface.Schema;
 namespace Mud.AI.ToolSurface;
 
 /// <summary>
-/// 工具面 Schema 生成引擎入口（设计文档 §5.3）：把 <c>[SdkToolProfile]</c> 剖面驱动的
+/// 工具面 Schema 生成引擎入口：把 <c>[SdkToolProfile]</c> 剖面驱动的
 /// 工具特性接口编译为「模型可调用工具」的全部编译期产物。
 /// </summary>
 /// <remarks>
@@ -59,7 +59,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
         // Extraction ↔ Schema 层接缝注册（幂等赋值；工厂签名携带 profile，注册点与剖面无关——扇出安全）。
         ToolSurfaceSchemaResolver.Factory = static (compilation, profile) => new TypeSchemaResolver(compilation, profile);
 
-        // 追踪名（§10「引擎增量」门禁的断言锚点）：
+        // 追踪名（「引擎增量」门禁的断言锚点）：
         // 与 HTTP 生成器同体例——无追踪名时 IncrementalStepRunReason 无法归属到具体步骤，
         // 「无关文件编辑 ⇒ Cached/Unchanged」只能靠整体结果反推，粒度不足以定位回归。
         // 剖面集合经 SdkToolProfileSet 值相等包装：ImmutableArray 的相等性是数组引用比较，
@@ -141,7 +141,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
                 "ToolSurfaceGuidance", EmitGuidance));
 
         // ── Tier R：能力目录（开关 = build_property.{CapabilityCatalogPropertyName}，剖面槽动态键）──
-        // 动态键经拼接读取：组件侧 props 不预注册消费方属性（§5.3 v2.1 消费方注册义务）。
+        // 动态键经拼接读取：组件侧 props 不预注册消费方属性。
         var catalogFlags = profiles
             .Combine(context.AnalyzerConfigOptionsProvider)
             .Select(static (pair, _) =>
@@ -359,7 +359,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
             {
                 var models = ModelsFor(data.Models, profile);
 
-                // per-tool affordance（F-7）：解析 / 校验 / 发射同 pass，零新增注册、零新增遍历
+                // per-tool affordance：解析 / 校验 / 发射同 pass，零新增注册、零新增遍历
                 // （AdditionalTexts 已在输入元组里）。**必须在 models.IsEmpty 早退之前**：
                 // 孤儿资产（文件名不命中任何工具名）的诊断不依赖"本剖面是否存在工具"。
                 var affordance = AffordanceAssets.Collect(
@@ -589,7 +589,7 @@ public sealed class ToolSurfaceSourceGenerator : TransitiveCodeGenerator
             ? "-p:" + profile.GoldenUpdatePropertyName + "=true"
             : "剖面未声明 GoldenUpdatePropertyName 槽，请手动更新快照文件";
 
-    /// <summary>读取该剖面的 golden 快照（<see cref="SchemaEmitter.IsGoldenFile"/> 全名匹配，§5.2-3）。</summary>
+    /// <summary>读取该剖面的 golden 快照（<see cref="SchemaEmitter.IsGoldenFile"/> 全名匹配）。</summary>
     private static string? ReadGolden(ImmutableArray<AdditionalText> texts, SdkToolProfileModel profile, CancellationToken cancellationToken)
     {
         foreach (var text in texts)

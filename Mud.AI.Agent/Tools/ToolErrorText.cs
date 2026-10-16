@@ -11,11 +11,8 @@ namespace Mud.AI.Agent.Tools;
 /// 结构化错误文本构造（模型可读、带工具名前缀）与错误类别字面量映射。
 /// </summary>
 /// <remarks>
-/// v2.3 中立化迁入：原为 <c>FeishuToolBinding</c>（飞书执行链）的静态助手——
 /// 执行器骨架 <c>ToolExecutor</c> 与 <c>ToolResultPipeline</c> 都要调用它们，
-/// 而 <c>FeishuToolBinding</c> 留飞书侧（它是授权门禁 + 租户切换的执行链，深度产品耦合）。
-/// 故把这两个纯文本构造点上移到骨架；飞书侧 <c>FeishuToolBinding</c> 的同类静态方法
-/// 转为对本类型的转发（20+ 执行器调用点零改动）。
+/// 故这两个纯文本构造点归骨架共有（飞书侧同类静态方法转发本类型）。
 /// </remarks>
 public static class ToolErrorText
 {
@@ -24,7 +21,7 @@ public static class ToolErrorText
         => $"[tool_error] {toolName}: {reason}";
 
     /// <summary>
-    /// 构造带错误语义分类的结构化错误文本（B2 错误契约：分类 + 原因 + 建议——
+    /// 构造带错误语义分类的结构化错误文本（分类 + 原因 + 建议——
     /// 授权拒绝与参数错误可区分，模型据此自我修正：重试 or 换参数 or 放弃）。
     /// </summary>
     /// <remarks>
@@ -34,7 +31,7 @@ public static class ToolErrorText
     /// 让模型去改参数会让它陷入无意义的重试循环。
     /// </para>
     /// <para>
-    /// <b>B2 错误契约</b>：此方法返回人类可读正文；结构化 JSON 载荷由调用方置于正文首行。
+    /// <b>载荷分工</b>：此方法返回人类可读正文；结构化 JSON 载荷由调用方置于正文首行。
     /// </para>
     /// </remarks>
     public static string StructuredError(string toolName, ToolErrorCategory category, string reason, int? apiCode = null, string? subtype = null)

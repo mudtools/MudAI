@@ -8,7 +8,7 @@
 namespace Mud.AI.ToolSurface.Extraction;
 
 /// <summary>
-/// <c>Source</c> 源挂钩归一与 SDK 成员解析（设计文档 §4.3：引擎经本单元把
+/// <c>Source</c> 源挂钩归一与 SDK 成员解析（引擎经本单元把
 /// 「<c>nameof</c> 或字符串」两种合法输入归一为 <c>(InterfaceName, MethodName)</c>）。
 /// </summary>
 /// <remarks>
@@ -16,12 +16,12 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// 泛化自上游 <c>Extractors.ResolveSourceMember</c> 与 <c>CuratedToolScanner</c> 的内联切分：
 /// 命名空间前缀切分用剖面槽 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>
 /// （替代硬编码 <c>"Mud.Feishu."</c>）。解析本身是固定两步（先全名命中，失败再全局按名兜底），
-/// 两步逻辑平台无关（设计文档 §4.1 v2.1 注：不设 <c>SourceResolutionStrategy</c> 槽）。
+/// 两步逻辑平台无关（刻意不设 <c>SourceResolutionStrategy</c> 槽）。
 /// </para>
 /// <para>
 /// <b>引擎不变量（不得被任何 profile 关闭）</b>：方法查找必须并入 <c>AllInterfaces</c>——
 /// 令牌派生接口常为空接口、方法声明在基接口上，只查 <c>GetMembers(name)</c> 会恒返回空
-/// （否则聚合路径恒产出空条目，这是上游评审纠正过的设计硬伤）。
+/// （否则聚合路径恒产出空条目——该不变量由 <c>ToolSurfaceShapeContractGuards</c> 机械锁定）。
 /// </para>
 /// </remarks>
 internal static class SourceResolver

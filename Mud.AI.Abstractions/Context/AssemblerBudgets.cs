@@ -8,7 +8,7 @@
 namespace Mud.AI.Abstractions.Context;
 
 /// <summary>
-/// 上下文装配器的<b>通用预算与标记</b>（N2-e 迁A，原产品 <c>ContextBudgets</c> 的通用子集）。
+/// 上下文装配器的<b>通用预算与标记</b>（原产品 <c>ContextBudgets</c> 的通用子集）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,12 +19,11 @@ namespace Mud.AI.Abstractions.Context;
 /// <para>
 /// <b>不收录</b>：各产品事件族的字段预算（审批 / 多维表格 / 日程 / 群历史）与
 /// <b>untrusted 标注文案</b>——后者含产品文案（"来自飞书事件载荷"），按「共享结构、
-/// 不共享语义」留在产品侧；中立装配器（N4 的 <c>FactListContextAssembler</c>）经构造参数
+/// 不共享语义」留在产品侧；中立装配器（<c>FactListContextAssembler</c>）经构造参数
 /// 接收宿主给的标注文案。
 /// </para>
 /// <para>
-/// <b>中立化说明</b>：产品侧 <c>ContextBudgets</c> 以常量转发保持既有引用面不变
-/// （N4 拆分装配器后删除转发）。
+/// <b>中立化说明</b>：产品侧 <c>ContextBudgets</c> 以常量转发保持既有引用面不变。
 /// </para>
 /// </remarks>
 public static class AssemblerBudgets

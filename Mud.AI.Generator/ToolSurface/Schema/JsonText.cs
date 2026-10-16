@@ -11,7 +11,7 @@ namespace Mud.AI.ToolSurface.Schema;
 /// 生成器内 JSON 文本拼装的最小工具（零依赖、netstandard2.0 可用）。
 /// </summary>
 /// <remarks>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.JsonText</c>（设计文档 §2 判定：纯机制直搬）。
+/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.JsonText</c>（纯机制直搬）。
 /// 全工程<b>唯一</b>的字符串转义实现：所有转义（含 Extraction 层 <c>ParameterSchemaRenderer</c>
 /// 的 <see cref="Quote"/> 委托）必须收敛到本类——转义实现一旦出现第二份并漂移，会产出非法 JSON
 /// （编译期常量损坏 → 运行期 <c>JsonDocument.Parse</c> 失败）。
@@ -69,7 +69,7 @@ internal static class JsonText
     /// <para>
     /// <b>为什么空串不能用原始形态</b>：<c>""""""</c>（6 连引号）会被 Roslyn 按"最长引号连跑"
     /// 整体吞成开头定界符，找不到闭合定界符 → CS8997"未终止的字符串字面量"
-    /// （WP2 契约表的 <c>SdkSource/HttpMethod/Route</c> 空值首次暴露）。
+    /// （契约表的 <c>SdkSource/HttpMethod/Route</c> 空值首次暴露）。
     /// 首尾引号会被并入定界符扫描，同理不安全；换行会把单行原始字面量变成多行形态
     /// （开引号后必须换行，行内开启即非法）。
     /// </para>

@@ -14,7 +14,7 @@ namespace Mud.AI.Agent.Events;
 /// <param name="ConversationKey">会话键（由宿主的会话键治理策略构造）。</param>
 /// <param name="ChatId">触发会话的会话目标 ID（可空）。</param>
 /// <param name="UserId">触发用户（可空）。</param>
-/// <param name="ThreadId">话题（thread）维度（可空；N4 追加为末尾可选参数 ⇒ 既有构造点源码兼容。
+/// <param name="ThreadId">话题（thread）维度（可空；末尾可选参数追加 ⇒ 既有构造点源码兼容。
 /// 回复进话题等平台特性由产品工具执行链按本维度取用）。</param>
 /// <remarks>
 /// <b>字段全是中立表述</b>：不出现任何生态专有名词（飞书的 <c>AppKey</c> 语义已中性化为

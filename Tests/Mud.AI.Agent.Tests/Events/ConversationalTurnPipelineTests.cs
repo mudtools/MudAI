@@ -22,7 +22,7 @@ namespace Mud.AI.Agent.Tests.Events;
 /// <para>
 /// <b>N4 DoD</b>：产品侧端到端行为由 <c>Mud.Feishu.AI.Tests/Events/*</c> 既有用例锁定（全部保持绿）；
 /// 本文件补齐中立包侧的独立覆盖（Q1「测试随类型走」），并承载
-/// <c>ToolContext_Begin_ShouldPrecedeContextAssembly</c> 的<b>行为锚</b>（§6.2：替身记录调用序号，
+/// <c>ToolContext_Begin_ShouldPrecedeContextAssembly</c> 的<b>行为锚</b>（替身记录调用序号，
 /// 断言工具作用域先于装配）。
 /// </para>
 /// </remarks>
@@ -396,7 +396,7 @@ public class ConversationalTurnPipelineTests
     }
 
     /// <summary>
-    /// 行为锚（§6.2 / P0-1）：工具执行上下文 <b>BeginToolScope</b> 必须先于装配器 <b>AssembleAsync</b>
+    /// 行为锚：工具执行上下文 <b>BeginToolScope</b> 必须先于装配器 <b>AssembleAsync</b>
     /// ——顺序颠倒会让知识/引用类装配器读不到租户上下文（RAG 注入模式永久静默失效）。
     /// </summary>
     [Fact]

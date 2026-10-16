@@ -12,11 +12,10 @@ namespace Mud.AI.Agent.Events;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>为什么落 <c>Mud.AI.Agent</c> 而不是 <c>Mud.AI.Abstractions</c></b>（N2-c 执行时对账 §7.2）：
+/// <b>为什么落 <c>Mud.AI.Agent</c> 而不是 <c>Mud.AI.Abstractions</c></b>：
 /// 本端口的方法签名承载 MAF <c>AgentSession</c>，而 <c>Mud.AI.Abstractions</c> 是<b>零 MAF</b>
-/// 的编译期契约层（硬纪律 §4.3.1）——§3 目标树把本端口与 <c>ITurnScopeFactory</c> 一起登记在
-/// <c>Mud.AI.Agent/Events/</c>，与「§7.2 一行的『迁A』标签」相比，目标树 + 硬纪律是更强的约束，
-/// 故按目标树落地（本注记即为两者对账结论）。
+/// 的编译期契约层——故本端口与 <c>ITurnScopeFactory</c> 一起落在 <c>Mud.AI.Agent/Events/</c>，
+/// 这是「零 MAF 硬纪律」与迁移目标树共同决定的位置。
 /// </para>
 /// <para>
 /// <b>产品实现</b>：飞书侧 <c>FeishuAgent</c> 直接实现本端口（其 <c>GetOrCreateSessionAsync</c> /

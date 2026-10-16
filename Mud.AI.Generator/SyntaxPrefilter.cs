@@ -65,7 +65,7 @@ internal static class SyntaxPrefilter
     }
 
     /// <summary>
-    /// 单个类型声明的特性名文本预检（F-2b）：属性名中不含目标标记的声明，
+    /// 单个类型声明的特性名文本预检：属性名中不含目标标记的声明，
     /// 其符号绑定（<c>GetDeclaredSymbol</c>）可安全跳过。
     /// </summary>
     /// <remarks>

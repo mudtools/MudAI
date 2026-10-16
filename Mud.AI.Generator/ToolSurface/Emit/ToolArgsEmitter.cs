@@ -401,7 +401,7 @@ internal static class ToolArgsEmitter
         source.Line($"        /// <summary>工具名契约常量（与 <c>{profile.ProductPrefix}Names</c> 同源；契约守卫据此把本类型映射回工具名）。</summary>");
         source.Line($"        internal const string {ToolNameConstant} = {JsonText.ToCSharpLiteral(plan.ToolName)};");
 
-        // R5 / F-2：常量类闭集的"常量名 → 平台整数值"映射表（零反射；AOT 安全）。
+        // 常量类闭集的"常量名 → 平台整数值"映射表（零反射；AOT 安全）。
         if (!string.IsNullOrEmpty(plan.ClosedSetMaps))
         {
             source.Append(plan.ClosedSetMaps);

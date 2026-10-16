@@ -60,7 +60,7 @@ public static class AgentRuntimeServiceCollectionExtensions
         // ② 会话存储：进程内默认（分布式部署由宿主先注册自己的实现覆盖）。
         services.TryAddSingleton<ISessionStore>(static _ => new MemorySessionStore());
 
-        // ③ 待确认快照：进程内默认（R7 / C4a 的软缺席契约，见其类型注释）。
+        // ③ 待确认快照：进程内默认（软缺席契约见 <see cref="Approvals.IPendingApprovalStore"/> 注释）。
         services.TryAddSingleton<IPendingApprovalStore, Mud.AI.Agent.Approvals.InMemoryPendingApprovalStore>();
 
         return services;

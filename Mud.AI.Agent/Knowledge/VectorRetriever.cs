@@ -14,8 +14,8 @@ namespace Mud.AI.Agent.Knowledge;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>中立化说明（N2-e）</b>：自产品适配层原样迁入——端口（<c>IRetriever</c>）与值类型
-/// （<c>RetrievedChunk</c>）均已在 N1 下沉；默认值改引中立 <c>RetrievalBudgets</c>（单一源）。
+/// <b>中立化说明</b>：自产品适配层原样迁入——端口（<c>IRetriever</c>）与值类型
+/// （<c>RetrievedChunk</c>）均已在 Abstractions 下沉；默认值改引中立 <c>RetrievalBudgets</c>（单一源）。
 /// </para>
 /// <para>
 /// <b>与托管问答（产品侧知识 Provider）的关系</b>：两者都实现 <c>IRetriever</c>，宿主<b>二选一</b>

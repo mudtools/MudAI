@@ -10,13 +10,13 @@ using System.Text.RegularExpressions;
 namespace Mud.AI.Agent.Tests.ContractGuards;
 
 /// <summary>
-/// <b>NeutralPackages_ShouldNotContainProductVocabulary</b>（N6 上线，方案 v2 §6.4 / v2.1 Q2 定稿）：
+/// <b>NeutralPackages_ShouldNotContainProductVocabulary</b>（上线登记）：
 /// <c>Mud.AI.*</c> 源码的<b>非注释行</b>不得出现产品词汇——「共享结构、不共享语义」的机械化。
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>迁移说明</b>：本守卫随 <c>Mud.AI.*</c> 自飞书仓 <c>Mud.Feishu.AI.Tests/ContractGuards</c>
-/// 迁入（迁移方案 §6：随迁）；仓根锚点由 <c>Mud.Feishu.slnx</c> 改为 <c>Mud.AI.slnx</c>。
+/// 迁入（随迁）；仓根锚点由 <c>Mud.Feishu.slnx</c> 改为 <c>Mud.AI.slnx</c>。
 /// </para>
 /// <para>
 /// <b>判据（v2.1 设计订正 Q2）</b>：规则式注释行豁免（行首 <c>//</c> 跳过，覆盖 <c>///</c> XML 文档）

@@ -13,8 +13,8 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// <remarks>
 /// <para>
 /// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CapabilityEntry</c>；令牌身份从上游
-/// <c>ToolIdentity</c> 统一为引擎镜像 <see cref="ToolSurfaceTokenKind"/>（设计文档 §3：
-/// 令牌身份是枚举槽而非命名前缀，渲染字面量一律经 <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>）。
+/// <c>ToolIdentity</c> 统一为引擎镜像 <see cref="ToolSurfaceTokenKind"/>（令牌身份是枚举槽而非命名前缀，
+/// 渲染字面量一律经 <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>）。
 /// </para>
 /// <para>
 /// 手写值相等（而非 record）：生成器宿主为 netstandard2.0，仓库纪律禁用 record。
@@ -133,7 +133,7 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>为什么集合字段也必须逐个入哈希</b>：上游早期实现只取了标量字段，集合与长字符串字段被整个跳过——
+    /// <b>为什么集合字段也必须逐个入哈希</b>：只取标量字段会跳过集合与长字符串字段——
     /// 两个仅在某集合元素上不同的条目会得到<b>相同</b>哈希。本类型是 Roslyn 增量管线的值键，
     /// 哈希碰撞会让"每个条目都要跑一遍逐字段 <c>Equals</c>"退化，在大型 SDK 上放大为可见的编译开销。
     /// </para>

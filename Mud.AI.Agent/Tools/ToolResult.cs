@@ -8,16 +8,16 @@
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>
-/// 工具执行结果（§7.1 分型结果契约）：替代 <c>Task&lt;string&gt;</c> 的结构化返回。
+/// 工具执行结果（分型结果契约）：替代 <c>Task&lt;string&gt;</c> 的结构化返回。
 /// </summary>
 /// <remarks>
 /// <para>
 /// 当前形态只承载 <see cref="Text"/>（人类可读文本，已投影 + 截断）与截断标记：结构化结果一律由各执行器的
 /// <b>有意策展投影</b>转成文本（见下）。<b>不得</b>把 <c>JsonNode</c> 挂在结果上——那属未被消费的
-/// "第二真相源"，会让"模型看到什么"出现两条口径。多模态分片（<c>Parts</c>）如确需引入，再按 §7.1 以显式契约新增。
+/// "第二真相源"，会让"模型看到什么"出现两条口径。多模态分片（<c>Parts</c>）如确需引入，再以显式契约新增。
 /// </para>
 /// <para>
-/// 设计决策（C.6 决策 2）：移除 <c>implicit operator string</c>——项目未发布，无需兼容老代码，
+/// 设计决策：移除 <c>implicit operator string</c>——项目未发布，无需兼容老代码，
 /// 调用方显式使用 <see cref="ToString"/> 获取文本。
 /// </para>
 /// <para>
@@ -40,7 +40,7 @@ public sealed class ToolResult
     public string? TruncationReason { get; init; }
 
     /// <summary>
-    /// 结构化错误载荷（B2 错误契约）：成功时为 <see langword="null"/>，失败时携带分类/子类/可重试等信息。
+    /// 结构化错误载荷：成功时为 <see langword="null"/>，失败时携带分类/子类/可重试等信息。
     /// </summary>
     public ToolError? Error { get; init; }
 
@@ -68,7 +68,7 @@ public sealed class ToolResult
         => new() { Text = errorText };
 
     /// <summary>
-    /// 从结构化错误载荷构造结果（B2 错误契约：首行 JSON + 人类可读正文）。
+    /// 从结构化错误载荷构造结果（首行 JSON 载荷 + 人类可读正文）。
     /// </summary>
     /// <param name="error">结构化错误载荷。</param>
     /// <param name="humanReadableText">人类可读正文（模型可见，保持向后兼容）。</param>

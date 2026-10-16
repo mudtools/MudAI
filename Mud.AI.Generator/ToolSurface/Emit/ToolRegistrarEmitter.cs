@@ -370,7 +370,7 @@ internal static class ToolRegistrarEmitter
         }
 
         // 注册器登记：执行器缺席（工厂返回 null）时工厂返回 null → 该域工具不进注册表。
-        // 经 internal 静态助手登记（**非** private 扩展——生成产物是独立类型，跨类不可见：R1 §4.5 的 CS0122 根因）。
+        // 经 internal 静态助手登记（**非** private 扩展——生成产物是独立类型，跨类不可见：这也是 <c>CS0122</c> 的根因）。
         source.Line($"            {profile.RegistrationNamespace}.{profile.ProductPrefix}DomainRegistrars.Add(services, static sp =>");
         source.Line($"                sp.GetService<{first.ExecutorType}>() is {{ }} executor");
         source.Line($"                    ? new {profile.RegistrationNamespace}.{registrarName}(executor, sp.GetRequiredService<{profile.ContractNamespace}.{profile.BindingTypeName}>())");

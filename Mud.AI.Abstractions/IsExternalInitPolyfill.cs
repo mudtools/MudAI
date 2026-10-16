@@ -5,7 +5,7 @@
 //  不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 // -----------------------------------------------------------------------
 
-// N1 中立化：本包以 record（ConversationScope / EventFact / FrameworkToolApprovalRequest …）
+// 本包以 record（ConversationScope / EventFact / FrameworkToolApprovalRequest …）
 // 承载编译期契约，netstandard2.0 目标需要 IsExternalInit polyfill。
 // internal ⇒ 不会与消费方编译单元内的同类 polyfill 冲突（同名 internal 类型跨程序集不可见）。
 #if NETSTANDARD2_0

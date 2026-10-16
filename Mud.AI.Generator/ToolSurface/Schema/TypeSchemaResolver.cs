@@ -276,7 +276,7 @@ internal sealed class TypeSchemaResolver : IToolSurfaceTypeSchemaResolver
         var sb = new StringBuilder();
         sb.Append("{\"type\":\"string\",\"enum\":[");
 
-        // ⚠️ R5 / F-2 修正：必须按 HasConstantValue 过滤。
+        // ⚠️ 必须按 HasConstantValue 过滤。
         //   C# enum 隐式含一个名为 `value__` 的**实例**字段（无常量值），
         //   不过滤会把它写进 enum 列表 ⇒ 输出 Schema 里出现伪成员 "value__"。
         //   ParameterSchemaRenderer.RenderEnum 与 RenderClosedSet 早已过滤；此处是输出侧的漏网点，

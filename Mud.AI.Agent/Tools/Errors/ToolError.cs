@@ -11,7 +11,7 @@ using Mud.AI.Abstractions.Tools.Errors;
 namespace Mud.AI.Agent.Tools.Errors;
 
 /// <summary>
-/// 结构化工具错误载荷（B2 错误契约）：模型与宿主均可机械消费的错误分类信息。
+/// 结构化工具错误载荷：模型与宿主均可机械消费的错误分类信息。
 /// </summary>
 /// <remarks>
 /// 置于 <see cref="ToolResult"/> 的 <see cref="ToolResult.Error"/> 属性中，同时以紧凑 JSON 注入结果文本的

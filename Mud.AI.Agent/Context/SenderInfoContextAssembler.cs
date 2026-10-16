@@ -15,7 +15,7 @@ namespace Mud.AI.Agent.Context;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>N4 上移（E8，迁G）</b>：已核实本类零产品语义（只读 <see cref="ConversationRequest.SenderId"/>
+/// <b>上移中立包的依据</b>：本类零产品语义（只读 <see cref="ConversationRequest.SenderId"/>
 /// 与 <see cref="ConversationScope"/>）——机制整体迁入中立包，产品侧经 global using 保持
 /// 简单名引用零改动（DI 注册与测试不受影响）。
 /// </para>

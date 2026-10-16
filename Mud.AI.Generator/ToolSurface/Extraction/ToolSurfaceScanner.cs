@@ -33,9 +33,9 @@ internal static class ToolSurfaceScanner
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
     /// <param name="faultInjection">
     /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
-    /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——曾用进程级静态字段，
-    /// 而 xUnit 默认并行跑测试类 ⇒ 注入期内的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、
-    /// 只剩一条 026），且只在负载下偶发。常态为 <see langword="null"/>，零开销。
+    /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让
+    /// xUnit 并行跑的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、只剩一条 026），
+    /// 且只在负载下偶发、极难复现。常态为 <see langword="null"/>，零开销。
     /// </param>
     /// <returns>扫描结果（模型 + 诊断）。</returns>
     public static ScannedTool Scan(
@@ -408,7 +408,7 @@ internal static class ToolSurfaceScanner
     /// 无 <c>Source</c> 声明（或声明未命中）时的缺省令牌身份。
     /// </summary>
     /// <remarks>
-    /// 上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（设计文档 §4.2 十七组清单无此项），
+    /// 上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（槽位清单无此项），
     /// 为保持行为零漂移沿用同一枚举值（枚举槽本身平台无关，Tenant 语义 = 租户/企业级令牌）。
     /// </remarks>
     private const ToolSurfaceTokenKind DefaultIdentity = ToolSurfaceTokenKind.Tenant;

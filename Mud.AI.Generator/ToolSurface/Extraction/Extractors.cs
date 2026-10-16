@@ -81,7 +81,7 @@ internal static class Extractors
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 危险词表来自剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>（设计文档 §4.2 第 7 项）。
+    /// 危险词表来自剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。
     /// </para>
     /// <para>
     /// <b>只匹配方法名，不匹配路由</b>（上游结论保留）：SDK 路由里普遍带 <c>{app_token}</c> 这类

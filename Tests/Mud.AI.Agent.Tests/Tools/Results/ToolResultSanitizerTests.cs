@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests.Tools.Results;
 
 /// <summary>
-/// 出站净化单元测试（方案 §5 AT-B08 / §8.2 R4 的正反两面）。
+/// 出站净化单元测试（正反两面：误伤面与检出面）。
 /// </summary>
 /// <remarks>
 /// 用例分两类：<b>必须脱敏</b>（凭据/手机号/控制字符）与<b>必须保留</b>

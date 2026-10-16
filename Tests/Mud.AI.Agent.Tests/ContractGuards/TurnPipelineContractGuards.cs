@@ -8,11 +8,11 @@
 namespace Mud.AI.Agent.Tests.ContractGuards;
 
 /// <summary>
-/// N4 事件管线中立化的两条守卫（方案 v2 §6.4）：
+/// N4 事件管线中立化的两条守卫：
 /// <list type="bullet">
 /// <item><see cref="TurnPipeline_ShouldNotHardcodeProductPolicy"/>：中立回合管线不得内建产品政策；</item>
 /// <item><see cref="NeutralPackages_ShouldNotReferenceMafExperimentalApis"/>：<c>Mud.AI.*</c> 不得引用
-/// MAF 实验面（§1 对齐结论的机械化）。</item>
+/// MAF 实验面（对齐结论的机械化）。</item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -64,8 +64,8 @@ public class TurnPipelineContractGuards
     /// <c>Mud.AI.*</c> 源码不得引用 MAF 实验面命名空间（如 <c>Microsoft.Agents.AI.Compaction</c>）。
     /// </summary>
     /// <remarks>
-    /// §1 对齐结论：MAF 实验面（1.20.0 的 <c>Compaction</c> 族）不得焊进包族底层——
-    /// 升级即可能断裂。本守卫机械兜底（MAF 版本升级时「对齐结论腐烂」的防线，§8.2）。
+    /// 对齐结论：MAF 实验面（1.20.0 的 <c>Compaction</c> 族）不得焊进包族底层——
+    /// 升级即可能断裂。本守卫机械兜底（MAF 版本升级时「对齐结论腐烂」的防线）。
     /// </remarks>
     [Fact]
     public void NeutralPackages_ShouldNotReferenceMafExperimentalApis()

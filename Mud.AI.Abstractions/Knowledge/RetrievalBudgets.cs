@@ -8,7 +8,7 @@
 namespace Mud.AI.Abstractions.Knowledge;
 
 /// <summary>
-/// 知识检索注入的<b>三级预算闸</b>单一源（N2-e 迁A，原产品 <c>ContextBudgets.Knowledge*</c>）。
+/// 知识检索注入的<b>三级预算闸</b>单一源（原产品 <c>ContextBudgets.Knowledge*</c>）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,7 +24,7 @@ namespace Mud.AI.Abstractions.Knowledge;
 /// </para>
 /// <para>
 /// <b>中立化说明</b>：预算值是<b>产品中立</b>的通用 RAG 注入策略（与飞书无关）；
-/// 产品侧 <c>ContextBudgets</c> 以常量转发保持既有引用面不变（N4 拆分装配器后删除转发）。
+/// 产品侧 <c>ContextBudgets</c> 以常量转发保持既有引用面不变。
 /// </para>
 /// </remarks>
 public static class RetrievalBudgets

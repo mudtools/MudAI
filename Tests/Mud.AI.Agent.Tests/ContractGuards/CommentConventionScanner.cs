@@ -40,9 +40,20 @@ internal static class CommentConventionScanner
     /// 前后视 <c>(?&lt;![\w-])/(?![\w-])</c>：编号被别的标识符包住时（<c>xR7-4foo</c>）不算编号——
     /// 否则会把 <c>DP-R7-4</c> 这类决策记录号截成 <c>R7-4</c> 上报（诊断信息指向错的东西）。
     /// <c>DP-…</c> 单列一条，它同样是「必须可解析」的引用。
+    /// <para>
+    /// <b>闭集是本仓全批次形态的并集</b>：中介方案（<c>N\d+-?\w*</c>）、条目（<c>E\d+</c>）、
+    /// 策略轴（<c>S-?\d+</c>）、错误契约（<c>B\d+(-?\d+)?</c>）、工作组（<c>WP\d+</c>）、
+    /// 任务分支（<c>F-\d+</c>）、结论（<c>C\d+[a-z]?</c>）、裸轮次（<c>R\d+</c>）、
+    /// 文档版本（<c>v\d+(\.\d+)+</c>）与方案条目引用（<c>§\d+</c>）都在列——清理实测过：
+    /// 只认「R\d+-\d+」这类四段号会漏掉同族同源的裸号，返工时才发现语句已被成本化。
+    /// </para>
+    /// <para>
+    /// <b>刻意不收 <c>P\d+</c></b>：<c>P95/P99</c> 是延迟指标的合法百分位写作，收进去必然假红。
+    /// <c>C0/C1</c> 同理是 Unicode 控制字符块的通用记号（净化器注释大量使用），<c>C\d+</c> 只从 2 起收。
+    /// </para>
     /// </remarks>
     public static readonly Regex AnchorToken = new(
-        @"(?<![\w-])(?:DP-[A-Z]+\d+-\d+|R\d+-\d+[a-z]?|P\dD-\d+[a-z]?|P\d+-\d+[a-z]?|R-\d+|B\d+\.\d+|AT-[A-Z]\d+|AI-FD-[A-Z]+\d+|T\d+ / D\d+)(?![\w-])",
+        @"(?<![\w-])(?:DP-[A-Z]+\d+-\d+|R\d+-\d+[a-z]?|P\dD-\d+[a-z]?|P\d+-\d+[a-z]?|R-\d+|AT-[A-Z]\d+|AI-FD-[A-Z]+\d+|T\d+ / D\d+|N\d+(?:-[a-z]\d*)?|E\d+|S-?\d+|B-?\d+(?:-\d+)?|WP\d+|F-\d+|C(?!0|1)\d+[a-z]?|R\d+|v\d+(?:\.\d+)+|§\d+(?:\.\d+)*(?:-\d+)?)(?![\w-])",
         RegexOptions.CultureInvariant);
 
     /// <summary>

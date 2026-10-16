@@ -11,7 +11,7 @@ using Mud.AI.Abstractions.Configuration;
 namespace Mud.AI.Agent.Tools.Errors;
 
 /// <summary>
-/// 工具重试策略（B3 限流退避）：对只读工具的 retryable 错误自动重试，写工具默认零重试。
+/// 工具重试策略（限流退避）：对只读工具的 retryable 错误自动重试，写工具默认零重试。
 /// </summary>
 /// <remarks>
 /// <para><b>安全优先</b>语义：</para>

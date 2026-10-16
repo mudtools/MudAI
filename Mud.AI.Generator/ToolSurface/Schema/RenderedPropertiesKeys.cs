@@ -12,7 +12,7 @@ namespace Mud.AI.ToolSurface.Schema;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.RenderedPropertiesKeys</c>（设计文档 §2 判定：纯机制直搬，
+/// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.RenderedPropertiesKeys</c>（纯机制直搬，
 /// 无 SDK 命名事实）。
 /// </para>
 /// <para>

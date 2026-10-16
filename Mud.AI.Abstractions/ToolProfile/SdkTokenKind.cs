@@ -12,9 +12,6 @@ namespace Mud.AI;
 /// </summary>
 /// <remarks>
 /// <para>
-/// v2.3 随引擎进仓（原 <c>Mud.HttpUtils.SdkTokenKind</c>）。
-/// </para>
-/// <para>
 /// 核心不变量：<b>令牌身份是枚举槽而非命名前缀</b>。飞书 <c>[Tenant|User]</c> 与
 /// 微信 <c>_Provider/_ThirdParty/_Internal</c> 的差异由各 SDK profile 的「令牌身份推导策略」吸收，
 /// 引擎内部只消费本枚举，永远不看任何 SDK 的命名前缀/后缀字符串。

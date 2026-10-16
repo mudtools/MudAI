@@ -17,7 +17,7 @@ namespace Mud.AI.Agent.Tools;
 /// 本类型是<b>底层机制</b>：不经它直接回填模型——所有出站都走
 /// <c>ToolResultPipeline</c>（唯一出口，负责预算与截断标记）。直接
 /// <c>ToolResult.FromText(ToolResultText.Truncate…)</c> 由
-/// <c>TruncationVisibilityContractGuards</c> 机械拦截（B-1 的根因形态）。
+/// <c>TruncationVisibilityContractGuards</c> 机械拦截（手拼信封的根因形态）。
 /// </remarks>
 public static class ToolResultText
 {

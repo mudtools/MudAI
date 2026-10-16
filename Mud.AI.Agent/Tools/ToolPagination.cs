@@ -11,7 +11,7 @@ using System.Text.Json.Nodes;
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>
-/// 自动分页聚合器（B1）：把多次翻页调用的结果合并为单个信封，在预算内自动取完。
+/// 自动分页聚合器：把多次翻页调用的结果合并为单个信封，在预算内自动取完。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -35,7 +35,7 @@ public static class ToolPagination
     public const int HardMaxPages = 50;
 
     /// <summary>
-    /// 聚合层截断的<b>统一原因字面量</b>（B-1 口径单源）：触达 <c>max_items</c> 或 <c>max_pages</c>
+    /// 聚合层截断的<b>统一原因字面量</b>（口径单源）：触达 <c>max_items</c> 或 <c>max_pages</c>
     /// 时回填给模型与审计的 <c>TruncationReason</c>。具体是哪一个由信封内的
     /// <c>truncation_reason</c> 细化（见 <see cref="BuildEnvelope"/>）。
     /// </summary>

@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis;
 namespace Mud.AI.ToolSurface;
 
 /// <summary>
-/// 工具面引擎的<b>动态诊断槽位表</b>（设计文档 §6.1：档位 2「引擎通用槽位」）。
+/// 工具面引擎的<b>动态诊断槽位表</b>（档位 2「引擎通用槽位」）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -223,7 +223,7 @@ internal static class ToolSurfaceDiagnostics
                     throw new ArgumentOutOfRangeException(nameof(slot), slot, "未知的工具面诊断槽位号");
                 }
 
-                // 兜底槽（026）用独立 Tooling 类别（v2.1 实测例外）。
+                // 兜底槽（026）用独立 Tooling 类别（刻意例外，理由见槽位表上方说明）。
                 var category = slot == SlotGeneratorInternalError
                     ? _profile.ToolingDiagnosticCategory
                     : _profile.DiagnosticCategory;

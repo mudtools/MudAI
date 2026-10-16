@@ -22,7 +22,7 @@ namespace Mud.AI.Agent.Approvals;
 /// <b>fail-closed 不变</b>：宿主批准通道未注册或抛异常时，写工具保持未执行，绝不降级为「自动批准」。
 /// </para>
 /// <para>
-/// <b>中立化说明（N2-c）</b>：自产品适配层迁入并把 <c>appKey</c> 参数名中性化为
+/// <b>中立化说明</b>：自产品适配层迁入并把 <c>appKey</c> 参数名中性化为
 /// <c>tenantKey</c>（值语义未变——飞书侧传入的仍是 <c>FeishuAgentOptions.AppKey</c>）；
 /// 通道端口由产品门面 <c>IFeishuToolApprovalChannel</c> 换为中立
 /// <see cref="IToolApprovalChannel"/>（门面继承它 ⇒ 调用点零改）。
@@ -109,7 +109,7 @@ public static class ApprovalRequestProjector
     /// 把待确认项交给宿主批准通道（未注册即静默跳过 = 降级为「纯提示」），并逐项记 Warning。
     /// </summary>
     /// <remarks>
-    /// <b>R7 / C4a：先落快照，再通知通道</b>——顺序不可颠倒。若先通知后落库，宿主可能在
+    /// <b>先落快照，再通知通道</b>——顺序不可颠倒。若先通知后落库，宿主可能在
     /// 「已收到通知」与「快照可查」之间重启进程，表现为「宿主说审批过、待办列表里却没有」的
     /// 不一致（孤儿审批自愈只需要会话侧信息，快照缺失只会让宿主少一次可查询的机会）。
     /// 落库失败<b>不阻断</b>通知（best-effort：宿主通道才是主路径），但会记 Warning。
@@ -136,7 +136,7 @@ public static class ApprovalRequestProjector
                 item.ToolName, item.RequestId, item.TenantKey);
         }
 
-        // R7 / C4a：登记待确认快照（宿主重启后仍能列出的唯一来源）。
+        // 登记待确认快照（宿主重启后仍能列出的唯一来源）。
         if (store is not null)
         {
             foreach (var item in pending)

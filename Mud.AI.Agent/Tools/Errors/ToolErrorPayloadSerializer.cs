@@ -12,7 +12,7 @@ using System.Text.Json;
 namespace Mud.AI.Agent.Tools.Errors;
 
 /// <summary>
-/// B2 错误契约：将 <see cref="ToolError"/> 序列化为紧凑 JSON 首行（≤ 512 字节）。
+/// 将 <see cref="ToolError"/> 序列化为紧凑 JSON 首行（≤ 512 字节）。
 /// </summary>
 /// <remarks>
 /// <para>

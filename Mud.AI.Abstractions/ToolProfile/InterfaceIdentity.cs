@@ -11,7 +11,6 @@ namespace Mud.AI;
 /// SDK 接口名解析结果（值对象）：接口命名范式经 profile 解析后的结构化事实。
 /// </summary>
 /// <remarks>
-/// v2.3 随引擎进仓（原 <c>Mud.HttpUtils.InterfaceIdentity</c>）。
 /// <para>
 /// 引擎侧不变量：本类型只携带<b>归一化后的语义</b>（令牌身份 <see cref="Kind"/>、域、资源、版本），
 /// 不携带任何 SDK 命名前缀字符串——前缀/后缀/中缀的推导发生在 profile 解析委托内。

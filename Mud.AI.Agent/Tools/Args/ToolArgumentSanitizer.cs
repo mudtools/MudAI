@@ -64,9 +64,9 @@ public static class ToolArgumentSanitizer
     /// <param name="value">参数值。</param>
     /// <returns>违规描述，或 <see langword="null"/>。</returns>
     /// <remarks>
-    /// <b>WP1 修复（S1）</b>：只识别 <c>string</c> 与 <c>IEnumerable&lt;string&gt;</c>，
-    /// 不识别运行时真实形态 <c>JsonElement</c>——导致入站净化在主路径从未生效。
-    /// 现经 <see cref="ToolArgumentNormalizer.EnumerateTexts"/> 统一遍历，覆盖所有 JSON 形态。
+    /// <b>覆盖全部 JSON 形态</b>：值形态经 <see cref="ToolArgumentNormalizer.EnumerateTexts"/>
+    /// 统一遍历——只识别 <c>string</c> / <c>IEnumerable&lt;string&gt;</c> 会漏掉 <c>JsonElement</c>；
+    /// 新增文本处理入口一律走该遍历，不得自行 switch <c>ValueKind</c>。
     /// </remarks>
     public static string? ValidateValue(string name, object? value)
     {

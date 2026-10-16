@@ -135,7 +135,7 @@ internal sealed class ToolHandlerBinding : IEquatable<ToolHandlerBinding?>
     /// <summary>
     /// 由执行器类型名派生 DI 核心方法名（<c>BitableTools</c> + SDK 名 <c>Feishu</c> →
     /// <c>AddFeishuBitableToolsCore</c>）。上游把 <c>AddFeishu</c> 硬编码在此；泛化后 SDK 名
-    /// 取自剖面 <see cref="SdkToolProfileModel.Name"/> 槽（设计文档 §4.2 第 5 项同源事实）。
+    /// 取自剖面 <see cref="SdkToolProfileModel.Name"/> 槽（同源事实）。
     /// </summary>
     public static string BuildCoreMethodName(string executorTypeName, SdkToolProfileModel profile)
         => "Add" + profile.Name + executorTypeName + "Core";

@@ -33,7 +33,7 @@ internal static class SchemaEmitter
 {
     /// <summary>
     /// 判断 AdditionalFile 是否为该剖面的 golden 快照（由入口生成器在
-    /// <c>AdditionalTextsProvider</c> 过滤时消费；<b>全文件名</b>匹配，§5.2-3 v2.1）。
+    /// <c>AdditionalTextsProvider</c> 过滤时消费；<b>全文件名</b>匹配）。
     /// </summary>
     /// <remarks>
     /// <see cref="SdkToolProfileModel.GoldenFileName"/> 是<b>非必填槽</b>（如剖面尚未固化快照时）：
@@ -241,7 +241,7 @@ internal static class SchemaEmitter
     // ────────── {P}Contracts.g.cs ──────────
 
     /// <summary>
-    /// 发射类型化契约表（WP2 / R-B 根因）：契约事实（risk/identity/scopes/isWrite/http/route）的
+    /// 发射类型化契约表：契约事实（risk/identity/scopes/isWrite/http/route）的
     /// <b>类型化出口</b>——下游（注册器、目录、宿主策略默认值）直接消费编译期常量，
     /// 不再运行期解析 Schema JSON。
     /// </summary>

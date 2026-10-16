@@ -11,7 +11,7 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// 类型 → JSON Schema 推导器的<b>引擎侧接缝接口</b>。
 /// </summary>
 /// <remarks>
-/// Schema 层实现为 <c>Schema/TypeSchemaResolver.cs</c>（设计文档 §1.2）；Extraction 层只经本接口消费其能力，
+/// Schema 层实现为 <c>Schema/TypeSchemaResolver.cs</c>；Extraction 层只经本接口消费其能力，
 /// 由入口生成器在 <c>Initialize</c> 中以 <see cref="ToolSurfaceSchemaResolver"/> 注册工厂（解耦接缝）。
 /// 成员形状与上游公开面一一对应。
 /// </remarks>
@@ -131,7 +131,7 @@ internal static class ParameterSchemaRenderer
 
                 var fragment = RenderFragment(parameter.Type, resolver, depth: 0);
 
-                // R5 / F-2：显式声明的取值闭集优先于类型推导。
+                // 显式声明的取值闭集优先于类型推导。
                 // 放在 InsertDescription 之前 ⇒ InsertDescription 仍能把 description 正确插到
                 // 闭合花括号之前（插入点不依赖片段内部是否已带 description）。
                 var closedSet = GetParameterEnumType(attribute);

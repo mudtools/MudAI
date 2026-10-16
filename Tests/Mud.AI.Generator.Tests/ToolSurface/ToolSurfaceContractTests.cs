@@ -262,7 +262,7 @@ public class ToolSurfaceContractTests
         slots.Should().Contain(ToolSurfaceDiagnostics.SlotGeneratorInternalError);
         slots.Should().Contain(ToolSurfaceDiagnostics.SlotDerivedConstantNameConflict);
 
-        // per-tool affordance 四槽（F-7）：028/029/030（Error 零容忍）+ 031（Warning 基线）。
+        // per-tool affordance 四槽：028/029/030（Error 零容忍）+ 031（Warning 基线）。
         slots.Should().Contain(ToolSurfaceDiagnostics.SlotAffordanceStructure);
         slots.Should().Contain(ToolSurfaceDiagnostics.SlotAffordanceOrphan);
         slots.Should().Contain(ToolSurfaceDiagnostics.SlotAffordanceDanglingReference);
@@ -333,7 +333,7 @@ public class ToolSurfaceContractTests
         factory[ToolSurfaceDiagnostics.SlotToolNameConflict].Id.Should().Be("MUDWX003");
         factory[ToolSurfaceDiagnostics.SlotToolNameConflict].Category.Should().Be("MudWechat.AI");
 
-        // 兜底槽类别例外（§6.1 v2.1 实测）：上游 MUDFT026 = MudFeishu.Tooling。
+        // 兜底槽类别例外（实测）：上游 MUDFT026 = MudFeishu.Tooling。
         factory[ToolSurfaceDiagnostics.SlotGeneratorInternalError].Id.Should().Be("MUDWX026");
         factory[ToolSurfaceDiagnostics.SlotGeneratorInternalError].Category.Should().Be("MudWechat.Tooling");
 
@@ -424,7 +424,7 @@ public class ToolSurfaceContractTests
     [Fact]
     public void TokenKindMarkers_PerEntryModeOverride_SupportsWechatDualForm()
     {
-        // 微信「后缀 + 中缀双形态并存」（§3 v2.1 实测）：逐条覆写匹配形态。
+        // 微信「后缀 + 中缀双形态并存」（实测）：逐条覆写匹配形态。
         var profile = ResolveSingleProfile("""
             [SdkToolProfile("Wechat",
                 ToolAttributeName = "WechatTool",

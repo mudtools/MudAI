@@ -122,7 +122,7 @@ public abstract class BufferedMessageChannel : IMessageChannel
     /// <inheritdoc />
     public async Task FlushAsync(string tenantKey, string chatId, string messageId, CancellationToken cancellationToken = default)
     {
-        // WP4（W1 修复）：与 _buffers 同生命周期清理——_lastUpdateTicks 在 FlushAsync 后不得持有已终止的 messageId。
+        // 与 _buffers 同生命周期清理——_lastUpdateTicks 在 FlushAsync 后不得持有已终止的 messageId。
         _lastUpdateTicks.TryRemove(messageId, out _);
         try
         {
@@ -209,7 +209,7 @@ public abstract class BufferedMessageChannel : IMessageChannel
     /// <summary>
     /// 单次更新失败的降级记录钩子：默认经 <see cref="IAgentTelemetry"/> 端口记一次
     /// （<see cref="DegradedReason"/> 文案）；产品子类覆写以补产品维度（如 app_key tag）——
-    /// 迁移期产品指标因此逐字节不变（方案 v2 §5.3 C3 ②式）。
+    /// 迁移期产品指标因此逐字节不变。
     /// </summary>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="messageId">占位消息 ID。</param>

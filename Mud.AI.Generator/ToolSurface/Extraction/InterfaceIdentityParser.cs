@@ -16,9 +16,9 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 与运行时契约 <c>Mud.AI.Abstractions.InterfaceIdentity</c>（设计文档 §3/§4.3）**逐字段镜像**
+/// 与运行时契约 <c>Mud.AI.Abstractions.InterfaceIdentity</c> **逐字段镜像**
 /// （InterfaceName / Kind / Domain / Resource / Version / RawTokenMarker），由
-/// <c>ToolSurfaceContractTests</c> 反射比对机械锁定。镜像的原因：工程纪律 §1.2-3 禁止生成器
+/// <c>ToolSurfaceContractTests</c> 反射比对机械锁定。镜像的原因：工程纪律禁止生成器
 /// 引用任何 <c>Mud.*</c> 运行时程序集，故引擎持有自己的 <c>ToolSurfaceTokenKind</c> 形态值对象。
 /// </para>
 /// <para>不采用 <c>record</c>：netstandard2.0 目标未注入 <c>IsExternalInit</c>（仓库纪律）。</para>
@@ -44,7 +44,7 @@ internal sealed class ToolSurfaceInterfaceIdentity : IEquatable<ToolSurfaceInter
     /// <summary>接口名（如 <c>IFeishuTenantV1BitableAppTable</c>）。</summary>
     public string InterfaceName { get; }
 
-    /// <summary>归一化令牌身份（引擎唯一消费的身份轴，设计文档 §3）。</summary>
+    /// <summary>归一化令牌身份（引擎唯一消费的身份轴）。</summary>
     public ToolSurfaceTokenKind Kind { get; }
 
     /// <summary>域名段（如 <c>Bitable</c>；正则无 <c>domain</c> 组时为空串）。</summary>
@@ -56,7 +56,7 @@ internal sealed class ToolSurfaceInterfaceIdentity : IEquatable<ToolSurfaceInter
     /// <summary>版本号（<c>V{n}</c> 的 <c>n</c>；正则无 <c>version</c> 组或非数字时 <see langword="null"/>）。仅作 profile 本地诊断，引擎不强制消费。</summary>
     public int? Version { get; }
 
-    /// <summary>命中的原始命名标记串（如 <c>IFeishuTenant</c> / <c>_Provider</c>；无标记命中时 <see langword="null"/>）。供生态本地授权链读取精细语义（设计文档 §3）。</summary>
+    /// <summary>命中的原始命名标记串（如 <c>IFeishuTenant</c> / <c>_Provider</c>；无标记命中时 <see langword="null"/>）。供生态本地授权链读取精细语义。</summary>
     public string? RawTokenMarker { get; }
 
     public bool Equals(ToolSurfaceInterfaceIdentity? other)
@@ -89,7 +89,7 @@ internal sealed class ToolSurfaceInterfaceIdentity : IEquatable<ToolSurfaceInter
 
 /// <summary>
 /// 接口名 → <see cref="ToolSurfaceInterfaceIdentity"/> 解析器
-/// （泛化自上游 <c>Extractors.TryParseSdkInterfaceName</c>，设计文档 §4.2 第 3/4 项）。
+/// （泛化自上游 <c>Extractors.TryParseSdkInterfaceName</c>）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -99,7 +99,7 @@ internal sealed class ToolSurfaceInterfaceIdentity : IEquatable<ToolSurfaceInter
 /// <para>
 /// 命名范式正则来自剖面槽 <c>InterfaceNameRegex</c>（组名契约：<c>domain</c> / <c>resource</c> /
 /// <c>version</c> 三个可选命名组）；令牌身份来自 <c>TokenKindStrategy</c> + <c>TokenKindMarkers</c>
-/// 标记表——引擎内部零 SDK 命名字符串（设计文档 §2/§3）。
+/// 标记表——引擎内部零 SDK 命名字符串。
 /// </para>
 /// </remarks>
 internal static class InterfaceIdentityParser

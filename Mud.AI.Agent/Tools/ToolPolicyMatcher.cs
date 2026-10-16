@@ -49,11 +49,11 @@ public sealed record ToolPolicyRules(
 }
 
 /// <summary>
-/// <b>S-1：glob / 域级策略匹配器</b>（纯函数，零 IO）。
+/// <b>glob / 域级策略匹配器</b>（纯函数，零 IO）。
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>中立化说明（N2-d，方案 v2 §5.1 A10）</b>：匹配算法自产品执行链
+/// <b>中立化说明</b>：匹配算法自产品执行链
 /// （飞书 <c>FeishuToolBinding.EvaluateToolPolicy</c>）原样抽出——「域轴先于工具名轴」
 /// 的判定顺序、Deny 优先于 Allow、空集合语义（Allow 空 = 该轴不启用，**不是**"全拒"）
 /// 全部是<b>产品中立</b>的策略语义；抽走后产品侧只保留 reason_code 映射与文案构造。

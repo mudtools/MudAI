@@ -116,7 +116,7 @@ internal static class GuidanceEmitter
 
             // 只有 L2 资产（{dir}/{domain}/{topic}.md）而没有 L1 域文件时也必须产出：
             // References / ReferenceKeys 是 guidance_read 元工具的唯一数据源，
-            // 「无 L1 即整体丢弃」会让 L2 素材静默消失（与 F-9 修掉的静默覆盖同类）。
+            // 「无 L1 即整体丢弃」会让 L2 素材静默消失（静默覆盖类缺陷）。
             if (blocks.Count == 0 && references.Count == 0)
             {
                 return;

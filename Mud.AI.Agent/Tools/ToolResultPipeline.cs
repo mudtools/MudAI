@@ -58,7 +58,7 @@ public static class ToolResultPipeline
     /// JSON 信封出口：序列化为保留中文的紧凑 JSON → JSON 感知截断 → 回填截断标记。
     /// </summary>
     /// <remarks>
-    /// 这是手拼信封的<b>唯一</b>合法形态（B-1 的 8 处一类 + 12 处二类都收敛于此）。
+    /// 这是手拼信封的<b>唯一</b>合法形态（一类与二类形态都收敛于此）。
     /// 直接 <c>ToolResult.FromText(ToolResultText.TruncateJson(ToolResultJson.ToText(x), n))</c>
     /// 由 <c>TruncationVisibilityContractGuards</c> 机械拦截。
     /// </remarks>
@@ -109,9 +109,8 @@ public static class ToolResultPipeline
     /// （授权类拒绝路径从工具声明投影），其他分类恒为 <see langword="null"/>。
     /// </remarks>
     /// <remarks>
-    /// B-2 的三处同构构造（<c>ToolExecutor.FromStructuredError</c>、
-    /// <c>FeishuToolBinding.EgressResult(toolName, category, subtype, reason, apiCode)</c> 与
-    /// <c>FeishuToolBinding</c> 的 catch 路径）全部收敛到此处——错误契约演进时只需改一处。
+    /// 三处同构构造（<c>ToolExecutor.FromStructuredError</c>、<c>FeishuToolBinding.EgressResult</c>
+    /// 与 <c>FeishuToolBinding</c> 的 catch 路径）全部收敛到此处——错误契约演进时只需改一处。
     /// 三处的唯一差异是 <paramref name="trace"/>（catch 路径携带 Span Id），已作为显式可选形参保留。
     /// </remarks>
     /// <param name="toolName">工具名（载荷锚点）。</param>

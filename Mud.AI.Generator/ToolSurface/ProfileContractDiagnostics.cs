@@ -15,11 +15,7 @@ namespace Mud.AI.ToolSurface;
 /// </summary>
 /// <remarks>
 /// <para>
-/// v2.3 自组件仓迁入时，把原 <c>Mud.HttpUtils</c> 根命名空间下 <c>Diagnostics</c>/<c>DiagnosticIds</c>
-/// 两个静态类中的 SDKT 子集抽到此文件——组件仓那两个类的主体是 HTTP 客户端生成诊断，不随竖井搬迁。
-/// </para>
-/// <para>
-/// 编号约定（ToolSurface 设计文档 §6.1）：级别为 Error 但<b>不带</b> <c>NotConfigurable</c>——
+/// 编号约定：级别为 Error 但<b>不带</b> <c>NotConfigurable</c>——
 /// 本诊断属「使用者改一行即可修复」（补特性或补接口实现），加标签会连坐抑制同编译中的其他诊断。
 /// </para>
 /// </remarks>

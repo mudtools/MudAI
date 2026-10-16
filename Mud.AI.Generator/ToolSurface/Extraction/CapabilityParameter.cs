@@ -12,7 +12,7 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CapabilityParameter</c>（设计文档 §2 判定：纯机制，引擎持有）。
+/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CapabilityParameter</c>（纯机制，引擎持有）。
 /// </para>
 /// <para>
 /// <see cref="SchemaFragmentJson"/> 是<b>类型系统已完成推导</b>的 JSON Schema 片段
@@ -153,7 +153,7 @@ internal sealed class CapabilityParameter : IEquatable<CapabilityParameter?>
 /// </summary>
 /// <remarks>
 /// 产物代码里引用的<b>消费方风险枚举全名</b>（如 <c>Mud.Feishu.AI.Tools.FeishuToolRisk</c>）属
-/// Emit 层的 <c>RiskEnumFullName</c> 剖面槽职责，与本引擎枚举无关（设计文档 §4.2 第 11 项）。
+/// Emit 层的 <c>RiskEnumFullName</c> 剖面槽职责，与本引擎枚举无关。
 /// </remarks>
 internal enum ToolSurfaceRisk
 {

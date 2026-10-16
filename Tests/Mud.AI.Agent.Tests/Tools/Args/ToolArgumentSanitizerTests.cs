@@ -12,7 +12,7 @@ namespace Mud.AI.Agent.Tests.Tools.Args;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>本矩阵的重点是"误伤面"</b>（方案 §10.2 R-2）：入站净化的风险不在于漏检，而在于<b>把正常内容判成攻击</b>
+/// <b>本矩阵的重点是"误伤面"</b>（R-2）：入站净化的风险不在于漏检，而在于<b>把正常内容判成攻击</b>
 /// ——用户正文里的换行、Tab、Emoji（尤其含 ZWJ 的家庭/职业 emoji）一旦被拒，整条写链路就废了。
 /// 故每个"该拒"的用例都配一个"该放"的对照用例。
 /// </para>
@@ -121,10 +121,10 @@ public class ToolArgumentSanitizerTests
         ToolArgumentSanitizer.Validate(args).Should().BeNull("数值/布尔/null 参数不携带可注入的不可见字符");
     }
 
-    // ───────────────────── WP1 形态矩阵（S1 核心回归） ─────────────────────
+    // ───────────────────── 形态矩阵（核心回归） ─────────────────────
 
     /// <summary>
-    /// WP1 形态矩阵：确保入站净化覆盖运行时真实参数形态（JsonElement），
+    /// 形态矩阵：确保入站净化覆盖运行时真实参数形态（JsonElement），
     /// 不再只识别 string/IEnumerable&lt;string&gt;（S1 根因修复）。
     /// </summary>
     [Theory]

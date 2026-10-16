@@ -597,7 +597,7 @@ internal sealed class SdkToolProfileSet : IEquatable<SdkToolProfileSet>
 }
 
 /// <summary>
-/// 剖面发现（设计文档 §5.3）：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按 <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。
+/// 剖面发现：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按 <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。
 /// </summary>
 /// <remarks>
 /// <para>

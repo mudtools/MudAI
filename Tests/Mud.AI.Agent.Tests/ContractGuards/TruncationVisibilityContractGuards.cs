@@ -35,7 +35,7 @@ public class TruncationVisibilityContractGuards
     }
 
     /// <summary>
-    /// ⑥ <c>new ToolError(...)</c> 只允许出现在唯一工厂内（B-2：此前 3 处同构拷贝）。
+    /// ⑥ <c>new ToolError(...)</c> 只允许出现在唯一工厂内（此前 3 处同构拷贝）。
     /// </summary>
     [Fact]
     public void ToolError_ShouldBeConstructedOnlyAtTheSingleFactory()
@@ -70,7 +70,7 @@ public class TruncationVisibilityContractGuards
     }
 
     /// <summary>
-    /// S-10（F-8 的中立半边）：唯一出口是工具结果的<b>中心序列化点</b>，必须走 <c>ToolResultJson</c>
+    /// 中立半边：唯一出口是工具结果的<b>中心序列化点</b>，必须走 <c>ToolResultJson</c>
     /// （保留中文的编码器）而不是裸 <c>ToJsonString()</c>（那会重新引入转义）。
     /// </summary>
     /// <remarks>

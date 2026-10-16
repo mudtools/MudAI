@@ -12,8 +12,6 @@ namespace Mud.AI.Agent.Tools;
 /// 错误转可读文本回填模型（执行链通用规则 3）。
 /// </summary>
 /// <remarks>
-/// v2.3 中立化迁入（原 <c>Mud.Feishu.AI.AgentTools.FeishuApiOutcome&lt;T&gt;</c>，internal → public：
-/// 飞书侧 <c>FeishuApiResultReader</c>（读 <c>FeishuApiResult&lt;T&gt;</c> 产品信封）与本骨架共用同一产物形状）。
 /// 信封读取器本身产品间差异大，留各生态适配层（YAGNI 不进共享层）。
 /// <para>
 /// <b>业务码语义的归属（独立产品线纪律）</b>：本类型<b>只携带</b>产品业务码（<see cref="Code"/>，进载荷的

@@ -87,7 +87,7 @@ public class NeutralSourceContractGuards
     }
 
     /// <summary>
-    /// <b>v3 §6.2 反向断言</b>：<see cref="AgentRuntimeOptions"/> 的每个中立旋钮都必须有真实消费点。
+    /// <b>反向断言</b>：<see cref="AgentRuntimeOptions"/> 的每个中立旋钮都必须有真实消费点。
     /// </summary>
     /// <remarks>
     /// <para>
@@ -192,7 +192,7 @@ public class NeutralSourceContractGuards
     }
 
     /// <summary>
-    /// R2-1（P0）/ WP3：SDK 不签发/不校验任何确认凭据——模型可见载荷中
+    /// SDK 不签发/不校验任何确认凭据——模型可见载荷中
     /// <b>绝不</b>出现 confirm_token、令牌明文或自批复指示——中立半边。
     /// </summary>
     /// <remarks>
@@ -288,7 +288,7 @@ public class NeutralSourceContractGuards
     }
 
     /// <summary>
-    /// R2-12：<c>MaxHistoryMessages</c> 的<b>消费点</b>——中立工厂的裁剪窗注入（中立半边）。
+    /// <c>MaxHistoryMessages</c> 的<b>消费点</b>——中立工厂的裁剪窗注入（中立半边）。
     /// </summary>
     /// <remarks>
     /// <b>迁移拆分</b>：中立工厂的消费点（<c>MessageCountingChatReducer</c> 裁剪窗）随实现迁入本仓；

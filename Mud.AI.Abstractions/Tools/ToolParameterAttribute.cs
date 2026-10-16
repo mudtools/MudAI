@@ -11,7 +11,6 @@ namespace Mud.AI.Abstractions.Tools;
 /// 覆盖工具参数的模型侧描述与必填性（产品族中立声明契约）。
 /// </summary>
 /// <remarks>
-/// v2.3 中立化迁入（原 <c>Mud.Feishu.AI.AgentTools.ToolParameterAttribute</c>，名已中立）。
 /// XML 注释进 Schema <c>description</c> 之外，本特性提供显式覆盖
 /// （改善模型入参推断准确率，对齐 Aily「字段描述解释 + 样例」建议）。
 /// </remarks>

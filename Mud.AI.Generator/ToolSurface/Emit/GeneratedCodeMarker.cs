@@ -22,7 +22,7 @@ namespace Mud.AI.ToolSurface.Emit;
 /// </para>
 /// <para>
 /// <b>泛化点</b>（上游生成器标识硬编码）：生成器标识改由剖面驱动——<c>{ProductPrefix}SchemaGenerator</c>
-/// （Feishu 剖面即 <c>FeishuToolSchemaGenerator</c>，与上游产物文件头注释逐字节一致）。§4.2 十七组槽无"生成器标识"槽，
+/// （Feishu 剖面即 <c>FeishuToolSchemaGenerator</c>，与上游产物文件头注释逐字节一致）。剖面槽位表无"生成器标识"槽，
 /// 该串只进产物注释与特性实参（不进 golden、不被代码引用），由 <c>ProductPrefix</c> 派生是零漂移口径。
 /// </para>
 /// <para>

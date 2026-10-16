@@ -22,7 +22,7 @@ namespace Mud.AI.Agent.Tests.ContractGuards;
 /// 注释是追加式介质——审查要求"证明想过"，而无人度量"是否可删"，于是过程叙事与悬空编号沉淀为维护成本。
 /// </para>
 /// <para>
-/// <b>迁移说明</b>：本组守卫随 <c>Mud.AI.*</c> 迁入新仓（迁移方案 §6：两仓各一份——飞书仓读收窄后
+/// <b>迁移说明</b>：本组守卫随 <c>Mud.AI.*</c> 迁入新仓（两仓各一份——飞书仓读收窄后
 /// 基线，新仓读新基线）。作用域为 <c>Mud.AI.Abstractions</c> / <c>Mud.AI.Agent</c> / <c>Mud.AI.Generator</c>
 /// 三个运行时工程；Tests 不入强制作用域（测试注释以解释意图为主，且本组自证用例依赖叙述词样本）。
 /// </para>
@@ -126,6 +126,16 @@ public class CommentConventionContractGuards
     [InlineData("/// <item>AT-F14 判据</item>", "AT-F14")]
     [InlineData("/// T2 / D2 的结论", "T2 / D2")]
     [InlineData("/// 按 DP-R7-4 的裁定", "DP-R7-4")]
+    [InlineData("// N2-e 迁A：原产品 ContextBudgets 的通用子集", "N2-e")]
+    [InlineData("// E8 上移：已核实零产品语义", "E8")]
+    [InlineData("// S-1：glob / 域级策略匹配器", "S-1")]
+    [InlineData("// WP1 修复（S1）：只识别 string", "WP1")]
+    [InlineData("// B-6：条件必填是跨参数约束", "B-6")]
+    [InlineData("// F-2：常量类闭集映射表", "F-2")]
+    [InlineData("// C4a：先落快照再通知", "C4a")]
+    [InlineData("// R5 / F-2：显式取值闭集优先", "R5")]
+    [InlineData("// v2.3 随引擎进仓（原 Mud.HttpUtils.InterfaceIdentity）", "v2.3")]
+    [InlineData("// 设计文档 §5.1 A10：匹配算法抽出", "§5.1")]
     public void Scanner_ShouldReportUnresolvedAnchor(string source, string expected)
         => CommentConventionScanner.FindUnresolvedAnchors(source, static _ => false).Should().Contain(
             expected, "不可解析的评审编号必须报红，否则本守卫是假绿");

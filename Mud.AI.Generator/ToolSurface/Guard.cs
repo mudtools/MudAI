@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 namespace Mud.AI.ToolSurface;
 
 /// <summary>
-/// 输出路径统一异常兜底（泛化上游 <c>FeishuToolSchemaGenerator.Guard&lt;T&gt;</c>，设计文档 §1.2-6）。
+/// 输出路径统一异常兜底（泛化上游 <c>FeishuToolSchemaGenerator.Guard&lt;T&gt;</c>）。
 /// </summary>
 /// <remarks>
 /// <para>

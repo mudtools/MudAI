@@ -11,7 +11,6 @@ namespace Mud.AI.Attributes;
 /// 令牌身份推导策略：如何从 SDK 接口名推出 <see cref="SdkTokenKind"/>。
 /// </summary>
 /// <remarks>
-/// v2.3 随引擎进仓（原 <c>Mud.HttpUtils.Attributes.TokenKindDerivationStrategy</c>）。
 /// 引擎只按本策略 + profile 的 <c>TokenKindMarkers</c> 标记表推导，永不内联任何 SDK 的命名事实。
 /// 实测：微信同时存在后缀形态（<c>IWechatWorkAccountIdBotService_Provider</c>）与中缀形态
 /// （<c>IWechatWorkProviderAccountIdBotService</c>），故策略必须三值，且标记表按形态分列。

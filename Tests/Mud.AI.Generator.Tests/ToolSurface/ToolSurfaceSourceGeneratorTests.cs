@@ -10,7 +10,7 @@ using Mud.AI.ToolSurface;
 namespace Mud.AI.Generator.Tests;
 
 /// <summary>
-/// 工具面引擎入口（<see cref="ToolSurfaceSourceGenerator"/>）的行为级测试（设计文档 §10 门禁）：
+/// 工具面引擎入口（<see cref="ToolSurfaceSourceGenerator"/>）的行为级测试（全输出路径门禁）：
 /// 空剖面短路、SDKT002 缺槽守卫、有效剖面零产出。
 /// </summary>
 /// <remarks>
@@ -38,7 +38,7 @@ public class ToolSurfaceSourceGeneratorTests
     [Fact]
     public void NoProfile_SourceProducesNothing()
     {
-        // 空剖面短路（§5.3/§7.2）：纯 HTTP 消费方典型编译——0 工具诊断、0 AddSource。
+        // 空剖面短路：纯 HTTP 消费方典型编译——0 工具诊断、0 AddSource。
         const string source = """
             public interface IPlainApi
             {

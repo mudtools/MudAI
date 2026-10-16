@@ -8,7 +8,7 @@
 namespace Mud.AI.Agent.Tests;
 
 /// <summary>
-/// <b>NeutralPublicTypes_ShouldHaveOwningTests</b>（N6 上线，方案 v2 §6.4 / v2.1 Q4）：
+/// <b>NeutralPublicTypes_ShouldHaveOwningTests</b>（上线登记）：
 /// <see cref="Mud.AI.Agent"/> 的每个公开类型必须「有归属测试」——机械防「迁了类型、忘了迁用例」。
 /// </summary>
 /// <remarks>
@@ -25,7 +25,7 @@ namespace Mud.AI.Agent.Tests;
 /// </para>
 /// <para>
 /// 范围：非接口类型（接口由实现方测试覆盖，机械登记属噪声；枚举同理）。
-/// <c>Mud.AI.Abstractions</c> 的契约类型按 §6.4「或声明契约的既有归属工程」处理——
+/// <c>Mud.AI.Abstractions</c> 的契约类型按「或声明契约的既有归属工程」处理——
 /// 由实现方测试覆盖（如 <c>ISessionStore</c> ⇐ <c>MemorySessionStoreTests</c>），不逐条登记。
 /// </para>
 /// </remarks>

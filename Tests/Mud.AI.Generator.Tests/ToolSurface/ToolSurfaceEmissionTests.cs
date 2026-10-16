@@ -11,7 +11,7 @@ using Mud.AI.ToolSurface;
 namespace Mud.AI.Generator.Tests;
 
 /// <summary>
-/// 工具面引擎的<b>端到端发射</b>测试（设计文档 §10「全部输出路径均参与」+ golden + 诊断契约 + 引擎增量）。
+/// 工具面引擎的<b>端到端发射</b>测试（「全部输出路径均参与」+ golden + 诊断契约 + 引擎增量）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,7 +22,7 @@ namespace Mud.AI.Generator.Tests;
 /// </para>
 /// <para>
 /// SDK 类型刻意放在名为 <c>Test.Sdk</c> 的独立程序集（Tier R 能力目录按「程序集名 ==
-/// <c>SdkNamespaceRoot</c>」定位 SDK，见 §4.2 第 2 项），使 Tier R 路径真实可达。
+/// <c>SdkNamespaceRoot</c>」定位 SDK，见槽位表第 2 项），使 Tier R 路径真实可达。
 /// </para>
 /// <para>
 /// 消费方手写 helper（<c>ToolArgs</c> / <c>TestToolRegistration</c> / <c>TestToolDomainRegistrars</c> /
@@ -370,14 +370,14 @@ public class ToolSurfaceEmissionTests
 
         AssertGeneratedCodeCompiles(run.Output);
 
-        // 参数解包产物与解包映射表同源（§5.2-1）：参数特性声明的必填性决定读取器形态。
+        // 参数解包产物与解包映射表同源：参数特性声明的必填性决定读取器形态。
         var args = Normalize(Source(run, "TestToolArgs/BitableListArgs.g.cs"));
         args.Should()
             .Contain("internal const string ToolName = \"bitable.list\"")
             .And.Contain("ToolArgs.RequireString(args, \"appToken\")")
             .And.Contain("public string AppToken { get; }");
 
-        // 描述符信封：厂商扩展键 / 令牌身份 / 返回契约均来自剖面与 SDK 符号（§2 v2.1 / §3）。
+        // 描述符信封：厂商扩展键 / 令牌身份 / 返回契约均来自剖面与 SDK 符号。
         var schemas = Normalize(Source(run, "TestToolSchemas.g.cs"));
         schemas.Should()
             .Contain("\"x-test\":")
@@ -418,7 +418,7 @@ public class ToolSurfaceEmissionTests
         catalog.Should().Contain("[\"Bitable\"] = 1", "分组轴 = 接口名解析出的 domain 段");
         catalog.Should().Contain("[\"BitableRecord\"] = 1");
 
-        // 槽位 018 是聚合单条 Info（§6.1 非零容忍）。
+        // 槽位 018 是聚合单条 Info（非零容忍）。
         var coverage = enabled.Result.Diagnostics.Where(d => d.Id == "MUDTT018").ToList();
         coverage.Should().ContainSingle();
         coverage[0].Severity.Should().Be(DiagnosticSeverity.Info);
@@ -591,7 +591,7 @@ public class ToolSurfaceEmissionTests
             "GuidanceDirectory 为空时不得吸收任何 markdown 资产");
     }
 
-    // ────────── per-tool affordance（F-7）──────────
+    // ────────── per-tool affordance ──────────
 
     /// <summary>一份结构合法的 affordance 资产（四节齐备且非空）。</summary>
     private const string AffordanceAsset = """
@@ -1003,7 +1003,7 @@ public class ToolSurfaceEmissionTests
             + "（行为用例覆盖面 = 想到的路径数，结构包装覆盖面 = 实际路径数）");
     }
 
-    // ────────── 引擎增量（§10：Cached/Modified 运行理由断言）──────────
+    // ────────── 引擎增量（Cached/Modified 运行理由断言）──────────
 
     /// <summary>六条追踪名（<c>WithTrackingName</c>）：无追踪名时增量回归无法定位到具体步骤。</summary>
     private static readonly string[] TrackedStepNames =

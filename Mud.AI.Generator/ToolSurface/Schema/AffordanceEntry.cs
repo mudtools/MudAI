@@ -23,7 +23,7 @@ namespace Mud.AI.ToolSurface.Schema;
 /// <para>
 /// <b>为什么不与 guidance 合并</b>：guidance 是域级/跨工具的工作流资产，按域键读取、按需拉取；
 /// affordance 是单工具的选型与前置条件，随描述符<b>推</b>给模型可见面。两者的键空间、消费时机、
-/// 预算口径都不同，合并会让"域变宽即压缩文案"（F-1 纪律 22）与"单工具变胖即压缩文案"互相污染。
+/// 预算口径都不同，合并会让"域变宽即压缩文案"与"单工具变胖即压缩文案"互相污染。
 /// </para>
 /// </remarks>
 internal sealed class AffordanceEntry : IEquatable<AffordanceEntry?>

@@ -11,7 +11,7 @@ using Match = System.Text.RegularExpressions.Match;
 namespace Mud.AI.Agent.Tests.ContractGuards;
 
 /// <summary>
-/// <c>Mud.AI.*</c> 家族的<b>内部包锁</b>（迁移方案 §6：「需扫描 <c>Mud.AI.Agent</c> csproj 的家族内部锁
+/// <c>Mud.AI.*</c> 家族的<b>内部包锁</b>（迁移约定：「需扫描 <c>Mud.AI.Agent</c> csproj 的家族内部锁
 /// 随测试迁新仓」）。
 /// </summary>
 /// <remarks>
@@ -149,7 +149,7 @@ public class AgentPackageContractGuards
     // ────────── 实现 ──────────
 
     /// <summary>
-    /// <b>中立性反向锁</b>（迁移方案 §6：随「唯一源级引擎 + 禁兼引」守卫的断言 ⑤ 迁入本仓）：
+    /// <b>中立性反向锁</b>（随「唯一源级引擎 + 禁兼引」守卫的断言 ⑤ 迁入本仓）：
     /// <c>Mud.AI.*</c> 工程不得引用任何 <c>Mud.Feishu*</c> 工程或包。
     /// </summary>
     /// <remarks>
