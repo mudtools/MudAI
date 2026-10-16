@@ -13,24 +13,15 @@ namespace Mud.AI.ToolSurface.Extraction;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CuratedToolScanner</c>，泛化点（设计文档 §2）：
-/// <list type="bullet">
-/// <item>特性识别 → <see cref="Extractors.GetToolAttribute"/>（<c>ToolAttributeName/Namespace</c> 槽）；</item>
-/// <item>源挂钩解析 → <see cref="SourceResolver"/>（<c>SdkNamespaceRoot</c> 槽）；</item>
-/// <item>令牌身份推导 → <see cref="InterfaceIdentityParser.DeriveTokenKind"/>
-/// （<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c> 标记表，替代 <c>StartsWith("IFeishuTenant")</c>）；</item>
-/// <item>接口范式校验 → <see cref="InterfaceIdentityParser.TryParse"/>（<c>InterfaceNameRegex</c> 槽）；</item>
-/// <item>危险词表 → <c>WriteVerbKeywords</c> 槽（经 <see cref="Extractors.DeriveRisk"/>）；</item>
-/// <item>诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 动态槽位（替代静态 MUDFT 常量）。</item>
-/// </list>
+/// 泛化点：特性识别 → <see cref="Extractors.GetToolAttribute"/>（<c>ToolAttributeName/Namespace</c> 槽）；源挂钩解析 →
+/// <see cref="SourceResolver"/>（<c>SdkNamespaceRoot</c> 槽）；令牌身份推导 → <see cref="InterfaceIdentityParser.DeriveTokenKind"/>
+/// （<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c> 标记表）；接口范式校验 → <see cref="InterfaceIdentityParser.TryParse"/>（<c>InterfaceNameRegex</c> 槽）；
+/// 危险词表 → <c>WriteVerbKeywords</c> 槽（经 <see cref="Extractors.DeriveRisk"/>）；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 动态槽位。
 /// </para>
 /// <para>
-/// <b>这是"工具面不脱钩 SDK"的机械保证</b>：工具名/描述/scope 由人声明（就是策展），
-/// 而 <b>HTTP 路由、风险分级、返回形状、上传/下载形态</b>全部从 SDK 符号推导——
-/// 声明与 SDK 不符即构建失败（槽位 019 / 017）。
-/// </para>
-/// <para>
-/// 参数 Schema 由 <see cref="ParameterSchemaRenderer"/> 从符号推导（枚举/数组元素/format/复合 DTO）。
+/// <b>这是"工具面不脱钩 SDK"的机械保证</b>：工具名/描述/scope 由人声明（就是策展），而 <b>HTTP 路由、风险分级、返回形状、
+/// 上传/下载形态</b>全部从 SDK 符号推导——声明与 SDK 不符即构建失败（槽位 019 / 017）。参数 Schema 由
+/// <see cref="ParameterSchemaRenderer"/> 从符号推导（枚举/数组元素/format/复合 DTO）。
 /// </para>
 /// </remarks>
 internal static class ToolSurfaceScanner
@@ -41,7 +32,7 @@ internal static class ToolSurfaceScanner
     /// <param name="profile">当前剖面。</param>
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
     /// <param name="faultInjection">
-    /// P2-2 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
+    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
     /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——曾用进程级静态字段，
     /// 而 xUnit 默认并行跑测试类 ⇒ 注入期内的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、
     /// 只剩一条 026），且只在负载下偶发。常态为 <see langword="null"/>，零开销。
@@ -78,7 +69,7 @@ internal static class ToolSurfaceScanner
                     symbol.Name));
             }
 
-            // 显式窄化到独立的非空局部变量（上游 R2-04 纪律：一次窄化同时消除 CS1717 与下游 CS8604）。
+            // 显式窄化到独立的非空局部变量（一次窄化同时消除 CS1717 与下游 CS8604）。
             var toolName = candidateToolName!;
             var description = GetNamedString(attribute, "Description") ?? string.Empty;
             var scopes = GetNamedArray(attribute, "RequiredScopes");
@@ -163,7 +154,7 @@ internal static class ToolSurfaceScanner
 
             // ── 槽位 005/006 上报点 ──
             // 这两条反映的是"模型看到的描述质量"：description 为空 → 模型不知工具干什么；
-            // 参数无说明 → 模型只能靠参数名猜。二者都是真实且此前**静默**的缺口。
+            // 参数无说明 → 模型只能靠参数名猜。二者都是真实的静默缺口。
             if (string.IsNullOrWhiteSpace(docSummary))
             {
                 diagnostics.Add(PendingDiagnostic.Create(
@@ -205,7 +196,7 @@ internal static class ToolSurfaceScanner
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             GeneratorDebugLogger.LogError(nameof(ToolSurfaceScanner), ex);
-            // P2-2：扫描体异常折算为 {prefix}026 随流上报——此前返回无诊断的 Faulted，
+            // 扫描体异常折算为 {prefix}026 随流上报——直接返回无诊断的 Faulted 会让
             // 产物静默缺席而构建全绿（错误不可诊断）。OCE 是宿主取消语义，必须继续上抛。
             return ScannedTool.Faulted(
                 symbol.Name,

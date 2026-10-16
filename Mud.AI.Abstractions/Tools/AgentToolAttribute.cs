@@ -8,15 +8,9 @@
 namespace Mud.AI.Abstractions.Tools;
 
 /// <summary>
-/// 标注一个工具接口为 LLM FunctionCall 工具（产品族中立声明契约）。
+/// 标注一个工具接口为 LLM FunctionCall 工具。
 /// </summary>
 /// <remarks>
-/// <para>
-/// v2.3 中立化迁入（原 <c>Mud.Feishu.AI.AgentTools.FeishuToolAttribute</c>）：声明契约必须对
-/// <b>任何声明工具的程序集</b>可见——含非 owner 程序集（如飞书仓 <c>Tests/Mud.Feishu.AI.Tests</c>
-/// 样例工程，它自带剖面、在同名 <c>Generated</c> 命名空间生成自己的产物，不能引用 owner 程序集——
-/// 引用即 CS0433 同名类型歧义）。落位 <c>Mud.AI.Abstractions</c> 后企微/钉钉等生态共用同一份形状。
-/// </para>
 /// <para>
 /// 接口只声明 Schema（工具名、描述、模型可见参数），不复用 HTTP 路由特性
 /// （语义分属「工具参数」与「HTTP 绑定」两层）；参数到强类型请求的映射由产品侧绑定类型在执行链内完成。
@@ -68,16 +62,14 @@ public sealed class AgentToolAttribute(string name) : Attribute
     /// <remarks>
     /// <b>为什么需要它</b>：一批工具存在<b>跨参数</b>必填约束（<c>user_id</c>/<c>room_id</c> 二选一、
     /// <c>emails</c>/<c>mobiles</c> 至少一个、<c>summary</c>/<c>description</c>/<c>due</c> 至少一个），
-    /// <c>Required = true</c> 表达不了（那会让整组都变必填），只写在描述里靠模型"读懂"属<b>弱约束</b>，
-    /// 必须结构化进 Schema。
+    /// <c>Required = true</c> 表达不了（那会让整组都变必填），只写在描述里靠模型"读懂"属<b>弱约束</b>，必须结构化进 Schema。
     /// <para>
     /// <b>产出与校验</b>：源生成器渲染为标准 JSON Schema 关键字 <c>"anyOf": [ {"required":["a"]}, … ]</c>
     /// （同时保留描述文本：结构化给校验器，文本给推理）；组内参数名必须存在于同一工具签名，
     /// 否则报条件必填组诊断（构建期 Error）——避免"组里写错参数名 ⇒ 约束静默失效"。
     /// </para>
     /// <para>
-    /// <b>运行时兜底不变</b>：执行器的 <c>ArgumentException</c> 校验保留——Schema 是给模型的提示，
-    /// 不是安全边界；不支持 Schema 的宿主仍需正确报错。
+    /// <b>运行时兜底不变</b>：执行器的 <c>ArgumentException</c> 校验保留——Schema 是给模型的提示，不是安全边界；不支持 Schema 的宿主仍需正确报错。
     /// </para>
     /// <code>
     /// [AgentTool("calendar.find_free_slots", Source = "IFeishuTenantV4Calendar.GetFreebusyCalendarAsync",

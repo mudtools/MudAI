@@ -41,12 +41,10 @@ public sealed record GuidanceResult(
 /// <para>
 /// <b>预算为什么是参数而不是常量</b>：额度值是<b>产品语义</b>（由该产品域资产实测长度与余量策略推出），
 /// 把常量搬进中立包等于把某个产品的预算焊进包族底层（违背「共享结构、不共享语义」）⇒ 本类只接收
-/// <c>maxGuidanceLength</c>，由产品侧（如 <c>FeishuGuidanceBudget.MaxGuidanceLength</c>）声明自己的额度；
-/// 这也是本类型的"零配置键"纪律：不做可选项、不做默认值。
+/// <c>maxGuidanceLength</c>，由产品侧（如 <c>FeishuGuidanceBudget.MaxGuidanceLength</c>）声明自己的额度；这也是本类型的"零配置键"纪律：不做可选项、不做默认值。
 /// </para>
 /// <para>
-/// <b>超限策略</b>：按<b>输入顺序</b>整域丢弃尾部域，<see cref="GuidanceResult"/> 给出 <c>Truncated</c> 与丢弃清单；
-/// 失败方式本身静默（无日志无异常），故调用方<b>必须</b>消费返回值上的信号。
+/// <b>超限策略</b>：按<b>输入顺序</b>整域丢弃尾部域，<see cref="GuidanceResult"/> 给出 <c>Truncated</c> 与丢弃清单；失败方式本身静默（无日志无异常），故调用方<b>必须</b>消费返回值上的信号。
 /// </para>
 /// </remarks>
 public static class GuidanceComposer

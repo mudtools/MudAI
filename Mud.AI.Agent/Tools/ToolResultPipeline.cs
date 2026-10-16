@@ -14,23 +14,18 @@ namespace Mud.AI.Agent.Tools;
 /// 「序列化 → <c>MaxToolResultLength</c> 截断 → <c>Truncated</c>/<c>TruncationReason</c> 标记」。
 /// </summary>
 /// <remarks>
-/// <b>为什么需要它</b>：截断必须是「出口的性质」而非「某几个执行器记得写的一步」——后者下，手拼信封
-/// <b>静默截断</b>（<c>Truncated</c> 恒 <c>false</c> ⇒ 模型把不完整结果当完整事实，OTel <c>tag_truncated</c>
-/// 恒 false 使监控对截断率失明），写工具回执信封则<b>完全无预算意识</b>；收口到本类型后这两种失败模式结构上不可能出现。
+/// <b>为什么需要它</b>：截断必须是「出口的性质」而非「某几个执行器记得写的一步」——后者下，手拼信封<b>静默截断</b>
+/// （<c>Truncated</c> 恒 <c>false</c> ⇒ 模型把不完整结果当完整事实，OTel <c>tag_truncated</c> 恒 false 使监控对截断率失明），
+/// 写工具回执信封则<b>完全无预算意识</b>；收口到本类型后这两种失败模式结构上不可能出现。
 /// <para>
-/// <b>无状态（有意）</b>：全部方法显式接收 <c>maxLength</c>，<b>不</b>持有长度——库内有两个出口持有者
-/// （<c>ToolExecutor</c> 为 <c>readonly struct</c>，写工具用 <c>0</c> 表示无预算；<c>FeishuToolBinding</c>
-/// 为持 <c>FeishuAgentOptions</c> 的 <c>sealed class</c>），本类型若也持长度，两者各 new 一个实例 ⇒
-/// 「唯一出口」退化为「唯一实现」并多出两个状态持有者。
+/// <b>无状态（有意）</b>：全部方法显式接收 <c>maxLength</c>，<b>不</b>持有长度——库内有两个出口持有者（<c>ToolExecutor</c> 为 <c>readonly struct</c>，写工具用 <c>0</c> 表示无预算；<c>FeishuToolBinding</c> 为持 <c>FeishuAgentOptions</c> 的 <c>sealed class</c>），本类型若也持长度，两者各 new 一个实例 ⇒「唯一出口」退化为「唯一实现」。
 /// </para>
 /// <para>
-/// <b>净化不在此处</b>：净化属「模型可见」边界而非「工具结果构造」边界——<c>FeishuToolBinding</c> 第 ⑥ 步
-/// 对所有执行器产出统一施加（无开关、不可绕过），执行链自身生成的拒绝/异常文本经 <c>EgressResult</c> 净化；
-/// 本类型只管<b>预算与标记</b>（含错误载荷的单一构造）。
+/// <b>净化不在此处</b>：净化属「模型可见」边界而非「工具结果构造」边界——<c>FeishuToolBinding</c> 第 ⑥ 步对所有执行器产出统一施加（无开关、不可绕过），执行链自身生成的拒绝/异常文本经 <c>EgressResult</c> 净化；本类型只管<b>预算与标记</b>（含错误载荷的单一构造）。
 /// </para>
 /// <para>
-/// <b><c>maxLength</c> ≤ 0 = 无预算</b>（不截断、不标记），与 <c>ToolExecutor(string toolName)</c> 单参构造的
-/// 既有语义一致。⚠️ <b>不能把 0 直传 <c>ToolResultText.Truncate</c></b>——那里把 &lt;1 钳制为 1，会截成 1 个字符。
+/// <b><c>maxLength</c> ≤ 0 = 无预算</b>（不截断、不标记），与 <c>ToolExecutor(string toolName)</c> 单参构造的既有语义一致。
+/// ⚠️ <b>不能把 0 直传 <c>ToolResultText.Truncate</c></b>——那里把 &lt;1 钳制为 1，会截成 1 个字符。
 /// </para>
 /// </remarks>
 public static class ToolResultPipeline

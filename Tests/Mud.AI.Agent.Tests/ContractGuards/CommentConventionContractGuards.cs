@@ -23,7 +23,8 @@ namespace Mud.AI.Agent.Tests.ContractGuards;
 /// </para>
 /// <para>
 /// <b>迁移说明</b>：本组守卫随 <c>Mud.AI.*</c> 迁入新仓（迁移方案 §6：两仓各一份——飞书仓读收窄后
-/// 基线，新仓读新基线）。作用域收窄为 <c>Mud.AI.Agent</c> / <c>Mud.AI.Abstractions</c>。
+/// 基线，新仓读新基线）。作用域为 <c>Mud.AI.Abstractions</c> / <c>Mud.AI.Agent</c> / <c>Mud.AI.Generator</c>
+/// 三个运行时工程；Tests 不入强制作用域（测试注释以解释意图为主，且本组自证用例依赖叙述词样本）。
 /// </para>
 /// <para>
 /// <b>定量口径</b>：冻结基线在 <see cref="AiDocs.CommentBudgetBaseline"/>（逐文件注释行数与最长注释块），
@@ -37,17 +38,18 @@ public class CommentConventionContractGuards
 
     /// <summary>扫描面下界：文件数与注释行数（低于即视为扫描面被截断/过滤器坏掉的假绿）。</summary>
     /// <remarks>
-    /// 迁移后作用域为两个 <c>Mud.AI.*</c> 工程（约 90 文件 / 4500 注释行），故下界随份额缩小，
-    /// 但仍是"接近实测值"的硬地板，不是随手可越过的空断言。
+    /// 作用域为三个 <c>Mud.AI.*</c> 工程（实测 126 文件 / 约 7000 注释行），下界取
+    /// "接近实测值"的硬地板，不是随手可越过的空断言。
     /// </remarks>
-    private const int MinimumScannedFiles = 80;
+    private const int MinimumScannedFiles = 120;
 
-    private const int MinimumCommentLines = 4000;
+    private const int MinimumCommentLines = 6500;
 
     private static readonly string[] ScopedProjects =
     [
-        "Mud.AI.Agent",
         "Mud.AI.Abstractions",
+        "Mud.AI.Agent",
+        "Mud.AI.Generator",
     ];
 
     private static readonly Lazy<CommentConventionAnalysis> Analysis = new(() =>

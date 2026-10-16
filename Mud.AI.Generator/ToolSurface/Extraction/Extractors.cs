@@ -10,29 +10,20 @@ using System.Text.RegularExpressions;
 namespace Mud.AI.ToolSurface.Extraction;
 
 /// <summary>
-/// L1 抽取器：从 Roslyn <see cref="INamedTypeSymbol"/>（接口）提取方法级 <see cref="CapabilityEntry"/>
-/// 所需的平台无关事实。
+/// L1 抽取器：从 Roslyn <see cref="INamedTypeSymbol"/>（接口）提取方法级 <see cref="CapabilityEntry"/> 所需的平台无关事实。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.Extractors</c>，泛化点（设计文档 §2 剖面判定）：
-/// <list type="bullet">
-/// <item>工具特性识别：硬编码 <c>"AgentToolAttribute"</c> + <c>"Mud.Feishu.AI.Tools"</c>
-/// → 剖面槽 <see cref="SdkToolProfileModel.ToolAttributeName"/> /
-/// <see cref="SdkToolProfileModel.ToolAttributeNamespace"/>（含 <c>Attribute</c> 后缀剥离双形态匹配）；</item>
-/// <item>源符号解析（<c>"Mud.Feishu." + typeName</c>）→ 拆至 <see cref="SourceResolver"/>
-/// （经 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>）；</item>
-/// <item>接口命名正则（<c>^IFeishu…$</c>）→ 拆至 <see cref="InterfaceIdentityParser"/>
-/// （经 <see cref="SdkToolProfileModel.InterfaceNameRegex"/> + 令牌标记表）；</item>
-/// <item>危险词表（<c>DangerWords</c>）→ 剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。</item>
-/// </list>
+/// 泛化点：工具特性识别（硬编码特性名 + 命名空间）→ 剖面槽 <see cref="SdkToolProfileModel.ToolAttributeName"/> /
+/// <see cref="SdkToolProfileModel.ToolAttributeNamespace"/>（含 <c>Attribute</c> 后缀剥离双形态匹配）；源符号解析 →
+/// <see cref="SourceResolver"/>（经 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>）；接口命名正则 →
+/// <see cref="InterfaceIdentityParser"/>（经 <see cref="SdkToolProfileModel.InterfaceNameRegex"/> + 令牌标记表）；
+/// 危险词表 → 剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。
 /// </para>
 /// <para>
-/// <b>两条扫描路径的真实分工（上游 AT-B18 结论保留）</b>：
-/// ① 手写工具特性接口——<b>唯一</b>的"产工具"路径（经 <see cref="ToolSurfaceScanner"/>）；
-/// 工具名/描述/scope 由人策展，其余事实（HTTP 路由、风险、返回形状）从 SDK 符号派生。
-/// ② SDK 接口——<b>仅</b>聚合为能力目录事实，<b>不产任何工具</b>：执行器承载的是<b>有意的策展</b>
-/// （哪些字段回填模型、JSON 键怎么命名、错误如何归类），生成器无从得知。
+/// <b>两条扫描路径的真实分工</b>：① 手写工具特性接口——<b>唯一</b>的"产工具"路径（经 <see cref="ToolSurfaceScanner"/>），
+/// 工具名/描述/scope 由人策展，其余事实（HTTP 路由、风险、返回形状）从 SDK 符号派生；② SDK 接口——<b>仅</b>聚合为
+/// 能力目录事实，<b>不产任何工具</b>：执行器承载的是<b>有意的策展</b>（哪些字段回填模型、JSON 键怎么命名、错误如何归类），生成器无从得知。
 /// </para>
 /// </remarks>
 internal static class Extractors

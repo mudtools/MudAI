@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 //  作者：Mud Studio  版权所有 (c) Mud Studio 2026
 //  Mud.AI 项目的版权、商标、专利和其他相关权利均受相应法律法规的保护。使用本项目应遵守相关法律法规和许可证的要求。
 //  本项目主要遵循 MIT 许可证进行分发和使用。许可证位于源代码树根目录中的 LICENSE-MIT 文件。
@@ -15,7 +15,7 @@ namespace Mud.AI.Agent.Tools.Args;
 /// <remarks>
 /// <para>
 /// <b>拒绝而非剥离</b>：剥离会静默改写用户内容（模型发出去的与下游看到的不一致），拒绝让模型自愈；
-/// 出站（<see cref="ToolResultSanitizer"/>）取剥离是有意相反的合理取法——下游数据 → 模型上下文，去噪即保留信息。
+/// 出站（<see cref="Results.ToolResultSanitizer"/>）取剥离是有意相反的合理取法——下游数据 → 模型上下文，去噪即保留信息。
 /// </para>
 /// <para>
 /// <b>与官方 CLI 的偏离（重要）</b>：官方 <c>charcheck.go</c> 无差别拒绝 <c>U+200D</c>，本仓不能照抄——
@@ -131,7 +131,7 @@ public static class ToolArgumentSanitizer
     }
 
     /// <summary>
-    /// 校验<b>邮件头字段</b>值（R3-12）：拒绝任何 <c>CR</c>/<c>LF</c>——头字段换行是 SMTP 头注入的
+    /// 校验<b>邮件头字段</b>值：拒绝任何 <c>CR</c>/<c>LF</c>——头字段换行是 SMTP 头注入的
     /// 经典载体（<c>Subject: "x\r\nBcc: attacker@evil"</c> 可凭空插入收件人）。
     /// </summary>
     /// <remarks>
@@ -174,7 +174,7 @@ public static class ToolArgumentSanitizer
     /// <b>Emoji 例外</b>：<c>U+200D</c>（ZWJ）与 <c>U+FE0F</c>（变体选择符）在 Emoji 序列中是合法组成，
     /// 仅当它们<b>孤立出现</b>（前后为普通空白/ASCII/边界）时才判为可疑。此处采用"邻近码位启发式"：
     /// 前一个码位或后一个码位属于 emoji 常见区段（或本身就是 ZWJ/变体选择符的同伴）即放行。
-    /// 该启发式刻意保守——宁可放过也不误伤（误伤用户正文比漏检零宽的后果更严重，见 R-2）。
+    /// 该启发式刻意保守——宁可放过也不误伤（误伤用户正文比漏检零宽的后果更严重）。
     /// </remarks>
     private static bool IsForbiddenUnicode(char ch, string text, int index)
         => ch switch

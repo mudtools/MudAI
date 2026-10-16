@@ -15,23 +15,18 @@ namespace Mud.AI.ToolSurface.Emit;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>为什么需要它</b>：产物文件头的 <c>&lt;auto-generated&gt;</c> 只对<b>逐文件</b>判定"是否生成代码"的
-/// 工具（部分分析器、diff 忽略规则）有效；<c>[GeneratedCode]</c> 是<b>符号级</b>标记，覆盖"消费方按符号
-/// 而非按文件过滤"的场景（Roslyn 分析器、CA/Sonar 规则抑制、调试器单步跳过、代码覆盖率排除）。
+/// <b>为什么需要它</b>：产物文件头的 <c>&lt;auto-generated&gt;</c> 只对<b>逐文件</b>判定"是否生成代码"的工具
+/// （部分分析器、diff 忽略规则）有效；<c>[GeneratedCode]</c> 是<b>符号级</b>标记，覆盖"消费方按符号而非按文件过滤"的场景
+/// （Roslyn 分析器、CA/Sonar 规则抑制、调试器单步跳过、代码覆盖率排除）。<b>标注粒度</b>：每个产物<b>类型</b>都标注；
+/// 类型内的<b>可执行成员</b>（方法 / 属性）另行标注——字段与常量由类型级标注覆盖，逐个标注 20+ 个 <c>const</c> 只会把产物撑成噪声。
 /// </para>
 /// <para>
-/// <b>标注粒度</b>：每个产物<b>类型</b>都标注；类型内的<b>可执行成员</b>（方法 / 属性）另行标注——
-/// 字段与常量由类型级标注覆盖，逐个标注 20+ 个 <c>const</c> 只会把产物撑成噪声。
-/// </para>
-/// <para>
-/// <b>泛化点</b>（上游 <c>GeneratorName = "Mud.Feishu.AI.Tools.FeishuToolSchemaGenerator"</c> 硬编码）：
-/// 生成器标识改由剖面驱动——<c>{ProductPrefix}SchemaGenerator</c>（Feishu 剖面即
-/// <c>FeishuToolSchemaGenerator</c>，与上游产物文件头注释逐字节一致）。§4.2 十七组槽无"生成器标识"槽，
+/// <b>泛化点</b>（上游生成器标识硬编码）：生成器标识改由剖面驱动——<c>{ProductPrefix}SchemaGenerator</c>
+/// （Feishu 剖面即 <c>FeishuToolSchemaGenerator</c>，与上游产物文件头注释逐字节一致）。§4.2 十七组槽无"生成器标识"槽，
 /// 该串只进产物注释与特性实参（不进 golden、不被代码引用），由 <c>ProductPrefix</c> 派生是零漂移口径。
 /// </para>
 /// <para>
-/// <b>版本号</b>取自生成器程序集自身的 <see cref="Version"/>（major.minor.build），与 Mud.AI
-/// 生成器同一体例：消费方据此反查"这段产物出自哪个版本的生成器"，无需另设版本常量维护。
+/// <b>版本号</b>取自生成器程序集自身的 <see cref="Version"/>（major.minor.build）：消费方据此反查"这段产物出自哪个版本的生成器"，无需另设版本常量维护。
 /// </para>
 /// </remarks>
 internal static class GeneratedCodeMarker

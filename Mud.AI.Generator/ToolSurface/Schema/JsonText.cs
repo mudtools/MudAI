@@ -12,10 +12,9 @@ namespace Mud.AI.ToolSurface.Schema;
 /// </summary>
 /// <remarks>
 /// 移植自上游 <c>Mud.Feishu.AI.Tools.Schema.JsonText</c>（设计文档 §2 判定：纯机制直搬）。
-/// 全工程<b>唯一</b>的字符串转义实现：此前 <c>SchemaWriter.Quote</c> 与
-/// <c>FeishuToolSchemaGenerator.Quote</c> 各写一份，两者一旦漂移会产出非法 JSON
-/// （编译期常量损坏 → 运行期 <c>JsonDocument.Parse</c> 失败）。Extraction 层
-/// <c>ParameterSchemaRenderer</c> 的私有 <c>JsonQuote</c> 亦已收敛委托至本类 <see cref="Quote"/>。
+/// 全工程<b>唯一</b>的字符串转义实现：所有转义（含 Extraction 层 <c>ParameterSchemaRenderer</c>
+/// 的 <see cref="Quote"/> 委托）必须收敛到本类——转义实现一旦出现第二份并漂移，会产出非法 JSON
+/// （编译期常量损坏 → 运行期 <c>JsonDocument.Parse</c> 失败）。
 /// </remarks>
 internal static class JsonText
 {

@@ -71,7 +71,7 @@ public sealed class PendingApprovalState(string historyStateKey)
         catch (Exception)
         {
             // 坏值按「无待确认项」处理：消费方全部 fail-closed（续跑抛错、放弃路径清键），
-            // 不会因读失败而放行任何写工具（R4-7 收口纪律）。
+            // 不会因读失败而放行任何写工具（收口纪律）。
             // 有意静默（守卫白名单）：本方法无日志面；读失败的所有后果都是 fail-closed，
             // 且注入日志会把「框架状态不可读」这一瞬时事实膨胀成每轮噪声。
         }
@@ -85,7 +85,7 @@ public sealed class PendingApprovalState(string historyStateKey)
     public bool HasAny(AgentSession session) => Read(session).Count > 0;
 
     /// <summary>
-    /// 会话是否处于「有待确认的写操作」状态（R5-12 放弃判定的判据）。
+    /// 会话是否处于「有待确认的写操作」状态（放弃判定的判据）。
     /// </summary>
     /// <remarks>
     /// <b>两个判据取并集</b>，二者不可互相替代：
@@ -143,7 +143,7 @@ public sealed class PendingApprovalState(string historyStateKey)
         => content is ToolApprovalRequestContent { ToolCall: FunctionCallContent { InformationalOnly: false } };
 
     /// <summary>
-    /// 按 <c>RequestId</c> 取框架记录的待审批请求（R5-11 续跑的唯一入参来源）。
+    /// 按 <c>RequestId</c> 取框架记录的待审批请求（批准回灌续跑的唯一入参来源）。
     /// </summary>
     /// <param name="session">MAF 会话。</param>
     /// <param name="requestId">框架请求标识（<c>ficc_{callId}</c>）。</param>
@@ -170,7 +170,7 @@ public sealed class PendingApprovalState(string historyStateKey)
     }
 
     /// <summary>
-    /// <b>放弃</b>尚未应答的审批：从会话历史中摘除孤儿审批请求内容，并清空框架待审批记录（R5-12）。
+    /// <b>放弃</b>尚未应答的审批：从会话历史中摘除孤儿审批请求内容，并清空框架待审批记录。
     /// </summary>
     /// <remarks>
     /// <para>

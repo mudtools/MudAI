@@ -21,17 +21,13 @@ namespace Mud.AI.ToolSurface;
 /// （等同上游 <c>Diagnostics_ShouldNotDeclareUnreportedDiagnostics</c> 纪律）。
 /// </para>
 /// <para>
-/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），
-/// 使上游 <c>MUDFT001..027</c> 与 zero-tolerance 基线可零漂移映射；微信侧得到
-/// <c>MUDWX001..</c> 的同构但独立序列。
+/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），使上游 <c>MUDFT001..027</c> 与 zero-tolerance 基线可零漂移映射；微信侧得到 <c>MUDWX001..</c> 的同构但独立序列。
 /// </para>
 /// <para>
-/// <b>槽位表携带「是否零容忍」列</b>（v2.1）：上游零容忍集不含 009/018/021（Warning/Info），
-/// 缺该列会让微信侧误把截断告警升级为构建阻断。
+/// <b>槽位表携带「是否零容忍」列</b>：上游零容忍集不含 009/018/021（Warning/Info），缺该列会让微信侧误把截断告警升级为构建阻断。
 /// </para>
 /// <para>
-/// <b>类别例外</b>（v2.1 实测）：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c>
-/// 而非 <c>DiagnosticCategory</c>（上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
+/// <b>类别例外</b>：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c> 而非 <c>DiagnosticCategory</c>（上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
 /// </para>
 /// </remarks>
 internal static class ToolSurfaceDiagnostics
@@ -152,8 +148,7 @@ internal static class ToolSurfaceDiagnostics
     }
 
     /// <summary>
-    /// 全部引擎通用槽位（与上游 <c>MUDFT</c> 描述符一一对应；序号 007/011 旧僵尸位中
-    /// 007/012/013 已在上游 AT-B14 清理删除，本表不复活）。
+    /// 全部引擎通用槽位（与上游 <c>MUDFT</c> 描述符一一对应；本表只收录现存槽位）。
     /// </summary>
     public static readonly ImmutableArray<SlotDefinition> Slots =
     [
@@ -233,7 +228,7 @@ internal static class ToolSurfaceDiagnostics
                     ? _profile.ToolingDiagnosticCategory
                     : _profile.DiagnosticCategory;
 
-                // [P3-3] 兜底槽 026 与 PAYLOAD001 同为「引擎内部异常」语义，但刻意**不加**
+                // 兜底槽 026 与 PAYLOAD001 同为「引擎内部异常」语义，但刻意**不加**
                 // WellKnownDiagnosticTags.NotConfigurable（与 PAYLOAD001 不同待遇的显式取舍）：
                 // 该标签会封死 #pragma/NoWarn/.editorconfig 全部抑制通道，而 026 报告的是剖面引擎
                 // 内部异常，消费方可能需先经 .editorconfig 降级恢复构建再排查根因；且无标签不会触发

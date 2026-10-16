@@ -11,36 +11,23 @@ using Mud.AI.ToolSurface.Schema;
 namespace Mud.AI.ToolSurface.Emit;
 
 /// <summary>
-/// Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型
-/// （<c>{Tool}Args</c>，独立产物文件），把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。
+/// Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型（<c>{Tool}Args</c>，独立产物文件），把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Emit.ToolArgsEmitter</c>（设计文档 §5.1 第 4 条输出路径）。泛化点：
-/// <list type="bullet">
-/// <item>owner 门槛：上游 <c>SchemaEmitter.ToolNamesOwnerAssembly</c> → 单一剖面槽
-/// <see cref="SdkToolProfileModel.OwnerAssembly"/>（§5.2-2，上游同值三常量已收敛）；</item>
-/// <item>产物命名空间：上游 <c>NamespaceName = "Mud.Feishu.AI.FeishuTools"</c> →
-/// <see cref="SdkToolProfileModel.ContractNamespace"/>（§4.2 第 10 项；恰与 owner 门槛值同串，
-/// 但语义不同——门槛是程序集名，此处是产物落点命名空间，分别独立消费各自的槽）；</item>
-/// <item>产物目录 hintName 前缀：<c>FeishuToolArgs</c> → <c>{ProductPrefix}Args</c>；</item>
-/// <item>诊断：MUDFT020/021 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。</item>
-/// </list>
+/// 泛化点：owner 门槛 → <see cref="SdkToolProfileModel.OwnerAssembly"/> 单一槽；产物命名空间 → <see cref="SdkToolProfileModel.ContractNamespace"/>
+/// （恰与 owner 门槛值同串，但语义不同——门槛是程序集名，此处是产物落点命名空间，独立消费各自的槽）；hintName 前缀 → <c>{ProductPrefix}Args</c>；
+/// 诊断 MUDFT020/021 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。
 /// </para>
 /// <para>
-/// <b>为什么值得生成</b>：参数名在「接口签名（C# 参数名 = 参数特性声明名）」与
-/// 「执行器里的字符串字面量」两处独立维护，两者漂移的唯一表现是<b>运行期</b>
-/// <c>ArgumentException: 缺少必填参数 x</c>——编译期零保证。生成 <c>Unpack</c> 后字段名由接口派生，
-/// 改名即执行器编译失败（从运行期漂移降级为编译期错误）。
+/// <b>为什么值得生成</b>：参数名在「接口签名」与「执行器里的字符串字面量」两处独立维护，两者漂移的唯一表现是<b>运行期</b> <c>ArgumentException: 缺少必填参数 x</c>
+/// ——编译期零保证。生成 <c>Unpack</c> 后字段名由接口派生，改名即执行器编译失败（从运行期漂移降级为编译期错误）。
 /// </para>
 /// <para>
-/// <b>解包映射表是引擎机制</b>（§5.2-1）：<see cref="TryResolveReader"/> 的「类型 → 读取器」表保留在
-/// 引擎内，扩展点从"改某个 SDK 生态源码"变为"改引擎源码 + 加引擎级测试"。读取器指向的
-/// <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名，不复制其实现）。
+/// <b>解包映射表是引擎机制</b>：<see cref="TryResolveReader"/> 的「类型 → 读取器」表保留在引擎内，扩展点从"改某个 SDK 生态源码"变为"改引擎源码 + 加引擎级测试"；读取器指向的 <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名，不复制其实现）。
 /// </para>
 /// <para>
-/// <b>不生成执行器方法体</b>：白名单投影、filter/sort 解析、RFC3339 转换、dry_run 摘要等业务逻辑
-/// 仍由人写——生成器只搬运「从参数字典取值」这一机械动作。
+/// <b>不生成执行器方法体</b>：白名单投影、filter/sort 解析、RFC3339 转换、dry_run 摘要等业务逻辑仍由人写——生成器只搬运「从参数字典取值」这一机械动作。
 /// </para>
 /// </remarks>
 internal static class ToolArgsEmitter
@@ -59,8 +46,7 @@ internal static class ToolArgsEmitter
         => profile.ProductPrefix + TypeSuffix;
 
     /// <summary>
-    /// 发射参数解包产物（仅名字契约所有者程序集；无工具或不满足门槛时不产出）。
-    /// 每枚 <c>{Tool}Args</c> 类型一个独立产物文件（<c>{P}Args/{TypeName}.g.cs</c>）。
+    /// 发射参数解包产物（仅名字契约所有者程序集；无工具或不满足门槛时不产出）。每枚 <c>{Tool}Args</c> 类型一个独立产物文件（<c>{P}Args/{TypeName}.g.cs</c>）。
     /// </summary>
     /// <param name="context">源产出上下文。</param>
     /// <param name="models">Tier C 模型集合。</param>
@@ -175,11 +161,8 @@ internal static class ToolArgsEmitter
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> /
-    /// <c>string[]?</c> / <c>int?</c> / <c>bool?</c>（上游 61 枚工具逐一核对；计数以本仓规模守卫实测口径为准）。
-    /// </para>
-    /// <para>
-    /// <c>int</c> 必填与可选映射均提供（<c>RequireInt</c> / <c>OptionalInt</c>）；
+    /// 只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> / <c>string[]?</c> / <c>int?</c> / <c>bool?</c>
+    /// （计数以本仓规模守卫实测口径为准）。<c>int</c> 必填与可选映射均提供（<c>RequireInt</c> / <c>OptionalInt</c>）；
     /// <c>bool</c> 仅提供可选映射（当前无工具声明必填布尔参数）。
     /// </para>
     /// </remarks>
@@ -188,11 +171,9 @@ internal static class ToolArgsEmitter
         var name = JsonText.ToCSharpLiteral(parameter.Name);
         var isRequired = parameter.IsRequired;
 
-        // R5 / F-2：显式声明的取值闭集优先于类型推导。
-        //
-        // ⚠️ 关键：Schema 侧渲染的是**闭集成员的字面量**（enum 名或常量类常量名），
-        // 而参数的 C# 类型是 `int` / 某个 enum。二者口径必须一致，否则模型按 Schema 传名字、
-        // 读取器却按数值解析 ⇒ 恒失败。故此处**不复用**下面的 NormalizeTypeName 分支。
+        // 显式声明的取值闭集优先于类型推导。
+        // ⚠️ Schema 侧渲染的是**闭集成员的字面量**（enum 名或常量类常量名），而参数的 C# 类型是 `int` / 某个 enum——
+        // 二者口径必须一致，否则模型按 Schema 传名字、读取器却按数值解析 ⇒ 恒失败。故此处**不复用**下面的 NormalizeTypeName 分支。
         if (TryResolveClosedSetReader(parameter, name, isRequired, out fieldType, out reader))
         {
             return true;
@@ -255,23 +236,16 @@ internal static class ToolArgsEmitter
         }
     }
 
-    /// <summary>
-    /// 渲染取值闭集的读取器（R5 / F-2）。
-    /// </summary>
+    /// <summary>渲染取值闭集的读取器。</summary>
     /// <returns>
-    /// <see langword="true"/> 已产出 <paramref name="reader"/>；<see langword="false"/>
-    /// "本参数无闭集或闭集不可解"⇒ 调用方<b>回退到类型推导分支</b>（随后可能被槽位 020 拦下）。
+    /// <see langword="true"/> 已产出 <paramref name="reader"/>；<see langword="false"/> "本参数无闭集或闭集不可解"⇒ 调用方<b>回退到类型推导分支</b>（随后可能被槽位 020 拦下）。
     /// </returns>
     /// <remarks>
-    /// <b>两类闭集（R5 / R-4）</b>：
+    /// <b>两类闭集</b>：
     /// <list type="number">
-    /// <item><b>C# enum</b>：参数 C# 类型<b>就是</b>该 enum（同名）⇒
-    /// <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> / <c>OptionalEnum&lt;TEnum&gt;</c>，
+    /// <item><b>C# enum</b>：参数 C# 类型<b>就是</b>该 enum（同名）⇒ <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> / <c>OptionalEnum&lt;TEnum&gt;</c>，
     /// 泛型 + <c>Enum.TryParse</c>，AOT 安全；</item>
-    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：
-    /// 参数类型是 <c>int</c> ⇒ 只能按名字映射，用
-    /// <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，
-    /// 映射表由 <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。</item>
+    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：参数类型是 <c>int</c> ⇒ 只能按名字映射，用 <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，映射表由 <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。</item>
     /// </list>
     /// </remarks>
     private static bool TryResolveClosedSetReader(
@@ -311,10 +285,8 @@ internal static class ToolArgsEmitter
 
         var map = ClosedSetMapAccess(parameter.EnumTypeFullName!);
 
-        // R5 / F-5：闭集声明为 `string` 时，模型侧传**名字**（Schema 是
-        // `{"type":"string","enum":[…]}`），而 Args 字段必须是**整型**（SDK 要数字）——
-        // 两者由同一个 `RequireNamedInt` 衔接。若沿用声明类型 `string`，字段会变成字符串，
-        // 与生成器后续按整型使用它的假设冲突。
+        // 闭集声明为 `string` 时，模型侧传**名字**（Schema 是 `{"type":"string","enum":[…]}`），而 Args 字段必须是**整型**（SDK 要数字）——
+        // 两者由同一个 `RequireNamedInt` 衔接。若沿用声明类型 `string`，字段会变成字符串，与生成器后续按整型使用它的假设冲突。
         var declaredType = NormalizeTypeName(parameter.CsharpType);
         fieldType = declaredType == "string"
             ? (isRequired ? "int" : "int?")
@@ -504,7 +476,7 @@ internal static class ToolArgsEmitter
         }
 
         /// <summary>
-        /// R5 / F-2：常量类闭集的"常量名 → 平台整数值"映射表源码（<c>static readonly Dictionary</c>）。
+        /// 常量类闭集的"常量名 → 平台整数值"映射表源码（<c>static readonly Dictionary</c>）。
         /// 为空串表示本工具无常量类闭集参数——此时产物里不应出现任何 <c>__closedSet_*</c> 字段。
         /// </summary>
         public string ClosedSetMaps { get; }

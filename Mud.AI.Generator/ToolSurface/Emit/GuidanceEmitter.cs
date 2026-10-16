@@ -11,34 +11,23 @@ using Mud.AI.ToolSurface.Schema;
 namespace Mud.AI.ToolSurface.Emit;
 
 /// <summary>
-/// 域级 guidance 资产发射器（<b>WP6 / AT-F09</b>）：把 <c>{GuidanceDirectory}{domain}.md</c>（AdditionalFiles）
-/// 编译期固化为 <c>{P}Guidance.g.cs</c>。
+/// 域级 guidance 资产发射器：把 <c>{GuidanceDirectory}{domain}.md</c>（AdditionalFiles）编译期固化为 <c>{P}Guidance.g.cs</c>。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Emit.GuidanceEmitter</c>（设计文档 §5.1 第 6 条输出路径）。泛化点：
-/// <list type="bullet">
-/// <item>目录片段 <c>"/Guidance/"</c> → <see cref="SdkToolProfileModel.GuidanceDirectory"/> 槽；</item>
-/// <item>owner 门槛 → <see cref="SdkToolProfileModel.OwnerAssembly"/>（与 Names/Contracts/Args 同款）；</item>
-/// <item>产物命名空间 → <see cref="SdkToolProfileModel.GeneratedNamespace"/>，
-/// 类名 / hintName → <c>{P}Guidance</c>。</item>
-/// </list>
+/// 泛化点：目录片段 → <see cref="SdkToolProfileModel.GuidanceDirectory"/> 槽；owner 门槛 →
+/// <see cref="SdkToolProfileModel.OwnerAssembly"/>（与 Names/Contracts/Args 同款）；产物命名空间 → <see cref="SdkToolProfileModel.GeneratedNamespace"/>，类名 / hintName → <c>{P}Guidance</c>。
 /// </para>
 /// <para>
-/// <b>为什么用 AdditionalFiles 而不是源码内 XML 文档（R4.1 评审 R-8）</b>：生成器工程受
-/// <c>netstandard2.0</c> 约束，解析 XML doc 注释需要手写解析器（复杂且脆）；AdditionalFiles 的扫描、
-/// 读取、比对全部复用既有管线（golden 快照即先例）。
+/// <b>为什么用 AdditionalFiles 而不是源码内 XML 文档</b>：生成器工程受 <c>netstandard2.0</c> 约束，解析 XML doc
+/// 注释需手写解析器（复杂且脆）；AdditionalFiles 的扫描、读取、比对全部复用既有管线（golden 快照即先例）。
 /// </para>
 /// <para>
-/// <b>与工具面同源</b>：域 guidance 与该域工具同 repo、同一 pass 产出，且装配时只注入
-/// <b>已启用工具</b>所属域的 guidance——因此不可能出现"md 说的和工具面不一致"。
-/// 发射门槛与 <c>{P}Names</c> / <c>{P}Contracts</c> 一致（仅工具面实现包），
-/// 否则其他声明工具特性样例接口的工程会多出一个无人消费的静态类。
+/// <b>与工具面同源</b>：域 guidance 与该域工具同 repo、同一 pass 产出，且装配时只注入<b>已启用工具</b>所属域的
+/// guidance——因此不可能出现"md 说的和工具面不一致"。发射门槛与 <c>{P}Names</c> / <c>{P}Contracts</c> 一致（仅工具面实现包），否则其他声明工具特性样例接口的工程会多出一个无人消费的静态类。
 /// </para>
 /// <para>
-/// <b>不新增诊断</b>：域 guidance 与工具面的一致性由测试守卫锁定——
-/// 新增诊断必须同批补 driver 负例（WP1 的元守卫），而本能力的失败模式（多写一个 md 文件）不值得
-/// 引入一条零容忍诊断。资产键冲突沿用上游"抛异常令构建失败"的取舍（由入口 Guard 兜底为槽位 026）。
+/// <b>不新增诊断</b>：域 guidance 与工具面的一致性由测试守卫锁定——本能力的失败模式（多写一个 md 文件）不值得引入一条零容忍诊断。资产键冲突沿用"抛异常令构建失败"的取舍（由入口 Guard 兜底为槽位 026）。
 /// </para>
 /// </remarks>
 internal static class GuidanceEmitter
@@ -96,9 +85,8 @@ internal static class GuidanceEmitter
                     continue;
                 }
 
-                // ⚠️ **冲突必须响亮失败，绝不静默覆盖**（R5 / F-9，评审点②）。
-                // 旧实现是 blocks[domain] = text：两个文件映射到同一域时后者直接覆盖前者，
-                // **没有任何报错**——而 guidance 是模型的行为依据，覆盖即等于"某域的避坑文本静默消失"。
+                // ⚠️ **同键冲突必须响亮失败，绝不静默覆盖**：guidance 是模型的行为依据，
+                // 静默覆盖即等于"某域的避坑文本凭空消失"。
                 // 之所以用抛异常而非新增槽位诊断：新增零容忍诊断需同步描述符表 / 上报点守卫 /
                 // 零容忍清单多处；此处抛异常已能让构建失败（入口 Guard 兜底为槽位 026），且消息更直接。
                 if (owners.TryGetValue(key!, out var previousOwner))
@@ -112,7 +100,7 @@ internal static class GuidanceEmitter
 
                 owners[key!] = file.Path;
 
-                // 显式窄化到独立非空局部变量（上游 R2-04 纪律）：`key!` 的后缀断言不随
+                // 显式窄化到独立非空局部变量：`key!` 的后缀断言不随
                 // 分支流动，直接 `references[key]` 会触发 CS8604。
                 var assetKey = key!;
                 var assetText = text!.Trim();
@@ -146,7 +134,7 @@ internal static class GuidanceEmitter
             source.Line($"namespace {profile.GeneratedNamespace}");
             source.Line("{");
             source.Line("    /// <summary>");
-            source.Line("    /// 域级 guidance 资产（WP6 / AT-F09）：域 = 工具名首个 '.' 之前的部分；");
+            source.Line("    /// 域级 guidance 资产：域 = 工具名首个 '.' 之前的部分；");
             source.Line($"    /// 素材为 {profile.GuidanceDirectory.Trim('/')}/{{domain}}.md（生成器 AdditionalFiles），内容与该域工具同源同 pass。");
             source.Line("    /// </summary>");
             source.Line($"    {GeneratedCodeMarker.Attribute(profile)}");
@@ -207,17 +195,15 @@ internal static class GuidanceEmitter
     }
 
     /// <summary>
-    /// 从资产路径取<b>资产键</b>（R5 / F-9）。
+    /// 从资产路径取<b>资产键</b>。
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 旧实现只取<b>文件名</b>（<c>Guidance/bitable.md</c> → <c>"bitable"</c>），因此一旦引入
-    /// 子目录 <c>Guidance/im/replies.md</c>，键会变成 <c>"replies"</c>——与真正的域名混在一起，
+    /// 键取剖面 guidance 目录（<see cref="SdkToolProfileModel.GuidanceDirectory"/>）之后的
+    /// 相对路径去扩展名，<b>不得只取文件名</b>——只取文件名会让子目录
+    /// <c>Guidance/im/replies.md</c> 的键变成 <c>"replies"</c>，与真正的域名混在一起，
     /// 且不同域下的同名 topic 会<b>静默互相覆盖</b>。
-    /// </para>
-    /// <para>
-    /// 现改为：取剖面 guidance 目录（<see cref="SdkToolProfileModel.GuidanceDirectory"/>）之后的
-    /// 相对路径去扩展名——无子目录 ⇒ L1 键 <c>{domain}</c>（保持既有键不变，向后兼容）；
+    /// 无子目录 ⇒ L1 键 <c>{domain}</c>（保持既有键不变，向后兼容）；
     /// 有子目录 ⇒ L2 键 <c>{domain}/{topic}</c>。
     /// </para>
     /// <para>

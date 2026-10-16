@@ -17,29 +17,18 @@ namespace Mud.AI.ToolSurface.Emit;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Emit.CapabilityCatalogEmitter</c>（设计文档 §5.1 第 7 条输出路径）。泛化点：
-/// <list type="bullet">
-/// <item>SDK 程序集定位：上游硬编码 <c>"Mud.Feishu"</c> → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>
-/// 槽（§4.2 第 2 项，程序集名与命名空间根同串）；</item>
-/// <item>接口扫描前缀 <c>StartsWith("IFeishu")</c> → <see cref="SdkToolProfileModel.SdkInterfacePrefix"/>
-/// （§4.2 第 15 项）；</item>
-/// <item>接口名解析（domain 轴）→ <see cref="InterfaceIdentityParser.TryParse"/>
-/// （<c>InterfaceNameRegex</c> 槽，替代上游 <c>Extractors.TryParseSdkInterfaceName</c>）；</item>
-/// <item>开关属性名 <c>FeishuToolCatalog</c> → <see cref="SdkToolProfileModel.CapabilityCatalogPropertyName"/>
-/// （§4.2；<c>build_property</c> 读取由<b>入口生成器</b>完成，本发射器只接收 <c>catalogEnabled</c> bool——
-/// 上游即由入口把开关折进 <c>Compilation?</c> 输入，泛化后显式化为参数）；</item>
-/// <item>诊断 MUDFT018 → factory 槽位 018（消息第 5 实参 = 开关属性名槽）。</item>
-/// </list>
+/// 泛化点：SDK 程序集定位 → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>；接口扫描前缀 →
+/// <see cref="SdkToolProfileModel.SdkInterfacePrefix"/>；接口名解析（domain 轴）→ <see cref="InterfaceIdentityParser.TryParse"/>；
+/// 开关属性名 → <see cref="SdkToolProfileModel.CapabilityCatalogPropertyName"/>（<c>build_property</c> 读取由<b>入口生成器</b>完成，本发射器只接收 <c>catalogEnabled</c> bool）；诊断 → factory 槽位 018（消息第 5 实参 = 开关属性名槽）。
 /// </para>
 /// <para>
-/// <b>为什么不逐方法发射</b>（本方案评审的纠正点）：执行器承载的是<b>有意的策展</b>——哪些字段回填模型、
-/// JSON 键怎么命名、错误如何归类——这恰恰是护城河（白名单投影），生成器无从得知。
-/// 逐方法发射全部 Schema 还会把编译期成本与程序集体积推高一个量级。故 Tier R 只交付<b>可度量的目录事实</b>：
-/// SDK 能力总量、模块分布、策展覆盖率——使"能力面差距"从主观判断变成构建期可见的数字。
+/// <b>为什么不逐方法发射</b>：执行器承载的是<b>有意的策展</b>——哪些字段回填模型、JSON 键怎么命名、错误如何归类
+/// ——这恰恰是护城河（白名单投影），生成器无从得知；逐方法发射全部 Schema 还会把编译期成本与程序集体积推高一个量级。
+/// 故 Tier R 只交付<b>可度量的目录事实</b>：SDK 能力总量、模块分布、策展覆盖率——使"能力面差距"变成构建期可见的数字。
 /// </para>
 /// <para>
-/// <b>粒度纪律</b>：枚举只统计各接口<b>自身声明</b>的方法（<c>GetMembers()</c>，不含
-/// <c>AllInterfaces</c>）——SDK 的方法声明在基接口上时，把继承算进来会让同一方法被每个派生接口重复计数。
+/// <b>粒度纪律</b>：枚举只统计各接口<b>自身声明</b>的方法（<c>GetMembers()</c>，不含 <c>AllInterfaces</c>）——
+/// SDK 的方法声明在基接口上时，把继承算进来会让同一方法被每个派生接口重复计数。
 /// </para>
 /// </remarks>
 internal static class CapabilityCatalogEmitter
@@ -182,7 +171,7 @@ internal static class CapabilityCatalogEmitter
         source.Line("        /// 输出契约完整的工具数（声明了非空 output_schema 且推导未被截断）。");
         source.Line("        /// </summary>");
         source.Line("        /// <remarks>");
-        source.Line("        /// R2-05：这是 <c>CoverageReport.OutputSchemaRate</c> 的<b>分子</b>（分母 = CuratedToolCount）——");
+        source.Line("        /// 这是 <c>CoverageReport.OutputSchemaRate</c> 的<b>分子</b>（分母 = CuratedToolCount）——");
         source.Line("        /// 该度量在 R5 之前恒为 1.0、R5 之后恒为 0，两次都是假值；此处是它的第一个真实消费点");
         source.Line("        /// （契约守卫断言 OutputSchemaCoveredToolCount ≤ CuratedToolCount，且与 golden 快照的 output_schema 面一致）。");
         source.Line("        /// 单列分子/分母而<b>不</b>发射浮点率：整数是精确的、跨区域性无关的，且可由消费者自行求商。");

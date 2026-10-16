@@ -8,7 +8,7 @@
 namespace Mud.AI.ToolSurface.Schema;
 
 /// <summary>
-/// 从<b>渲染后的参数 Schema 文本</b>中提取 <c>properties</c> 段的顶层键（AT-B15 的"来源②"）。
+/// 从<b>渲染后的参数 Schema 文本</b>中提取 <c>properties</c> 段的顶层键（独立于参数意图模型的第二个比对来源）。
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,10 +16,9 @@ namespace Mud.AI.ToolSurface.Schema;
 /// 无 SDK 命名事实）。
 /// </para>
 /// <para>
-/// <b>为什么解析文本而不是复用对象模型</b>：这是 AT-B15 的<b>全部意义</b>所在。
-/// 原槽位 015 的 <c>required</c> 与 <c>properties</c> 都取自同一个 <c>entry.Parameters</c>，
-/// 条件恒假（假门禁）。要构成真实约束，第二个来源必须是<b>产物</b>（模型最终看到的 JSON 文本），
-/// 而不是同一份输入模型——否则无法检出"渲染期丢键/重复键/转义不一致"这类真实缺陷。
+/// <b>为什么解析文本而不是复用对象模型</b>：<c>required</c> 与 <c>properties</c> 若取自同一份
+/// <c>entry.Parameters</c>，比对条件恒假（假门禁）。要构成真实约束，第二个来源必须是<b>产物</b>
+/// （模型最终看到的 JSON 文本）——否则无法检出"渲染期丢键/重复键/转义不一致"这类真实缺陷。
 /// </para>
 /// <para>
 /// <b>解析范围刻意最小</b>：只处理 <see cref="SchemaWriter.WriteInputSchema"/> 的既有输出形状

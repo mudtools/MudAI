@@ -14,7 +14,7 @@ namespace Mud.AI.Agent.Tools;
 /// 工具结果文本工具：白名单投影（JsonNode 构建，AOT 安全——无反射序列化）与超长截断。
 /// </summary>
 /// <remarks>
-/// <b>R-1 起</b>：本类型是<b>底层机制</b>，不经它直接回填模型——所有出站都走
+/// 本类型是<b>底层机制</b>：不经它直接回填模型——所有出站都走
 /// <c>ToolResultPipeline</c>（唯一出口，负责预算与截断标记）。直接
 /// <c>ToolResult.FromText(ToolResultText.Truncate…)</c> 由
 /// <c>TruncationVisibilityContractGuards</c> 机械拦截（B-1 的根因形态）。
@@ -73,21 +73,19 @@ public static class ToolResultText
     }
 
     /// <summary>
-    /// JSON 感知截断（AI-FD-D12 P1D-2a 默认行为升级）：对 JSON 文本按数组属性
+    /// JSON 感知截断（默认行为）：对 JSON 文本按数组属性
     /// （<c>items</c>/<c>values</c>/<c>metas</c>/<c>blocks</c> 等）删除尾部条目直至长度达标，追加
     /// <c>truncated</c>/<c>hint</c> 标记——截断不落在 JSON 结构中间，模型拿到的是合法 JSON；
     /// 解析失败（纯文本/非法 JSON）或无数组属性时退回字符截断（<see cref="Truncate"/>，既有行为）。
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 开销为一次 JSON 解析（结果投影路径上，AOT 安全）；
-    /// 仅剩 1 条仍超限时保持合法 JSON 返回（不落到字符截断破坏结构，结构完整性优先于硬上限）。
+    /// 开销为一次 JSON 解析（结果投影路径上，AOT 安全）；仅剩 1 条仍超限时保持合法 JSON 返回（不落到字符截断破坏结构，结构完整性优先于硬上限）。
     /// </para>
     /// <para>
     /// <b>处理<b>全部</b>数组属性而不仅是第一个</b>：有的信封天然带两个同长的大数组
     /// （典型 <c>docx.import_markdown</c> 的 <c>first_level_block_ids</c> + <c>blocks</c>）。
-    /// 只剪第一个会留下另一个照样超标 —— 而 <c>truncated</c> 标记还会告诉调用方"已经处理过了"，
-    /// 即"看起来守住了上限，实际没有"，比不截断更危险。
+    /// 只剪第一个会留下另一个照样超标——而 <c>truncated</c> 标记还会告诉调用方"已经处理过了"，即"看起来守住了上限，实际没有"，比不截断更危险。
     /// </para>
     /// <para>
     /// 删除按<b>成批（每次约一半）</b>进行：逐条删除时每删 1 条都要重新序列化整棵树，

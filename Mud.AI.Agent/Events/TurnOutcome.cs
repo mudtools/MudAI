@@ -17,7 +17,7 @@ namespace Mud.AI.Agent.Events;
 /// 回复是否已由流式通道分片段送达（<see langword="true"/> 时不再有整段下发）。
 /// </param>
 /// <param name="Replayed">
-/// 本轮是否命中「上一轮待补发回复」——未重跑模型直接补发（P4-4 outbox）。
+/// 本轮是否命中「上一轮待补发回复」——未重跑模型直接补发（outbox 语义）。
 /// </param>
 /// <remarks>
 /// 结果是<b>观测面</b>：回复下发由管线经 <see cref="IConversationReplySink"/> 完成，

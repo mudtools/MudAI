@@ -18,19 +18,15 @@ namespace Mud.AI.Abstractions.Conversations;
 /// 触发文本），不冗余携带最终用户消息文本。
 /// </para>
 /// <para>
-/// <b>中立化说明</b>：本类型自产品适配层迁入。
-/// ① <see cref="Scope"/> 使用本包的<b>中立副本</b> <see cref="ConversationScope"/>
-/// （与产品侧同名类型的"刻意接缝"理由见该类型的注释）；
-/// ② <see cref="EventFacts"/> 的元素类型为中立 <see cref="EventFact"/>；
-/// ③ 事件族判别键（<see cref="EventKey"/>）是<b>产品事实</b>——中立侧只承载字符串，
-/// 取值单一源留在产品侧。
+/// <see cref="Scope"/> 用本包的<b>中立副本</b> <see cref="ConversationScope"/>（刻意接缝，理由见该类型注释）；
+/// <see cref="EventFacts"/> 元素类型为中立 <see cref="EventFact"/>；事件族判别键（<see cref="EventKey"/>）是<b>产品事实</b>
+/// ——中立侧只承载字符串，取值单一源留在产品侧。
 /// </para>
 /// <para>
-/// <b>为什么 <see cref="AppKey"/> 不改名 <c>TenantKey</c></b>：它是「租户/应用维度标识」这一
-/// 通用概念的属性名（非产品商标词汇），且被下游 ~19 个文件（含 Derivation 与测试）消费；
-/// 改名只增加改动面、不产生任何上游化收益。真正的产品词汇（<c>feishu.*</c> 命名面、
-/// <c>x-feishu.*</c> 词汇、飞书实测预算值）由中立性守卫严格锁定。
-/// 端口<b>参数</b>层仍按定式统一为 <c>tenantKey</c>（参数名不影响二进制兼容，改造成本为零）。
+/// <b>为什么 <see cref="AppKey"/> 不改名 <c>TenantKey</c></b>：它是「租户/应用维度标识」这一通用概念的属性名
+/// （非产品商标词汇），且被下游约 19 个文件消费，改名只增加改动面、不产生上游化收益。真正的产品词汇
+/// （<c>feishu.*</c> 命名面、<c>x-feishu.*</c> 词汇、飞书实测预算值）由中立性守卫严格锁定；端口<b>参数</b>层
+/// 仍按定式统一为 <c>tenantKey</c>（参数名不影响二进制兼容，改造成本为零）。
 /// </para>
 /// </remarks>
 /// <param name="AppKey">租户/应用维度标识（进入会话键）。</param>

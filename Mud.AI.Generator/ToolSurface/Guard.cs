@@ -14,7 +14,7 @@ namespace Mud.AI.ToolSurface;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>为什么是包装器而不是逐回调 try/catch</b>（根因 R-C）：行为用例的覆盖面 = 你想到的路径数，
+/// <b>为什么是包装器而不是逐回调 try/catch</b>：行为用例的覆盖面 = 你想到的路径数，
 /// 结构包装的覆盖面 = 代码里的实际路径数。把「每条注册路径都必须经本包装器」做成结构断言
 /// （引擎测试侧元守卫），新增路径自动被覆盖。
 /// </para>
@@ -25,9 +25,8 @@ namespace Mud.AI.ToolSurface;
 /// <para>
 /// <b>兜底诊断 ID 不再是静态 <c>MUDFT026</c>，而是 <c>{profile.DiagnosticPrefix}026</c></b>
 /// （profile 注入的动态档位，经 <see cref="ToolSurfaceDiagnostics.Factory"/> 取描述符）。
-/// 多 profile 扇出下，<c>{prefix}026</c> 的上报在入口的<b>逐剖面循环</b>内完成
-/// （单剖面异常不阻断其余剖面）；<see cref="WrapUnchecked{T}"/> 是外层统一兜底，
-/// 并覆盖「缺可信前缀无法拼 026」的 SDKT002 路径（退化为日志）。
+/// 多 profile 扇出下，<c>{prefix}026</c> 的上报在入口的<b>逐剖面循环</b>内完成（单剖面异常不阻断其余剖面）；
+/// <see cref="WrapUnchecked{T}"/> 是外层统一兜底，并覆盖「缺可信前缀无法拼 026」的 SDKT002 路径（退化为日志）。
 /// </para>
 /// </remarks>
 internal static class Guard

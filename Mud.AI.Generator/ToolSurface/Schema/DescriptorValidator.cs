@@ -79,7 +79,7 @@ internal static class DescriptorValidator
             // 所有工具都经过风险分级（Read/Write/HighRiskWrite），故 risk 覆盖率始终为 100%。
             var riskCovered = entryList.Count;
 
-            // W3（R5 修订 → R2-05 补完）：outputSchemaRate 按**真实语义**计算：
+            // outputSchemaRate 按**真实语义**计算：
             // 声明了非空 output_schema 且推导过程**未被截断**的工具占比。
             // 该值即"模型可见的返回契约完整"的程度——截断工具（槽位 009）会拉低它，正是本度量要暴露的事实。
             var outputSchemaCovered = entryList.Count(static e =>
@@ -139,7 +139,7 @@ internal static class DescriptorValidator
                     seenNames[entry.ToolName] = entry.InterfaceName;
                 }
 
-                // 派生常量名唯一（槽位 027 / R4-10）：字面不同的工具名可归一到同一常量名，
+                // 派生常量名唯一（槽位 027）：字面不同的工具名可归一到同一常量名，
                 // 产物会撞成重复常量（CS0101）或重复 hintName（AddSource 异常 → 槽位 026 表面症状）。
                 // 派生规则与产物同源（Emit 层 BuildNameConstant），不在此复刻；委托缺席则跳过本检查。
                 if (nameConstantBuilder is not null)
@@ -163,24 +163,22 @@ internal static class DescriptorValidator
     // ────────── L2 类型一致校验 ──────────
 
     /// <summary>
-    /// L2：<c>required ⊆ properties</c>，两个<b>独立</b>来源比对（AT-B15 / R3 评审 C-2）。
+    /// L2：<c>required ⊆ properties</c>，两个<b>独立</b>来源比对。
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>历史缺陷（假门禁）</b>：原实现把 <c>propertyNames</c> 与 <c>required</c> 都取自
-    /// <c>entry.Parameters</c>——同一集合自比，条件恒为假，槽位 015 从未真正触发过。
-    /// 这类"有上报点的假门禁"比死定义更危险：它让门禁清单看起来已被覆盖。
+    /// <b>两个来源必须独立</b>：若 <c>propertyNames</c> 与 <c>required</c> 都取自 <c>entry.Parameters</c>——同一集合自比，
+    /// 条件恒为假；"有上报点的假门禁"比死定义更危险：它让门禁清单看起来已被覆盖。
     /// </para>
     /// <para>
-    /// <b>修正后的两个来源</b>：
+    /// <b>两个来源</b>：
     /// ① <b>意图模型</b>——<see cref="CapabilityParameter.IsRequired"/>（来自参数特性 / C# 可空性）；
     /// ② <b>渲染产物</b>——<see cref="SchemaWriter.WriteInputSchema"/> 产出的 JSON 字符串，
     /// 用 <see cref="RenderedPropertiesKeys"/> 从<b>文本</b>中提取 <c>properties</c> 段顶层键。
     /// </para>
     /// <para>
-    /// 由此新增的真实检出能力：<b>参数名归一后重名</b>（如 <c>userId</c> 与 <c>user_id</c> 都归一为
-    /// <c>user_id</c>）会让 <c>properties</c> 出现重复键、<c>required</c> 与模型看到的键集不一致——
-    /// 这在原实现下完全静默。
+    /// 由此新增的真实检出能力：<b>参数名归一后重名</b>（如 <c>userId</c> 与 <c>user_id</c> 都归一为 <c>user_id</c>）会让
+    /// <c>properties</c> 出现重复键、<c>required</c> 与模型看到的键集不一致——这在单源实现下完全静默。
     /// </para>
     /// </remarks>
     private static void ValidateL2TypeConsistency(
@@ -220,9 +218,9 @@ internal static class DescriptorValidator
                 }
             }
 
-            // 真实检出③（WP1 driver 测试补强）：参数特性声明的参数名（意图源）与渲染键
-            // （实现源）漂移。此前两个"来源"均由 entry.Parameters 恒等派生，本条检出分支
-            // 在任何源码形状下都不可触发（driver 负例构造时发现）；引入意图源后成为真实门禁。
+            // 真实检出③：参数特性声明的参数名（意图源）与渲染键（实现源）漂移。
+            // 本条要求两个来源独立——若都由 entry.Parameters 恒等派生，该分支在任何源码形状下
+            // 都不可触发（假门禁）。
             foreach (var parameter in entry.Parameters)
             {
                 if (!string.IsNullOrEmpty(parameter.DeclaredToolParameterName)
@@ -297,9 +295,8 @@ internal sealed class ValidationResult
 
     /// <summary>构造校验结果（级别由 <see cref="Descriptor"/> 自身的 <c>DefaultSeverity</c> 表达）。</summary>
     /// <remarks>
-    /// R2-10：此处原有 <c>IsError</c> 属性与 <c>Warning(...)</c> 工厂——二者<b>均无读取方</b>
-    /// （全部校验项都走 <c>Error(...)</c>，且严重级已在描述符里定义），留下会诱使"再加一个不生效的级别开关"。
-    /// 另有 <c>InterfaceName</c> 属性同样无读取方（接口名已作为消息实参之一），一并移除。
+    /// 只提供 <c>Error(...)</c> 一个工厂：全部校验项都走 Error，且严重级已在描述符里定义——
+    /// 不得再添加无读取方的级别开关或属性（如接口名，已作为消息实参之一）。
     /// </remarks>
     public static ValidationResult Error(DiagnosticDescriptor descriptor, params object[] arguments)
         => new(descriptor, arguments);
