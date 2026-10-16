@@ -98,7 +98,7 @@ ProfileDiscovery ──▶ SdkToolProfileSet（按 Name 排序，值相等包装
 | 产物 | 发射器 | 内容 |
 | --- | --- | --- |
 | `{P}Schemas.g.cs` | `SchemaEmitter` | Schema 常量 + 名字注册表 |
-| `{P}Names.g.cs` | `SchemaEmitter` | 工具名契约表（**仅** `OwnerAssembly`，防 CS0433） |
+| `{P}Names.g.cs` | `SchemaEmitter` | 工具名契约表（**仅** `OwnerAssembly`，防 CS0433）；每个常量带上模型可见描述注释（与契约表 `Description` 同源） |
 | `{P}Contracts.g.cs` | `SchemaEmitter` | 类型化契约表 |
 | `{Tool}Args.g.cs` / `{P}Args` | `ToolArgsEmitter` | 每工具强类型入参解包器（一次 `Unpack` 收敛逐参读取，运行期漂降级为编译期错误） |
 | `{P}DomainRegistrars/*.g.cs` + `{Plural}ServiceCollectionCoreExtensions.g.cs` | `ToolRegistrarEmitter` | 每执行器一域注册器 + DI 装配（分组键 = 执行器类） |

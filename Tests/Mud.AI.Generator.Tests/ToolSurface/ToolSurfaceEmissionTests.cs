@@ -793,6 +793,45 @@ public class ToolSurfaceEmissionTests
             "写工具在契约表中必须 IsWrite=true（与 WriteAll 同源）");
     }
 
+    // ────────── 工具名常量的描述注释 ──────────
+
+    [Fact]
+    public void Names_ConstantsCarryDescriptionComment_MatchingContractDescription()
+    {
+        var run = Run([ProfileSource, ConsumerSource, CuratedToolsSource, WriteToolSource]);
+
+        var names = Normalize(Source(run, "TestToolNames.g.cs"));
+        var contracts = Normalize(Source(run, "TestToolContracts.g.cs"));
+
+        names.Should().Contain(
+            "/// <summary>列出多维表格</summary>\n        public const string BitableList = \"bitable.list\";",
+            "工具名常量必须带上工具特性声明的描述，否则使用者只能从常量名猜功能");
+        names.Should().Contain(
+            "/// <summary>删除记录</summary>\n        public const string BitableDeleteRecord = \"bitable.delete_record\";");
+
+        // 描述必须与契约表 Description 同源（第二份手写描述 = 漂移起点）。
+        contracts.Should().Contain("Description: \"列出多维表格\"");
+    }
+
+    [Fact]
+    public void Names_DescriptionComment_EscapesXmlAndFoldsLineBreaks()
+    {
+        var multilineDescription = CuratedToolsSource.Replace(
+            "Description = \"列出多维表格\"",
+            "Description = \"查询 <A&B>\\n第二行\"",
+            StringComparison.Ordinal);
+        multilineDescription.Should().NotBe(CuratedToolsSource, "替换必须真的落到声明上，否则本用例恒成立");
+
+        var run = Run([ProfileSource, ConsumerSource, multilineDescription]);
+
+        var names = Normalize(Source(run, "TestToolNames.g.cs"));
+        names.Should().Contain(
+            "/// <summary>查询 &lt;A&amp;B&gt; 第二行</summary>",
+            "描述里的尖括号与 & 必须 XML 转义、换行必须折成单行（否则产物语法/文档注释被破坏），且不得出现裸换行");
+
+        AssertGeneratedCodeCompiles(run.Output);
+    }
+
     /// <summary>
     /// 声明 <c>OutputSchema</c> 的工具：该属性是**权威覆盖**，需原样进入描述符
     /// （跳过 Source 返回类型推导），且不得把推导截断计入输出契约覆盖统计。

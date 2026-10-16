@@ -458,8 +458,8 @@ internal static class ToolArgsEmitter
     private static string LocalName(string fieldName)
         => char.ToLowerInvariant(fieldName[0]) + fieldName.Substring(1);
 
-    /// <summary>XML 文档文本转义（参数说明含 <c>&amp;</c>/<c>&lt;</c>/<c>&gt;</c> 时不得破坏产物）。</summary>
-    private static string XmlEscape(string text)
+    /// <summary>XML 文档文本转义（说明文本含 <c>&amp;</c>/<c>&lt;</c>/<c>&gt;</c> 时不得破坏产物语法）。</summary>
+    internal static string XmlEscape(string text)
         => text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 
     // ────────── 计划模型 ──────────
