@@ -10,17 +10,11 @@ namespace Mud.AI.Abstractions.Knowledge;
 /// <summary>
 /// 待索引语料文档（自建检索的输入单元；由宿主侧 <see cref="ICorpusSource"/> 提供）。
 /// </summary>
-/// <param name="SourceToken">
-/// <b>稳定来源标识</b>（如节点 token / 文档 id）。切片必须逐块携带它——
-/// 这是"答案可溯源"的唯一凭据，丢了就再也回不到原文。
-/// </param>
+/// <param name="SourceToken"><b>稳定来源标识</b>（如节点 token / 文档 id）。切片必须逐块携带它——这是"答案可溯源"的唯一凭据，丢了就再也回不到原文。</param>
 /// <param name="Text">正文（Markdown 或纯文本）。</param>
 /// <param name="Title">文档标题（可空；切片会据此推导标题层级路径）。</param>
 /// <param name="Url">回链 URL（可空；宿主给出时切片逐块携带）。</param>
-/// <param name="ScopeKey">
-/// 检索范围键（可空，通常是租户/公司维度）。<b>向量库实现必须按它隔离</b>——
-/// 与工具面"多租户禁止默认 appKey 兜底"同源：跨租户召回即为数据泄露。
-/// </param>
+/// <param name="ScopeKey">检索范围键（可空，通常是租户/公司维度）。<b>向量库实现必须按它隔离</b>——与工具面"多租户禁止默认 appKey 兜底"同源：跨租户召回即为数据泄露。</param>
 public readonly record struct CorpusDocument(
     string SourceToken,
     string Text,
@@ -28,11 +22,8 @@ public readonly record struct CorpusDocument(
     string? Url = null,
     string? ScopeKey = null);
 
-/// <summary>
-/// 语料切片（自建检索的索引单元）。<b>回链三件套</b>
-/// （<see cref="SourceToken"/> / <see cref="TitlePath"/> / <see cref="Url"/>）+ <see cref="ScopeKey"/>
-/// 缺一不可——它们是检索结果可溯源、且不跨租户的前提。
-/// </summary>
+/// <summary>语料切片（自建检索的索引单元）。<b>回链三件套</b>（<see cref="SourceToken"/> / <see cref="TitlePath"/> /
+/// <see cref="Url"/>）+ <see cref="ScopeKey"/> 缺一不可——它们是检索结果可溯源、且不跨租户的前提。</summary>
 /// <param name="SourceToken">来源标识（回链到文档/节点）。</param>
 /// <param name="Text">切片正文。</param>
 /// <param name="TitlePath">标题层级路径（如 <c>手册 / 部署 / 环境变量</c>）。</param>
@@ -50,10 +41,8 @@ public sealed record CorpusChunk(
 /// <summary>
 /// 语料来源（<b>宿主契约</b>：拉取全量或变更流）。SDK 不实现——"语料在哪"是宿主知识。
 /// </summary>
-/// <remarks>
-/// 未注册实现时自建检索索引管线不可用（索引器需显式注入本接口），
-/// 这与"域客户端缺席 → 该域工具不注册"是同一套软缺席纪律。
-/// </remarks>
+/// <remarks>未注册实现时自建检索索引管线不可用（索引器需显式注入本接口），这与"域客户端缺席 → 该域工具不注册"
+/// 是同一套软缺席纪律。</remarks>
 public interface ICorpusSource
 {
     /// <summary>拉取待索引文档（实现方负责去重/增量与规模上限）。</summary>
@@ -67,8 +56,8 @@ public interface ICorpusSource
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>实现方义务</b>：① <c>UpsertAsync</c> 按 <see cref="CorpusChunk.SourceToken"/> + <see cref="CorpusChunk.Index"/> 幂等覆盖
-/// （同一文档重新切片后不残留旧块）；② <c>QueryAsync</c> <b>必须</b>按 <see cref="CorpusChunk.ScopeKey"/> 隔离，
+/// <b>实现方义务</b>：① <c>UpsertAsync</c> 按 <see cref="CorpusChunk.SourceToken"/> + <see cref="CorpusChunk.Index"/> 幂等
+/// 覆盖（同一文档重新切片后不残留旧块）；② <c>QueryAsync</c> <b>必须</b>按 <see cref="CorpusChunk.ScopeKey"/> 隔离，
 /// 禁止跨范围召回；③ 返回的 <see cref="RetrievedChunk.Source"/> 应填回链（URL 优先，其次来源标识）。
 /// </para>
 /// <para>嵌入由宿主负责（SDK 无 Embedding API，也不该在 AOT 环境里拉模型）。</para>

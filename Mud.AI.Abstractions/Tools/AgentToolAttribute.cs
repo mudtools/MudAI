@@ -10,11 +10,8 @@ namespace Mud.AI.Abstractions.Tools;
 /// <summary>标注一个工具接口为 LLM FunctionCall 工具。</summary>
 /// <remarks>
 /// <para>
-/// 接口只声明 Schema（工具名、描述、模型可见参数），不复用 HTTP 路由特性（语义分属「工具参数」与
-/// 「HTTP 绑定」两层）；参数到强类型请求的映射由产品侧绑定类型在执行链内完成。
-/// </para>
-/// <para>
-/// 工具默认「进注册表不启用」，宿主须显式 MapTool（白名单语义）。
+/// 接口只声明 Schema（工具名、描述、模型可见参数），不复用 HTTP 路由特性（语义分属「工具参数」与「HTTP 绑定」两层）；
+/// 参数到强类型请求的映射由产品侧绑定类型在执行链内完成。工具默认「进注册表不启用」，宿主须显式 MapTool（白名单语义）。
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
@@ -32,18 +29,13 @@ public sealed class AgentToolAttribute(string name) : Attribute
     /// <summary>是否写操作：写工具在强制授权模式下必须过授权门禁。</summary>
     public bool IsWrite { get; set; }
 
-    /// <summary>
-    /// 该工具落地的 SDK 能力来源，形如 <c>"IFeishuTenantV3User.GetBatchUsersAsync"</c>（可空）。
-    /// </summary>
+    /// <summary>该工具落地的 SDK 能力来源，形如 <c>"IFeishuTenantV3User.GetBatchUsersAsync"</c>（可空）。</summary>
     /// <remarks>
     /// <para>
-    /// 声明后，源生成器在<b>编译期</b>用 SDK 符号交叉校验并派生（单一真相源 = SDK，非本特性）：
+    /// 声明后，源生成器在<b>编译期</b>用 SDK 符号交叉校验并派生（单一真相源 = SDK，非本特性）：HTTP 方法与路由
+    /// （<c>x-feishu.source</c>，审计与排障用）；风险分级（危险词命中 → <c>high-risk-write</c>，覆盖
+    /// <see cref="IsWrite"/> 的粗分级）；返回类型可映射性与上传/下载参数可映射性。
     /// </para>
-    /// <list type="bullet">
-    /// <item>HTTP 方法与路由（<c>x-feishu.source</c>，审计与排障用）；</item>
-    /// <item>风险分级（危险词命中 → <c>high-risk-write</c>，覆盖 <see cref="IsWrite"/> 的粗分级）；</item>
-    /// <item>返回类型可映射性与上传/下载参数可映射性。</item>
-    /// </list>
     /// <para>
     /// 无法解析（类型或方法名写错）时报工具名范式诊断并使构建失败——这正是「工具面与 SDK 不脱钩」的机械保证。
     /// </para>

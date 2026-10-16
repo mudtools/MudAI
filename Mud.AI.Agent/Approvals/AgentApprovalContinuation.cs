@@ -27,12 +27,8 @@ public static class AgentApprovalContinuation
     /// 回灌一次人工批准（或拒绝）并续跑同一会话。
     /// </summary>
     /// <remarks>
-    /// <para>
     /// <b>参数注入而非构造注入</b>：依赖显式、构造面零变更；闸门经产品委托 <paramref name="acquireGate"/> 消费，中立侧不命名闸门类型，满额上抛的产品异常原样传播。
-    /// </para>
-    /// <para>
     /// <b>fail-closed 边界（全部显式抛错，绝不静默降级或凭空放行）</b>：<paramref name="scopeFactory"/> 为 null ⇒ 装配缺陷抛错；<paramref name="approval"/> 缺 <c>RequestId</c>/<c>ConversationKey</c>/<c>TenantKey</c> ⇒ 异常；框架已不再记录该 <c>RequestId</c> ⇒ 失效抛出（引导用户重新发起，绝不凭空构造批准响应）；<paramref name="approvalChannel"/> 缺席只记 Warning。
-    /// </para>
     /// </remarks>
     /// <param name="agent">目标 Agent（须与发起确认时同一实例/同一会话存储）。</param>
     /// <param name="sessions">会话取/建/存端口（发起轮与续跑轮必须同键）。</param>

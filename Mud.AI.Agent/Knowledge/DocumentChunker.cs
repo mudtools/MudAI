@@ -10,13 +10,11 @@ using Mud.AI.Abstractions.Knowledge;
 
 namespace Mud.AI.Agent.Knowledge;
 
-/// <summary>
-/// RAG 切片参数（结构优先切片的三个闸）。默认值面向"技术文档 / wiki"这类中文长文本。
-/// </summary>
+/// <summary>RAG 切片参数（结构优先切片的三个闸）。默认值面向"技术文档 / wiki"这类中文长文本。</summary>
 /// <remarks>
-/// <b>为什么不引入分词器依赖</b>：真实分词器会引入模型/词典依赖并威胁 AOT 面；本仓用
-/// <see cref="TokenEstimator"/> 的<b>可解释近似</b>做预算判定（见其文档）。若宿主已有分词器，
-/// 可自行按 <see cref="DocumentChunker.Chunk(CorpusDocument, ChunkingOptions?)"/> 的同一输入产出更准的预算。
+/// <b>为什么不引入分词器依赖</b>：真实分词器会引入模型/词典依赖并威胁 AOT 面；本仓用 <see cref="TokenEstimator"/>
+/// 的<b>可解释近似</b>做预算判定（见其文档）。若宿主已有分词器，可自行按
+/// <see cref="DocumentChunker.Chunk(CorpusDocument, ChunkingOptions?)"/> 的同一输入产出更准的预算。
 /// </remarks>
 public sealed class ChunkingOptions
 {
@@ -32,9 +30,7 @@ public sealed class ChunkingOptions
     /// <summary>短于此长度的块直接丢弃（标题行、空行残留等噪声块）。</summary>
     public int MinChunkLength { get; set; } = 24;
 
-    /// <summary>
-    /// 校验参数自洽性。<b>非法即抛</b>——静默回落默认值会让"预算失控"变成看不见的回归。
-    /// </summary>
+    /// <summary>校验参数自洽性。<b>非法即抛</b>——静默回落默认值会让"预算失控"变成看不见的回归。</summary>
     /// <exception cref="ArgumentOutOfRangeException">参数非法（含重叠 ≥ 上限这类"无法前进"的配置）。</exception>
     public void Validate()
     {
@@ -67,18 +63,16 @@ public sealed class ChunkingOptions
     }
 }
 
-/// <summary>
-/// RAG 结构优先切片器：<b>标题层级 → 块边界 → 定长窗口（含重叠）</b>，纯函数、零依赖、零 IO。
-/// </summary>
+/// <summary>RAG 结构优先切片器：<b>标题层级 → 块边界 → 定长窗口（含重叠）</b>，纯函数、零依赖、零 IO。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么"结构优先"而不是"按长度硬切"</b>：硬切会把句子拦腰截断，检索命中后半段时语义不完整
-/// （"…请参见下表" 前面缺主语）。先按 Markdown 标题与空行分块、只在<b>单块超长</b>时才定长切，
-/// 才能让绝大多数块在语义上是"一个完整小节"。
+/// <b>为什么"结构优先"而不是"按长度硬切"</b>：硬切会把句子拦腰截断，检索命中后半段时语义不完整（"…请参见下表"
+/// 前面缺主语）。先按 Markdown 标题与空行分块、只在<b>单块超长</b>时才定长切，才能让绝大多数块在语义上是
+/// "一个完整小节"。
 /// </para>
 /// <para>
-/// <b>标题层级保留</b>：<c>#</c>~<c>######</c> 维护层级栈，切片记录其<b>首个块</b>的标题路径
-/// （<c>CorpusChunk.TitlePath</c>）——跨标题的块保留首个而非拼接，避免编造层级。
+/// <b>标题层级保留</b>：<c>#</c>~<c>######</c> 维护层级栈，切片记录其<b>首个块</b>的标题路径（<c>CorpusChunk.TitlePath</c>）
+/// ——跨标题的块保留首个而非拼接，避免编造层级。
 /// <b>确定性</b>：同一输入 + 同一参数 ⇒ 逐块相同的输出（无字典/随机/时间依赖），这是"重建索引不产生抖动"的前提。
 /// </para>
 /// </remarks>
@@ -86,9 +80,7 @@ public static class DocumentChunker
 {
     private const string TitleSeparator = " / ";
 
-    /// <summary>
-    /// 切片。
-    /// </summary>
+    /// <summary>切片。</summary>
     /// <param name="document">待切分文档（<c>CorpusDocument.SourceToken</c> 为空即视为无来源 ⇒ 抛错）。</param>
     /// <param name="options">切片参数（可空 ⇒ 默认值）。</param>
     /// <returns>切片序列（顺序稳定；空/全空白正文返回空序列）。</returns>

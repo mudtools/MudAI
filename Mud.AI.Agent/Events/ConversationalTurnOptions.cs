@@ -10,24 +10,17 @@ using Mud.AI.Abstractions.Conversations;
 
 namespace Mud.AI.Agent.Events;
 
-/// <summary>
-/// 回合管线的<b>产品事实与产品策略</b>注入面（① 参数化 + ③ 委托注入的选项形态）。
-/// </summary>
+/// <summary>回合管线的<b>产品事实与产品策略</b>注入面（① 参数化 + ③ 委托注入的选项形态）。</summary>
 /// <remarks>
 /// <para>
-/// <b>承载两类内容</b>：
-/// <list type="bullet">
-/// <item><b>产品事实</b>（① 式）：状态键字面量（outbox 补发键是 <c>feishu.agent.*</c> 产品命名面，
-/// 字面量归产品侧所有，本类型只以参数承载）；</item>
-/// <item><b>产品策略</b>（③ 式）：请求准入校验（多租户分级等）、投递可行性判定、流式目标解析、
-/// 用户消息装配、审批待确认文案——这些在产品侧是<b>可覆写钩子</b>（virtual），管线以委托消费，
-/// 由薄壳把自身虚方法以方法组形态注入（虚分派在每次调用时发生 ⇒ 派生类覆写自动生效）。</item>
-/// </list>
+/// <b>承载两类内容</b>：<b>产品事实</b>（① 式）——状态键字面量（outbox 补发键是 <c>feishu.agent.*</c> 产品命名面，
+/// 字面量归产品侧所有，本类型只以参数承载）；<b>产品策略</b>（③ 式）——请求准入校验（多租户分级等）、投递可行性判定、
+/// 流式目标解析、用户消息装配、审批待确认文案，这些在产品侧是<b>可覆写钩子</b>（virtual），管线以委托消费，由薄壳把
+/// 自身虚方法以方法组形态注入（虚分派在每次调用时发生 ⇒ 派生类覆写自动生效）。
 /// </para>
 /// <para>
-/// <b>各成员的缺省语义</b>（<see langword="null"/> = 使用管线内建默认）：
-/// 状态键为空 ⇒ outbox 补发整体禁用；策略委托为空 ⇒ 使用管线内建默认实现
-/// （与产品薄壳的历史默认行为逐字节一致）。
+/// <b>各成员的缺省语义</b>（<see langword="null"/> = 使用管线内建默认）：状态键为空 ⇒ outbox 补发整体禁用；策略委托
+/// 为空 ⇒ 使用管线内建默认实现（与产品薄壳的历史默认行为逐字节一致）。
 /// </para>
 /// </remarks>
 public sealed class ConversationalTurnOptions
@@ -43,19 +36,15 @@ public sealed class ConversationalTurnOptions
     /// </summary>
     public string? PendingReplyTurnStateKey { get; init; }
 
-    /// <summary>
-    /// 请求准入校验（多租户分级等产品策略；可抛异常 fail-fast）。
-    /// </summary>
+    /// <summary>请求准入校验（多租户分级等产品策略；可抛异常 fail-fast）。</summary>
     /// <remarks>
-    /// 在<b>任何</b>其他阶段（会话键构造、闸门、会话存取）之前执行——
-    /// 与既有行为一致：appKey 缺失的 fail-fast 发生在建立会话作用域之前。
+    /// 在<b>任何</b>其他阶段（会话键构造、闸门、会话存取）之前执行——与既有行为一致：appKey 缺失的 fail-fast
+    /// 发生在建立会话作用域之前。
     /// </remarks>
     public Action<ConversationRequest>? ValidateRequestPolicies { get; init; }
 
-    /// <summary>
-    /// 下发可行性前置判定：返回非空 = 本轮不可投递（管线按「已消费」短路）。
-    /// <see langword="null"/> ⇒ 无前置判定（保持既有默认行为）。
-    /// </summary>
+    /// <summary>下发可行性前置判定：返回非空 = 本轮不可投递（管线按「已消费」短路）；<see langword="null"/> ⇒ 无前置判定
+    /// （保持既有默认行为）。</summary>
     public Func<ConversationRequest, CancellationToken, Task<string?>>? FindDeliveryBlockAsync { get; init; }
 
     /// <summary>

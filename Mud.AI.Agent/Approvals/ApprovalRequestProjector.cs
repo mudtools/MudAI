@@ -9,30 +9,22 @@ using Mud.AI.Abstractions.Approvals;
 
 namespace Mud.AI.Agent.Approvals;
 
-/// <summary>
-/// 框架审批请求（<see cref="ToolApprovalRequestContent"/>）→ 宿主可见投影
-/// （<see cref="FrameworkToolApprovalRequest"/>）的<b>唯一</b>实现。
-/// </summary>
+/// <summary>框架审批请求（<see cref="ToolApprovalRequestContent"/>）→ 宿主可见投影
+/// （<see cref="FrameworkToolApprovalRequest"/>）的<b>唯一</b>实现。</summary>
 /// <remarks>
 /// <para>
-/// 投影 + 通知只允许存在于这一处：事件层（非流式/流式两处收集点）与续跑扩展必须共用同一实现——
-/// 「每个新入口各写一遍」是机制缺失，其缺陷表现为「续跑轮的审批请求静默丢失」。
-/// </para>
-/// <para>
+/// 投影 + 通知只允许存在于这一处：事件层（非流式/流式两处收集点）与续跑扩展必须共用同一实现——「每个新入口各写一遍」
+/// 是机制缺失，其缺陷表现为「续跑轮的审批请求静默丢失」。
 /// <b>fail-closed 不变</b>：宿主批准通道未注册或抛异常时，写工具保持未执行，绝不降级为「自动批准」。
 /// </para>
 /// <para>
-/// <b>中立化说明</b>：自产品适配层迁入并把 <c>appKey</c> 参数名中性化为
-/// <c>tenantKey</c>（值语义未变——飞书侧传入的仍是 <c>FeishuAgentOptions.AppKey</c>）；
-/// 通道端口由产品门面 <c>IFeishuToolApprovalChannel</c> 换为中立
-/// <see cref="IToolApprovalChannel"/>（门面继承它 ⇒ 调用点零改）。
+/// <b>中立化说明</b>：自产品适配层迁入，参数名中性化为 <c>tenantKey</c>（值语义未变——飞书侧传入的仍是
+/// <c>FeishuAgentOptions.AppKey</c>）；通道端口由产品门面换为中立 <see cref="IToolApprovalChannel"/>（门面继承它 ⇒ 调用点零改）。
 /// </para>
 /// </remarks>
 public static class ApprovalRequestProjector
 {
-    /// <summary>
-    /// 从一组消息中提取待审批请求（无则空集合）。
-    /// </summary>
+    /// <summary>从一组消息中提取待审批请求（无则空集合）。</summary>
     /// <param name="messages">模型回应消息集合（可空）。</param>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="conversationKey">会话键（宿主关联审批界面用）。</param>
@@ -60,9 +52,7 @@ public static class ApprovalRequestProjector
         return collected;
     }
 
-    /// <summary>
-    /// 从一组内容中收集待审批请求（流式路径按更新逐个收集）。
-    /// </summary>
+    /// <summary>从一组内容中收集待审批请求（流式路径按更新逐个收集）。</summary>
     /// <param name="contents">内容集合（可空）。</param>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="conversationKey">会话键。</param>
@@ -105,19 +95,14 @@ public static class ApprovalRequestProjector
         }
     }
 
-    /// <summary>
-    /// 把待确认项交给宿主批准通道（未注册即静默跳过 = 降级为「纯提示」），并逐项记 Warning。
-    /// </summary>
+    /// <summary>把待确认项交给宿主批准通道（未注册即静默跳过 = 降级为「纯提示」），并逐项记 Warning。</summary>
     /// <remarks>
-    /// <b>先落快照，再通知通道</b>——顺序不可颠倒。若先通知后落库，宿主可能在
-    /// 「已收到通知」与「快照可查」之间重启进程，表现为「宿主说审批过、待办列表里却没有」的
-    /// 不一致（孤儿审批自愈只需要会话侧信息，快照缺失只会让宿主少一次可查询的机会）。
-    /// 落库失败<b>不阻断</b>通知（best-effort：宿主通道才是主路径），但会记 Warning。
+    /// <b>先落快照，再通知通道</b>——顺序不可颠倒。若先通知后落库，宿主可能在「已收到通知」与「快照可查」之间重启
+    /// 进程，表现为「宿主说审批过、待办列表里却没有」的不一致（孤儿审批自愈只需要会话侧信息，快照缺失只会让宿主少一次
+    /// 可查询的机会）。落库失败<b>不阻断</b>通知（best-effort：宿主通道才是主路径），但会记 Warning。
     /// </remarks>
     /// <param name="channel">宿主批准通道（可空）。</param>
-    /// <param name="store">
-    /// 待确认快照存储（可空；未注册 ⇒ 退化为「只通知不落库」，单进程内仍可用）。
-    /// </param>
+    /// <param name="store">待确认快照存储（可空；未注册 ⇒ 退化为「只通知不落库」，单进程内仍可用）。</param>
     /// <param name="logger">日志（可空）。</param>
     /// <param name="pending">待确认项。</param>
     /// <param name="cancellationToken">取消令牌。</param>

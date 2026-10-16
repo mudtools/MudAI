@@ -9,9 +9,7 @@ using Mud.AI.ToolSurface.Extraction;
 
 namespace Mud.AI.ToolSurface.Schema;
 
-/// <summary>
-/// L2 描述符渲染器：把 <see cref="CapabilityEntry"/> 渲染为工具描述符常量（编译期 JSON 文本）。
-/// </summary>
+/// <summary>L2 描述符渲染器：把 <see cref="CapabilityEntry"/> 渲染为工具描述符常量（编译期 JSON 文本）。</summary>
 /// <remarks>
 /// <para>
 /// <b>非纯引擎</b>：信封扩展键 <c>x-feishu</c> 与 <c>identity</c> 字面量是剖面事实——扩展键改读
@@ -20,19 +18,15 @@ namespace Mud.AI.ToolSurface.Schema;
 /// <para>
 /// <b>形状（单一真相源）</b>：信封 = <c>name</c> / <c>description</c> / <c>parameters</c>（纯参数 Schema）+
 /// <c>{SchemaExtensionKey}</c>（<c>risk</c> / <c>is_write</c> / <c>identity</c> / <c>required_scopes</c>）。
-/// </para>
-/// <para>
-/// <b>口径纪律</b>：<c>parameters</c> 是<b>纯参数 JSON Schema</b>，供宿主 MEAI 契约直接消费；信封其余字段<b>不得</b>进入 Schema 关键字空间（Schema 只反映 parameters 载荷）。
-/// </para>
-/// <para>
-/// <b>风险轴</b>：<c>risk</c> 是策略判定的权威字段；<c>is_write</c> 是 <c>risk != "read"</c> 的<b>派生</b>布尔（同一处产出，不构成双真相源），保留它是为了让注册器与既有契约守卫的读法不变。
+/// <b>口径纪律</b>：<c>parameters</c> 是<b>纯参数 JSON Schema</b>，供宿主 MEAI 契约直接消费；信封其余字段<b>不得</b>
+/// 进入 Schema 关键字空间（Schema 只反映 parameters 载荷）。
+/// <b>风险轴</b>：<c>risk</c> 是策略判定的权威字段；<c>is_write</c> 是 <c>risk != "read"</c> 的<b>派生</b>布尔（同一处产出，
+/// 不构成双真相源），保留它是为了让注册器与既有契约守卫的读法不变。
 /// </para>
 /// </remarks>
 internal static class SchemaWriter
 {
-    /// <summary>
-    /// 渲染完整工具描述符 JSON（<c>name</c>/<c>description</c>/<c>parameters</c>/<c>{SchemaExtensionKey}</c>）。
-    /// </summary>
+    /// <summary>渲染完整工具描述符 JSON（<c>name</c>/<c>description</c>/<c>parameters</c>/<c>{SchemaExtensionKey}</c>）。</summary>
     /// <param name="entry">能力条目。</param>
     /// <param name="profile">当前剖面（提供信封扩展键槽）。</param>
     /// <param name="sourceMember">声明的 SDK 源成员（<c>接口.方法</c>，可空）。</param>
@@ -66,12 +60,10 @@ internal static class SchemaWriter
         }
     }
 
-    /// <summary>
-    /// 渲染 <c>parameters</c>（纯参数 JSON Schema）。
-    /// </summary>
+    /// <summary>渲染 <c>parameters</c>（纯参数 JSON Schema）。</summary>
     /// <remarks>
-    /// <b>可见性</b>：由 <see cref="DescriptorValidator"/> 消费（把"渲染产物"作为
-    /// 与"参数意图模型"独立的第二个真相来源，做 <c>required ⊆ properties</c> 的真实比对）。
+    /// <b>可见性</b>：由 <see cref="DescriptorValidator"/> 消费（把"渲染产物"作为与"参数意图模型"独立的第二个真相来源，
+    /// 做 <c>required ⊆ properties</c> 的真实比对）。
     /// </remarks>
     internal static string WriteInputSchema(CapabilityEntry entry)
     {
@@ -150,13 +142,10 @@ internal static class SchemaWriter
         return json.ToString();
     }
 
-    /// <summary>
-    /// 渲染厂商扩展块（不占用 JSON Schema 关键字空间）。
-    /// </summary>
+    /// <summary>渲染厂商扩展块（不占用 JSON Schema 关键字空间）。</summary>
     /// <remarks>
-    /// <b>可选子块的位置即契约</b>：<c>risk</c>/<c>is_write</c>/<c>identity</c>/<c>required_scopes</c> 恒出现，
-    /// <c>source</c> / <c>affordance</c> / <c>output_schema</c> 为可选且按固定顺序追加——
-    /// 顺序决定 golden 逐字节形态，调整即一次显式的契约变更。
+    /// <b>可选子块的位置即契约</b>：<c>risk</c>/<c>is_write</c>/<c>identity</c>/<c>required_scopes</c> 恒出现，<c>source</c> /
+    /// <c>affordance</c> / <c>output_schema</c> 为可选且按固定顺序追加——顺序决定 golden 逐字节形态，调整即一次显式的契约变更。
     /// </remarks>
     private static string WriteExtension(CapabilityEntry entry, string? sourceMember, AffordanceEntry? affordance)
     {

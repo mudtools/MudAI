@@ -10,22 +10,18 @@ using Mud.AI.Abstractions.Conversations;
 
 namespace Mud.AI.Agent.Sessions;
 
-/// <summary>
-/// 进程内内存会话存储（中立默认实现：<see cref="ISessionStore"/> 面，测试/单机开箱可用）。
-/// </summary>
+/// <summary>进程内内存会话存储（中立默认实现：<see cref="ISessionStore"/> 面，测试/单机开箱可用）。</summary>
 /// <remarks>
 /// <para>
-/// 基于 <see cref="ConcurrentDictionary{TKey,TValue}"/>，TTL 为<b>软过期</b>：读取时判定
-/// <c>{expireTimestampMs}|{payload}</c> 时间戳，过期即删除并视为 miss（对齐 Redis 实现的读侧有效性判定；
-/// Redis 由服务器键过期 + 读侧时间戳双重兜底）。
+/// 基于 <see cref="ConcurrentDictionary{TKey,TValue}"/>，TTL 为<b>软过期</b>：读取时判定 <c>{expireTimestampMs}|{payload}</c>
+/// 时间戳，过期即删除并视为 miss（对齐 Redis 实现的读侧有效性判定；Redis 由服务器键过期 + 读侧时间戳双重兜底）。
 /// </para>
 /// <para>
-/// <b>过期回收</b>：软过期只在<b>读同一键</b>时删除，<b>不再被读取</b>的键（一次性会话、被移出群的用户）
-/// 永不回收 ⇒ 长跑宿主的内存随会话数单调增长。故在写入路径按阈值 + 节流触发一次<b>惰性分摊清扫</b>：
-/// ≤<see cref="SweepThreshold"/> 条目时 O(1)；超过后按 <see cref="SweepEveryWrites"/> 次写入节流，
-/// 单次成本上界 <see cref="SweepMaxRemoval"/>，<b>不引入后台线程/定时器</b>，语义与 Redis 服务端过期一致。
-/// <b>能力边界</b>：清扫只回收<b>已过期</b>条目——TTL 窗口内的<b>新鲜</b>条目仍无数量上限（TTL 缓存的固有语义）；
-/// 需要按数量/字节上限淘汰的宿主应改用分布式后端，本实现仅适合单实例部署与测试。
+/// <b>过期回收</b>：软过期只在<b>读同一键</b>时删除，<b>不再被读取</b>的键（一次性会话、被移出群的用户）永不回收 ⇒
+/// 长跑宿主的内存随会话数单调增长。故在写入路径按阈值 + 节流触发一次<b>惰性分摊清扫</b>：≤<see cref="SweepThreshold"/> 条目时
+/// O(1)；超过后按 <see cref="SweepEveryWrites"/> 次写入节流，单次成本上界 <see cref="SweepMaxRemoval"/>，<b>不引入后台
+/// 线程/定时器</b>，语义与 Redis 服务端过期一致。<b>能力边界</b>：清扫只回收<b>已过期</b>条目——TTL 窗口内的<b>新鲜</b>
+/// 条目仍无数量上限（TTL 缓存的固有语义）；需要按数量/字节上限淘汰的宿主应改用分布式后端，本实现仅适合单实例部署与测试。
 /// </para>
 /// </remarks>
 public sealed class MemorySessionStore : ISessionStore
@@ -41,13 +37,11 @@ public sealed class MemorySessionStore : ISessionStore
     /// <summary>单次清扫最多回收的条目数（成本上界，与回收效果解耦）。</summary>
     public const int SweepMaxRemoval = 256;
 
-    /// <summary>
-    /// 中立默认 TTL（24 小时）。
-    /// </summary>
+    /// <summary>中立默认 TTL（24 小时）。</summary>
     /// <remarks>
-    /// <b>产品必须显式注入自己的 TTL 单一阈值源</b>（如飞书侧的 <c>FeishuConversationOptions.SessionTtl</c>），
-    /// 本默认值只服务于「中立包独立使用」的场景（宿主/测试直接构造）——绝不作为产品默认值的来源，
-    /// 否则「TTL 单一阈值源」这句契约会退化成两份可漂移的字面量。
+    /// <b>产品必须显式注入自己的 TTL 单一阈值源</b>（如飞书侧的 <c>FeishuConversationOptions.SessionTtl</c>），本默认值只
+    /// 服务于「中立包独立使用」的场景（宿主/测试直接构造）——绝不作为产品默认值的来源，否则「TTL 单一阈值源」这句契约
+    /// 会退化成两份可漂移的字面量。
     /// </remarks>
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromHours(24);
 
@@ -61,9 +55,7 @@ public sealed class MemorySessionStore : ISessionStore
     /// <summary>清扫调用计数（诊断/测试观测面，用于断言节流效果）。</summary>
     public int SweepCallCount;
 
-    /// <summary>
-    /// 初始化内存会话存储。
-    /// </summary>
+    /// <summary>初始化内存会话存储。</summary>
     /// <param name="ttl">会话 TTL（可空 ⇒ <see cref="DefaultTtl"/>；非正即抛）。</param>
     /// <param name="utcNow">UTC 时钟（测试注入用；缺省 <see cref="DateTimeOffset.UtcNow"/>）。</param>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="ttl"/> 非正。</exception>
