@@ -9,35 +9,27 @@ using Mud.AI.Agent.Tools.Security;
 
 namespace Mud.AI.Agent.Tools.Args;
 
-/// <summary>
-/// 入站净化阶段（模型 → 工具参数）：拒绝携带控制字符 / 危险 Unicode 的参数值。
-/// </summary>
+/// <summary>入站净化阶段（模型 → 工具参数）：拒绝携带控制字符 / 危险 Unicode 的参数值。</summary>
 /// <remarks>
 /// <para>
-/// <b>拒绝而非剥离</b>：剥离会静默改写用户内容（模型发出去的与下游看到的不一致），拒绝让模型自愈；
-/// 出站（<see cref="Results.ToolResultSanitizer"/>）取剥离是有意相反的合理取法——下游数据 → 模型上下文，去噪即保留信息。
+/// <b>拒绝而非剥离</b>：剥离会静默改写用户内容（模型发出去的与下游看到的不一致），拒绝让模型自愈；出站
+/// （<see cref="Results.ToolResultSanitizer"/>）取剥离是有意相反的合理取法——下游数据 → 模型上下文，去噪即保留信息。
+/// <b>与官方 CLI 的偏离（重要）</b>：官方 <c>charcheck.go</c> 无差别拒绝 <c>U+200D</c>，本仓不能照抄——它是 Emoji ZWJ
+/// 序列的合法组成，本实现只拒绝孤立的零宽字符（Emoji ZWJ 序列完整放行）。
 /// </para>
 /// <para>
-/// <b>与官方 CLI 的偏离（重要）</b>：官方 <c>charcheck.go</c> 无差别拒绝 <c>U+200D</c>，本仓不能照抄——
-/// 它是 Emoji ZWJ 序列的合法组成，本实现只拒绝孤立的零宽字符（Emoji ZWJ 序列完整放行）。
+/// <b>保留 <c>\n</c>/<c>\r</c>/<c>\t</c></b>；但独立的 <c>\r</c>（非 <c>\r\n</c>）被拒——它是 HTTP 头注入（CRLF）的
+/// 经典载体，参数被拼进 multipart/header 的路径无法在类型层面排除。
+/// <b>与授权链的顺序</b>：在上下文校验之后、授权门禁<b>之前</b>执行——审计可能记录参数，须看到已净化的形态。
 /// </para>
-/// <para>
-/// <b>保留 <c>\n</c>/<c>\r</c>/<c>\t</c></b>；但独立的 <c>\r</c>（非 <c>\r\n</c>）被拒——它是 HTTP 头注入
-/// （CRLF）的经典载体，参数被拼进 multipart/header 的路径无法在类型层面排除。
-/// </para>
-/// <para><b>与授权链的顺序</b>：在上下文校验之后、授权门禁<b>之前</b>执行——审计可能记录参数，须看到已净化的形态。</para>
 /// </remarks>
 public static class ToolArgumentSanitizer
 {
-    /// <summary>
-    /// 单个参数值的长度上限（超限拒绝）。默认 20000 字符：远大于任何真实工具入参
-    /// （最大的 <c>bitable.add_record.fields</c> 也在千字符量级），只用于拦住"模型把整篇文档塞进参数"的病态输入。
-    /// </summary>
+    /// <summary>单个参数值的长度上限（超限拒绝）。默认 20000 字符：远大于任何真实工具入参（最大的
+    /// <c>bitable.add_record.fields</c> 也在千字符量级），只用于拦住"模型把整篇文档塞进参数"的病态输入。</summary>
     public const int MaxArgumentValueLength = 20000;
 
-    /// <summary>
-    /// 校验全部参数（返回首个违规描述；全部合法返回 <see langword="null"/>）。
-    /// </summary>
+    /// <summary>校验全部参数（返回首个违规描述；全部合法返回 <see langword="null"/>）。</summary>
     /// <param name="arguments">模型 tool_call 入参。</param>
     /// <returns>违规描述（含参数名与原因），或 <see langword="null"/>。</returns>
     public static string? Validate(IReadOnlyDictionary<string, object?> arguments)
@@ -130,14 +122,12 @@ public static class ToolArgumentSanitizer
         return null;
     }
 
-    /// <summary>
-    /// 校验<b>邮件头字段</b>值：拒绝任何 <c>CR</c>/<c>LF</c>——头字段换行是 SMTP 头注入的
-    /// 经典载体（<c>Subject: "x\r\nBcc: attacker@evil"</c> 可凭空插入收件人）。
-    /// </summary>
+    /// <summary>校验<b>邮件头字段</b>值：拒绝任何 <c>CR</c>/<c>LF</c>——头字段换行是 SMTP 头注入的经典载体
+    /// （<c>Subject: "x\r\nBcc: attacker@evil"</c> 可凭空插入收件人）。</summary>
     /// <remarks>
-    /// <b>为什么不改 <see cref="ValidateText"/></b>：全局入站净化<b>必须</b>允许 CRLF/LF
-    /// （正文、文档内容、消息文本都靠换行表达结构），收紧会影响全部域；故换行禁忌只施加于
-    /// 「会被逐行解析成头部的字段」这一小面，由调用方（邮件 EML 构造）显式使用本方法。
+    /// <b>为什么不改 <see cref="ValidateText"/></b>：全局入站净化<b>必须</b>允许 CRLF/LF（正文、文档内容、消息文本都靠
+    /// 换行表达结构），收紧会影响全部域；故换行禁忌只施加于「会被逐行解析成头部的字段」这一小面，由调用方（邮件 EML
+    /// 构造）显式使用本方法。
     /// </remarks>
     /// <param name="name">字段名（错误消息用）。</param>
     /// <param name="value">字段值。</param>
@@ -167,14 +157,12 @@ public static class ToolArgumentSanitizer
     private static bool IsForbiddenControl(char ch)
         => SecurityTextPrimitives.IsControl(ch);
 
-    /// <summary>
-    /// 禁止的"危险 Unicode"：孤立零宽字符、Bidi 覆盖/嵌入/隔离、BOM 与各类不可见控制。
-    /// </summary>
+    /// <summary>禁止的"危险 Unicode"：孤立零宽字符、Bidi 覆盖/嵌入/隔离、BOM 与各类不可见控制。</summary>
     /// <remarks>
-    /// <b>Emoji 例外</b>：<c>U+200D</c>（ZWJ）与 <c>U+FE0F</c>（变体选择符）在 Emoji 序列中是合法组成，
-    /// 仅当它们<b>孤立出现</b>（前后为普通空白/ASCII/边界）时才判为可疑。此处采用"邻近码位启发式"：
-    /// 前一个码位或后一个码位属于 emoji 常见区段（或本身就是 ZWJ/变体选择符的同伴）即放行。
-    /// 该启发式刻意保守——宁可放过也不误伤（误伤用户正文比漏检零宽的后果更严重）。
+    /// <b>Emoji 例外</b>：<c>U+200D</c>（ZWJ）与 <c>U+FE0F</c>（变体选择符）在 Emoji 序列中是合法组成，仅当它们<b>孤立
+    /// 出现</b>（前后为普通空白/ASCII/边界）时才判为可疑。此处采用"邻近码位启发式"：前一个码位或后一个码位属于 emoji
+    /// 常见区段（或本身就是 ZWJ/变体选择符的同伴）即放行。该启发式刻意保守——宁可放过也不误伤（误伤用户正文比漏检
+    /// 零宽的后果更严重）。
     /// </remarks>
     private static bool IsForbiddenUnicode(char ch, string text, int index)
         => ch switch
@@ -188,9 +176,7 @@ public static class ToolArgumentSanitizer
             _ => false,
         };
 
-    /// <summary>
-    /// 判断该位置是否处于 Emoji 序列内（前后码位之一属 emoji 常见区段）。
-    /// </summary>
+    /// <summary>判断该位置是否处于 Emoji 序列内（前后码位之一属 emoji 常见区段）。</summary>
     private static bool IsEmojiAdjacent(string text, int index)
     {
         var before = index > 0 ? text[index - 1] : '\0';

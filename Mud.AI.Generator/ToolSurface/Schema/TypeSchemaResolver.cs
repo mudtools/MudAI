@@ -9,9 +9,7 @@ using Mud.AI.ToolSurface.Extraction;
 
 namespace Mud.AI.ToolSurface.Schema;
 
-/// <summary>
-/// 类型 → JSON Schema 递归推导器（纯机制引擎单元；返回包装解包表读剖面槽）。
-/// </summary>
+/// <summary>类型 → JSON Schema 递归推导器（纯机制引擎单元；返回包装解包表读剖面槽）。</summary>
 /// <remarks>
 /// <para>
 /// <b>接缝注册</b>：实现 Extraction 层的 <see cref="IToolSurfaceTypeSchemaResolver"/>，由<b>入口生成器</b>在
@@ -19,11 +17,7 @@ namespace Mud.AI.ToolSurface.Schema;
 /// </para>
 /// <para>
 /// <b>泛化点</b>（上游硬编码 → 剖面槽）：<c>FeishuApiResult&lt;T&gt;</c> 等 4 个泛型 + <c>FeishuNullDataApiResult</c> 的解包表 →
-/// <see cref="SdkToolProfileModel.OutputWrapperNamespace"/> + <see cref="SdkToolProfileModel.OutputWrapperTypeNames"/>（<c>|</c> 分隔清单，按「命名空间全等 + 类型简单名全等」匹配）。
-/// </para>
-/// <para>
-/// <b>解包行为统一规则</b>（上游 4 个泛型 3 种分支的收敛）：清单内的泛型包装类型 → 上溯基类链取 <c>Data</c> 属性类型
-/// （无 <c>Data</c> 时回退单泛型实参）；清单内的非泛型类型 → 无载荷（<c>null</c>）。唯一已知行为差：<c>FeishuApiListResult&lt;T&gt;</c> 由返回信封改为返回 <c>Data</c> 类型（仅 <c>items</c>），与 PageList 族的信封剥离口径一致。
+/// <see cref="SdkToolProfileModel.OutputWrapperNamespace"/> + <see cref="SdkToolProfileModel.OutputWrapperTypeNames"/>（<c>|</c> 分隔清单，按「命名空间全等 + 类型简单名全等」匹配）；<b>解包行为统一规则</b>（上游 4 个泛型 3 种分支的收敛）：清单内的泛型包装类型 → 上溯基类链取 <c>Data</c> 属性类型（无 <c>Data</c> 时回退单泛型实参）；清单内的非泛型类型 → 无载荷（<c>null</c>）。唯一已知行为差：<c>FeishuApiListResult&lt;T&gt;</c> 由返回信封改为返回 <c>Data</c> 类型（仅 <c>items</c>），与 PageList 族的信封剥离口径一致。
 /// </para>
 /// <para>
 /// 四条收敛规则（防 schema 爆炸）：1. 只发射带 [JsonPropertyName] 的属性；2. 深度上限 <see cref="MaxOutputDepth"/> = 4；3. 循环引用检测（以 OriginalDefinition 的完整元数据名入 HashSet 递归栈）；4. required 不伪造（非可空引用 / 非 Nullable&lt;T&gt; 值类型 → required）。
@@ -50,14 +44,11 @@ internal sealed class TypeSchemaResolver : IToolSurfaceTypeSchemaResolver
         _wrapperTypeNames = profile.OutputWrapperTypeNames;
     }
 
-    /// <summary>
-    /// 本次解析中被截断的位置（槽位 009：深度超限 / 循环引用）——<b>供上层聚合上报</b>。
-    /// </summary>
+    /// <summary>本次解析中被截断的位置（槽位 009：深度超限 / 循环引用）——<b>供上层聚合上报</b>。</summary>
     /// <remarks>
-    /// <b>为什么是"实例内收集 + 上层聚合"而不是"逐处上报"</b>：SDK 中层级超过
-    /// <see cref="MaxOutputDepth"/> 的 DTO 数量可观，逐处上报会产生成千条警告淹没构建输出
-    /// （槽位 018 的覆盖报告已确立"聚合单条"的体例）。
-    /// 本解析器只负责<b>如实记录</b>，聚合与上报由生成器在拿到全部模型的阶段一次完成。
+    /// <b>为什么是"实例内收集 + 上层聚合"而不是"逐处上报"</b>：SDK 中层级超过 <see cref="MaxOutputDepth"/> 的 DTO 数量
+    /// 可观，逐处上报会产生成千条警告淹没构建输出（槽位 018 的覆盖报告已确立"聚合单条"的体例）。本解析器只负责<b>如实
+    /// 记录</b>，聚合与上报由生成器在拿到全部模型的阶段一次完成。
     /// </remarks>
     public IReadOnlyList<string> Truncations => _truncations;
 
@@ -86,10 +77,8 @@ internal sealed class TypeSchemaResolver : IToolSurfaceTypeSchemaResolver
         }
     }
 
-    /// <summary>
-    /// 解包信封类型（按剖面解包表）：包装清单内的泛型 → 上溯基类链取 <c>Data</c> 属性类型；
-    /// 清单内的非泛型 → 无载荷；清单外类型直接作为 payload 返回。
-    /// </summary>
+    /// <summary>解包信封类型（按剖面解包表）：包装清单内的泛型 → 上溯基类链取 <c>Data</c> 属性类型；清单内的非泛型 →
+    /// 无载荷；清单外类型直接作为 payload 返回。</summary>
     internal ITypeSymbol? UnwrapEnvelope(ITypeSymbol type)
     {
         if (type is INamedTypeSymbol named

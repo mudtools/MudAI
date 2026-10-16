@@ -16,9 +16,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Mud.AI;
 
-/// <summary>
-/// 代码生成器基类。
-/// </summary>
+/// <summary>代码生成器基类。</summary>
 public abstract class TransitiveCodeGenerator : IIncrementalGenerator
 {
     /// <inheritdoc/>
@@ -31,15 +29,11 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
     protected static string GeneratedCodeAttribute => GeneratedCodeConsts.GeneratedCodeAttribute;
 
 
-    /// <summary>
-    /// 获取生成代码的默认引入的命名空间。
-    /// </summary>
-    /// <returns></returns>
+    /// <summary>获取生成代码默认引入的命名空间（生成代码实际依赖的完整集合）。</summary>
+    /// <returns>默认 using 命名空间集合。</returns>
     /// <remarks>
-    /// NEW-GEN-13 修复：原默认列表仅含 4 个命名空间，不包含生成代码实际依赖的
-    /// System.Net.Http、System.Threading、System.Text.Json、Mud.AI 等。
-    /// 若子类未重写此方法且消费项目未配置 GlobalUsings.cs，生成代码可能因缺少 using 而编译失败。
-    /// 修复后扩展为生成代码实际依赖的完整命名空间集合。
+    /// 若子类未重写且消费工程未配置 GlobalUsings.cs，缺 using 会让生成代码直接编译失败——故默认集合覆盖全部实际依赖
+    /// （含 System.Net.Http、System.Threading、System.Text.Json、Mud.AI 等）。
     /// </remarks>
     protected virtual Collection<string> GetFileUsingNameSpaces()
     {
@@ -62,9 +56,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
         ];
     }
 
-    /// <summary>
-    /// 生成通用的文件头部
-    /// </summary>
+    /// <summary>生成通用的文件头部。</summary>
     /// <param name="sb">代码构建器。</param>
     /// <param name="usingNamespaces">需要引入的命名空间。</param>
     /// <param name="emitNullableEnable">是否发射 #nullable enable（默认 true）。</param>
@@ -90,14 +82,10 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
         }
     }
 
-    /// <summary>
-    /// 生成通用的文件头部（使用子类提供的命名空间）。
-    /// </summary>
+    /// <summary>生成通用的文件头部（使用子类提供的命名空间）。</summary>
     /// <remarks>
-    /// G9-07：<paramref name="emitNullableEnable"/> 由调用方显式传入（参数化），移除原实例可变属性
-    /// <c>EmitNullableEnable</c>——增量生成器实例跨编译代复用，可变属性依赖「每次 ExecuteGenerator
-    /// 先赋值后生成」的顺序纪律，属脆弱的隐式契约；实现类文件路径（ClassStructureGenerator）已是参数传递，
-    /// 此处对齐为同一机制。
+    /// <paramref name="emitNullableEnable"/> 由调用方显式传入（参数化），不设实例可变属性——增量生成器实例跨编译代
+    /// 复用，可变属性依赖「每次生成前先赋值」的顺序纪律，属脆弱的隐式契约；实现类文件路径已是参数传递，此处对齐同一机制。
     /// </remarks>
     public void GenerateFileHeader(StringBuilder sb, bool emitNullableEnable)
     {
@@ -105,9 +93,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
     }
 
 
-    /// <summary>
-    /// 获取XML文档注释
-    /// </summary>
+    /// <summary>获取 XML 文档注释。</summary>
     protected string GetXmlDocumentation(SyntaxNode syntaxNode)
     {
         if (syntaxNode == null)
@@ -125,9 +111,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
         return string.Empty;
     }
 
-    /// <summary>
-    /// 报告生成错误的诊断信息（带精确位置）
-    /// </summary>
+    /// <summary>报告生成错误的诊断信息（带精确位置）。</summary>
     /// <param name="context">源码生成上下文</param>
     /// <param name="descriptor">诊断描述符</param>
     /// <param name="className">类名</param>
@@ -143,14 +127,11 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
         context.ReportDiagnostic(Diagnostic.Create(descriptor, location ?? Location.None, className, GeneratorDebugLogger.FormatExceptionMessage(exception)));
     }
 
-    /// <summary>
-    /// 生成代码语法验证的跳过开关：环境变量 <c>MudHttpSkipGeneratedValidation=true|1</c> 时跳过。
-    /// </summary>
+    /// <summary>生成代码语法验证的跳过开关：环境变量 <c>MudHttpSkipGeneratedValidation=true|1</c> 时跳过。</summary>
     /// <remarks>
-    /// 用环境变量而非 build_property 的原因：本验证方法标 <c>[Conditional("DEBUG")]</c>，
-    /// Release 编译时调用点被整体剥离，MSBuild 编译期属性无消费点；而 DEBUG 下需要在
-    /// 运行于编译器进程内的验证执行时机做运行时判定，环境变量是唯一稳定通道。
-    /// 每次调用读取（而非静态缓存）以保持可测试性；读取开销远小于被跳过的 ParseText 全量解析。
+    /// 用环境变量而非 build_property 的原因：本验证方法标 <c>[Conditional("DEBUG")]</c>，Release 编译时调用点被整体
+    /// 剥离，MSBuild 编译期属性无消费点；而 DEBUG 下需要在运行于编译器进程内的验证执行时机做运行时判定，环境变量是
+    /// 唯一稳定通道。每次调用读取（而非静态缓存）以保持可测试性；读取开销远小于被跳过的 ParseText 全量解析。
     /// </remarks>
     internal static bool ShouldSkipGeneratedValidation()
     {
@@ -159,12 +140,8 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
             || string.Equals(value, "1", StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// 在 DEBUG 构建下验证生成代码的语法正确性。
-    /// 使用 <c>CSharpSyntaxTree.ParseText</c> 解析生成代码，发现语法错误时记录日志。
-    /// Release 构建下此方法被 [Conditional("DEBUG")] 移除，零开销；
-    /// DEBUG 下可经 <c>MudHttpSkipGeneratedValidation=true</c> 环境变量跳过。
-    /// </summary>
+    /// <summary>在 DEBUG 构建下验证生成代码的语法正确性（<c>CSharpSyntaxTree.ParseText</c> 解析，错误记日志）；
+    /// Release 下被 [Conditional("DEBUG")] 移除，零开销；DEBUG 下可经 <c>MudHttpSkipGeneratedValidation=true</c> 跳过。</summary>
     [Conditional("DEBUG")]
     internal static void ValidateGeneratedCode(string hintName, string code)
     {
@@ -189,9 +166,7 @@ public abstract class TransitiveCodeGenerator : IIncrementalGenerator
         }
     }
 
-    /// <summary>
-    /// 添加生成源代码，并在 DEBUG 构建下验证语法正确性。
-    /// </summary>
+    /// <summary>添加生成源代码，并在 DEBUG 构建下验证语法正确性。</summary>
     internal static void AddSourceValidated(SourceProductionContext context, string hintName, string code)
     {
         ValidateGeneratedCode(hintName, code);

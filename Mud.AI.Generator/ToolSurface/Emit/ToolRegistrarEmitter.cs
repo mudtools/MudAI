@@ -10,23 +10,21 @@ using Mud.AI.ToolSurface.Extraction;
 
 namespace Mud.AI.ToolSurface.Emit;
 
-/// <summary>
-/// Tier C 发射器：产出 <c>{P}DomainRegistrars/*.g.cs</c>（每执行器一个域注册器文件）与
-/// <c>{Plural}ServiceCollectionCoreExtensions.g.cs</c>（逐执行器 DI 装配）。
-/// </summary>
+/// <summary>Tier C 发射器：产出 <c>{P}DomainRegistrars/*.g.cs</c>（每执行器一个域注册器文件）与
+/// <c>{Plural}ServiceCollectionCoreExtensions.g.cs</c>（逐执行器 DI 装配）。</summary>
 /// <remarks>
 /// <para>
 /// 泛化点：owner 门槛（上游第三处同值常量 <c>CoreNamespace</c>）收敛为 <see cref="SdkToolProfileModel.OwnerAssembly"/>
 /// 单一槽消费；域注册器命名空间 → <see cref="SdkToolProfileModel.RegistrationNamespace"/>，DI 装配命名空间 →
 /// <see cref="SdkToolProfileModel.ContractNamespace"/>（产物落点语义，与 owner 门槛值同串但独立消费）；DI 装配文件名用
 /// <see cref="SdkToolProfileModel.ProductPluralPrefix"/>（<b>不是</b> ProductPrefix+s）；绑定类型名 →
-/// <see cref="SdkToolProfileModel.BindingTypeName"/>；注册器接口名/登记表/注册助手/注册表/名字契约均由 ProductPrefix 推导（不入槽）；
-/// 诊断 MUDFT022/023 → factory 槽位 22/23（024/025 已由扫描层产出为 PendingDiagnostic）。
+/// <see cref="SdkToolProfileModel.BindingTypeName"/>；注册器接口名/登记表/注册助手/注册表/名字契约均由 ProductPrefix 推导
+/// （不入槽）；诊断 MUDFT022/023 → factory 槽位 22/23（024/025 已由扫描层产出为 PendingDiagnostic）。
 /// </para>
 /// <para>
 /// <b>分组键 = 执行器类</b>（不是「模块」）：一枚 handler 特性同时携带工具名与执行器类型，故注册器 / DI 核心方法可按
-/// 执行器类机械聚合。「Write 域跨多模块」「一模块一执行器」的伪约束与「软缺席语义需人工声明」由此消失
-/// （改为由执行器构造器参数的符号事实推导，见 <see cref="ToolDependencyKind"/>）。
+/// 执行器类机械聚合。「Write 域跨多模块」「一模块一执行器」的伪约束与「软缺席语义需人工声明」由此消失（改为由执行器
+/// 构造器参数的符号事实推导，见 <see cref="ToolDependencyKind"/>）。
 /// </para>
 /// </remarks>
 internal static class ToolRegistrarEmitter
@@ -43,9 +41,7 @@ internal static class ToolRegistrarEmitter
     public static string RegistrarsOutputFolder(SdkToolProfileModel profile)
         => profile.ProductPrefix + "DomainRegistrars";
 
-    /// <summary>
-    /// 发射注册器与 DI 装配（仅名字契约所有者程序集；产物引用 owner 程序集的 <c>internal</c> 类型）。
-    /// </summary>
+    /// <summary>发射注册器与 DI 装配（仅名字契约所有者程序集；产物引用 owner 程序集的 <c>internal</c> 类型）。</summary>
     /// <param name="context">源产出上下文。</param>
     /// <param name="models">Tier C 工具模型集合。</param>
     /// <param name="profile">当前剖面（门槛 / 命名空间 / 绑定类型名 / 前缀槽的唯一来源）。</param>
@@ -164,18 +160,16 @@ internal static class ToolRegistrarEmitter
     private static string RegistrarHintName(string registrarTypeName, SdkToolProfileModel profile)
         => $"{RegistrarsOutputFolder(profile)}/{registrarTypeName}.g.cs";
 
-    /// <summary>
-    /// 找出「派生名碰撞」的执行器并给出消歧后缀（无碰撞者为空串）。
-    /// </summary>
+    /// <summary>找出「派生名碰撞」的执行器并给出消歧后缀（无碰撞者为空串）。</summary>
     /// <remarks>
     /// <para>
-    /// 注册器名与核心方法名**分别**判碰撞——两者派生规则不同，可能一个撞另一个不撞
-    /// （如 <c>FooTools</c> 与 <c>FooToolTools</c>：注册器名都归约为 <c>FooToolDomainRegistrar</c>，
-    /// 核心方法名却是 <c>Add{SDK}FooToolsCore</c> / <c>Add{SDK}FooToolToolsCore</c>）。
+    /// 注册器名与核心方法名**分别**判碰撞——两者派生规则不同，可能一个撞另一个不撞（如 <c>FooTools</c> 与
+    /// <c>FooToolTools</c>：注册器名都归约为 <c>FooToolDomainRegistrar</c>，核心方法名却是
+    /// <c>Add{SDK}FooToolsCore</c> / <c>Add{SDK}FooToolToolsCore</c>）。
     /// </para>
     /// <para>
-    /// 后缀取自执行器<b>全限定名中的命名空间</b>（剥离非字母数字字符）——<c>命名空间 + 类名</c>在 C# 中唯一，
-    /// 故后缀能消除碰撞；且它与编译顺序无关（增量构建下名字稳定，不会引起无谓重发）。
+    /// 后缀取自执行器<b>全限定名中的命名空间</b>（剥离非字母数字字符）——<c>命名空间 + 类名</c>在 C# 中唯一，故后缀能
+    /// 消除碰撞；且它与编译顺序无关（增量构建下名字稳定，不会引起无谓重发）。
     /// </para>
     /// </remarks>
     private static Dictionary<string, string> ResolveCollidingNames(

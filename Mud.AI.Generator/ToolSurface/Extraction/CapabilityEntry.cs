@@ -7,18 +7,13 @@
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>
-/// L1 能力目录条目：从 Roslyn symbol 抽取的方法级结构化事实（纯数据，无 Schema 字符串）。
-/// </summary>
+/// <summary>能力目录条目：从 Roslyn symbol 抽取的方法级结构化事实（纯数据，无 Schema 字符串）。</summary>
 /// <remarks>
 /// <para>
-/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CapabilityEntry</c>；令牌身份从上游
-/// <c>ToolIdentity</c> 统一为引擎镜像 <see cref="ToolSurfaceTokenKind"/>（令牌身份是枚举槽而非命名前缀，
-/// 渲染字面量一律经 <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>）。
-/// </para>
-/// <para>
-/// 手写值相等（而非 record）：生成器宿主为 netstandard2.0，仓库纪律禁用 record。
-/// 值相等供增量管线缓存。
+/// 移植自上游 <c>Mud.Feishu.AI.Tools.Extraction.CapabilityEntry</c>；令牌身份从上游 <c>ToolIdentity</c> 统一为引擎镜像
+/// <see cref="ToolSurfaceTokenKind"/>（令牌身份是枚举槽而非命名前缀，渲染字面量一律经
+/// <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>）。手写值相等（而非 record）：生成器宿主为 netstandard2.0，
+/// 仓库纪律禁用 record；值相等供增量管线缓存。
 /// </para>
 /// </remarks>
 internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
@@ -64,44 +59,36 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
     public ToolSurfaceRisk Risk { get; }
     public IReadOnlyList<string> Scopes { get; }
 
-    /// <summary>
-    /// 工具返回值的 JSON Schema（可空；由 Schema 层的类型 Schema 解析器从 SDK 返回类型推导）。
-    /// </summary>
+    /// <summary>工具返回值的 JSON Schema（可空；由 Schema 层的类型 Schema 解析器从 SDK 返回类型推导）。</summary>
     /// <remarks>
     /// <para>
-    /// 消费面（两条皆为<b>构建期</b>信号）：
-    /// ① 写入描述符信封的 <c>{SchemaExtensionKey}.output_schema</c>（剖面槽，供宿主与生成器产物做契约比对）；
-    /// ② 驱动覆盖报告的 OutputSchemaRate 与截断告警（槽位 009）。
+    /// 消费面（两条皆为<b>构建期</b>信号）：① 写入描述符信封的 <c>{SchemaExtensionKey}.output_schema</c>（剖面槽，
+    /// 供宿主与生成器产物做契约比对）；② 驱动覆盖报告的 OutputSchemaRate 与截断告警（槽位 009）。
     /// </para>
     /// <para>
-    /// <b>不接线到运行时结果投影</b>：运行期字段裁剪与各执行器的<b>有意策展投影</b>冲突——
-    /// 策展后的键名并不都在 output_schema 的顶层字段集内，接线会把结果裁成空对象。
+    /// <b>不接线到运行时结果投影</b>：运行期字段裁剪与各执行器的<b>有意策展投影</b>冲突——策展后的键名并不都在
+    /// output_schema 的顶层字段集内，接线会把结果裁成空对象。
     /// </para>
     /// </remarks>
     public string? OutputSchemaJson { get; }
 
-    /// <summary>
-    /// 输出 Schema 推导过程中的截断样本（深度超限 / 循环引用）。
-    /// </summary>
+    /// <summary>输出 Schema 推导过程中的截断样本（深度超限 / 循环引用）。</summary>
     /// <remarks>
-    /// 由 Schema 层解析器在推导时记录，生成器在拿到全部模型后<b>聚合为单条</b>槽位 009 上报——
-    /// 逐处上报会因 SDK 中深层 DTO 众多而淹没构建输出。
+    /// 由 Schema 层解析器在推导时记录，生成器在拿到全部模型后<b>聚合为单条</b>槽位 009 上报——逐处上报会因 SDK 中深层
+    /// DTO 众多而淹没构建输出。
     /// </remarks>
     public IReadOnlyList<string> OutputSchemaTruncations { get; }
 
-    /// <summary>
-    /// 条件必填组：外层每项是一个"至少提供一个"的组，内层是该组的参数名。
-    /// </summary>
+    /// <summary>条件必填组：外层每项是一个"至少提供一个"的组，内层是该组的参数名。</summary>
     /// <remarks>
     /// <para>
     /// 声明面是工具特性的 <c>AnyOf = ["user_id|room_id"]</c>，渲染成参数 Schema 的
     /// <c>"anyOf": [{"required":["user_id"]},{"required":["room_id"]}]</c>。
     /// </para>
     /// <para>
-    /// <b>为什么必须进相等字段集</b>：本类型是 Roslyn 增量管线的值键。若 <code>AnyOfGroups</code>
-    /// 不参与 <see cref="Equals(CapabilityEntry?)"/>，那么"只改 <c>AnyOf</c> 不改其它字段"时
-    /// 生成器会认为条目未变 ⇒ <b>Schema 不更新</b> ⇒ 约束悄悄丢失。
-    /// 本字段的存在由等值字段覆盖测试机械锁定。
+    /// <b>为什么必须进相等字段集</b>：本类型是 Roslyn 增量管线的值键。若 <c>AnyOfGroups</c> 不参与
+    /// <see cref="Equals(CapabilityEntry?)"/>，那么"只改 <c>AnyOf</c> 不改其它字段"时生成器会认为条目未变 ⇒
+    /// <b>Schema 不更新</b> ⇒ 约束悄悄丢失。本字段的存在由等值字段覆盖测试机械锁定。
     /// </para>
     /// </remarks>
     public IReadOnlyList<IReadOnlyList<string>> AnyOfGroups { get; }
@@ -128,19 +115,14 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
 
     public override bool Equals(object? obj) => Equals(obj as CapabilityEntry);
 
-    /// <summary>
-    /// 哈希必须覆盖 <see cref="Equals(CapabilityEntry?)"/> 认可的<b>全部</b>字段。
-    /// </summary>
+    /// <summary>哈希必须覆盖 <see cref="Equals(CapabilityEntry?)"/> 认可的<b>全部</b>字段。</summary>
     /// <remarks>
     /// <para>
-    /// <b>为什么集合字段也必须逐个入哈希</b>：只取标量字段会跳过集合与长字符串字段——
-    /// 两个仅在某集合元素上不同的条目会得到<b>相同</b>哈希。本类型是 Roslyn 增量管线的值键，
-    /// 哈希碰撞会让"每个条目都要跑一遍逐字段 <c>Equals</c>"退化，在大型 SDK 上放大为可见的编译开销。
-    /// </para>
-    /// <para>
-    /// <b>刻意不做"计数 + 首元素"的省算优化</b>：那种写法与"完全跳过"在当前碰撞面上等价
-    /// （集合内其余元素变化仍碰撞），属"补了等于没补"；而本类型的入参是编译期元数据
-    /// （集合元素数是个位数到几十），全量遍历的成本可忽略。
+    /// <b>为什么集合字段也必须逐个入哈希</b>：只取标量字段会跳过集合与长字符串字段——两个仅在某集合元素上不同的条目会
+    /// 得到<b>相同</b>哈希。本类型是 Roslyn 增量管线的值键，哈希碰撞会让"每个条目都要跑一遍逐字段 <c>Equals</c>"退化，
+    /// 在大型 SDK 上放大为可见的编译开销。
+    /// <b>刻意不做"计数 + 首元素"的省算优化</b>：那种写法与"完全跳过"在当前碰撞面上等价（集合内其余元素变化仍碰撞），
+    /// 属"补了等于没补"；而本类型的入参是编译期元数据（集合元素数是个位数到几十），全量遍历的成本可忽略。
     /// </para>
     /// <para>契约：<c>Equals</c> 为真 ⇒ 哈希必相等（本实现同时满足，且反向碰撞面已最小化）。</para>
     /// </remarks>
@@ -224,13 +206,9 @@ internal sealed class CapabilityEntry : IEquatable<CapabilityEntry?>
         return true;
     }
 
-    /// <summary>
-    /// 条件必填组的逐组逐名比较。
-    /// </summary>
-    /// <remarks>
-    /// <b>为什么不能复用 <see cref="StringsEqual"/></b>：类型是
-    /// <c>IReadOnlyList&lt;IReadOnlyList&lt;string&gt;&gt;</c>（嵌套集合），不是扁平集合。
-    /// </remarks>
+    /// <summary>条件必填组的逐组逐名比较。</summary>
+    /// <remarks><b>为什么不能复用 <see cref="StringsEqual"/></b>：类型是 <c>IReadOnlyList&lt;IReadOnlyList&lt;string&gt;&gt;</c>
+    /// （嵌套集合），不是扁平集合。</remarks>
     private static bool AnyOfGroupsEqual(
         IReadOnlyList<IReadOnlyList<string>> a,
         IReadOnlyList<IReadOnlyList<string>> b)
