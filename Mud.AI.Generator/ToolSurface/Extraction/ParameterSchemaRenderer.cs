@@ -7,13 +7,10 @@
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>
-/// 类型 → JSON Schema 推导器的<b>引擎侧接缝接口</b>。
-/// </summary>
+/// <summary>类型 → JSON Schema 推导器的<b>引擎侧接缝接口</b>。</summary>
 /// <remarks>
-/// Schema 层实现为 <c>Schema/TypeSchemaResolver.cs</c>；Extraction 层只经本接口消费其能力，
-/// 由入口生成器在 <c>Initialize</c> 中以 <see cref="ToolSurfaceSchemaResolver"/> 注册工厂（解耦接缝）。
-/// 成员形状与上游公开面一一对应。
+/// Schema 层实现为 <c>Schema/TypeSchemaResolver.cs</c>；Extraction 层只经本接口消费其能力，由入口生成器在
+/// <c>Initialize</c> 中以 <see cref="ToolSurfaceSchemaResolver"/> 注册工厂（解耦接缝）。
 /// </remarks>
 internal interface IToolSurfaceTypeSchemaResolver
 {
@@ -27,21 +24,14 @@ internal interface IToolSurfaceTypeSchemaResolver
     string ResolveTypeSchema(ITypeSymbol type, int depth, string? path = null);
 }
 
-/// <summary>
-/// <see cref="IToolSurfaceTypeSchemaResolver"/> 的注册点（Extraction ↔ Schema 层的解耦接缝）。
-/// </summary>
+/// <summary><see cref="IToolSurfaceTypeSchemaResolver"/> 的注册点（Extraction ↔ Schema 层的解耦接缝）。</summary>
 /// <remarks>
-/// <b>为什么是静态注册而非参数透传</b>：扫描入口签名已由设计文档锁定为
-/// <c>Scan(symbol, compilation, profile, factory)</c>，resolver 不占形参位；Schema 层在生成器
-/// 入口组装时注册工厂一次即可。未注册时 Extraction 层<b>降级</b>（复合 DTO 渲染为 string、
-/// output schema 不推导）——该降级分支只是兜底（注册由 <c>ToolSurfaceSourceGenerator.Initialize</c>
-/// 无条件完成），出现降级即意味着入口接线被改动。
-/// <para>
-/// <b>工厂签名必须携带 profile</b>（R-2b-5 修正）：<c>TypeSchemaResolver</c> 的解包表读
-/// <see cref="SdkToolProfileModel.OutputWrapperNamespace"/>/<see cref="SdkToolProfileModel.OutputWrapperTypeNames"/>
-/// 两个槽——只接收 <c>Compilation</c> 的工厂在多 profile 扇出下无法区分当前剖面（静态注册点会串味）。
-/// profile 经形参传入后，注册点本身与剖面无关，扇出安全。
-/// </para>
+/// <b>为什么是静态注册而非参数透传</b>：扫描入口签名已锁定为 <c>Scan(symbol, compilation, profile, factory)</c>，
+/// resolver 不占形参位。未注册时 Extraction 层<b>降级</b>（复合 DTO 渲染为 string、output schema 不推导）——
+/// 该分支只是兜底，出现降级即意味着入口接线被改动。
+/// <b>工厂签名必须携带 profile</b>：解包表读 <see cref="SdkToolProfileModel.OutputWrapperNamespace"/>/
+/// <see cref="SdkToolProfileModel.OutputWrapperTypeNames"/> 两个槽，只接收 <c>Compilation</c> 的工厂在多 profile
+/// 扇出下无法区分当前剖面；profile 经形参传入后，注册点与剖面无关，扇出安全。
 /// </remarks>
 internal static class ToolSurfaceSchemaResolver
 {
@@ -67,30 +57,19 @@ internal static class ToolSurfaceSchemaResolver
 /// 参数 → JSON Schema 片段的<b>唯一</b>推导点（从 Roslyn 符号，而非"类型名字符串"）。
 /// </summary>
 /// <remarks>
-/// <para>
 /// 泛化点仅为参数特性名（<c>ToolParameterAttribute</c> 硬编码 → 剖面槽
 /// <see cref="SdkToolProfileModel.ParameterAttributeName"/>）与 resolver/JsonText 接缝。
-/// </para>
-/// <para>
-/// 三条既有 Schema 质量缺陷在此修复（不得回退）：
-/// </para>
-/// <list type="number">
-/// <item>数组参数 <c>items</c> 恒为 <c>{"type":"string"}</c>（<c>string[]</c> 之外的元素类型全错）；</item>
-/// <item>复合 DTO 参数一律降级为 <c>type: string</c>（模型不知道可传哪些字段）；</item>
-/// <item>C# <c>enum</c> 无 <c>enum:[...]</c> 约束（模型自由发挥取值）。</item>
-/// </list>
-/// <para>
-/// 设计约束：<b>只从符号推导，不做字符串猜测</b>——类型一旦标注（含 <c>List&lt;T&gt;</c>、<c>T[]</c>、可空、枚举、<c>DateTimeOffset</c>）就产出对应的 JSON Schema 关键字。
-/// </para>
+/// 三条既有 Schema 质量缺陷在此修复（不得回退）：数组参数 <c>items</c> 恒为 <c>{"type":"string"}</c>；
+/// 复合 DTO 参数一律降级为 <c>type: string</c>（模型不知道可传哪些字段）；C# <c>enum</c> 无 <c>enum:[...]</c> 约束。
+/// 设计约束：<b>只从符号推导，不做字符串猜测</b>——类型一旦标注（含 <c>List&lt;T&gt;</c>、<c>T[]</c>、可空、枚举、
+/// <c>DateTimeOffset</c>）就产出对应的 JSON Schema 关键字。
 /// </remarks>
 internal static class ParameterSchemaRenderer
 {
     /// <summary>输入参数对象展开的最大深度（防止 DTO 图失控）。</summary>
     public const int MaxInputDepth = 2;
 
-    /// <summary>
-    /// 取模型可见的参数集合（跨方法去重，保留首个同名参数——与既有行为一致）。
-    /// </summary>
+    /// <summary>取模型可见的参数集合（跨方法去重，保留首个同名参数）。</summary>
     /// <param name="interfaceSymbol">工具特性接口符号。</param>
     /// <param name="compilation">当前编译（对象展开需要）。</param>
     /// <param name="profile">当前剖面（提供参数特性名槽）。</param>
@@ -172,12 +151,10 @@ internal static class ParameterSchemaRenderer
     }
 
     /// <summary>
-    /// 读取参数特性声明的闭集类型（<c>EnumType = typeof(X)</c>；可标注在参数或方法上）。
+    /// 读取参数特性声明的闭集类型（<c>EnumType = typeof(X)</c>；可标注在参数或方法上）。走<b>符号</b>而非类型名
+    /// 字符串：<c>typeof(X)</c> 的实参是 <see cref="TypedConstant"/>（<c>Kind == TypedConstantKind.Type</c>），
+    /// <c>Value</c> 即 <see cref="ITypeSymbol"/>。
     /// </summary>
-    /// <remarks>
-    /// 走<b>符号</b>而非类型名字符串：<c>typeof(X)</c> 的实参是 <see cref="TypedConstant"/>
-    /// （<c>Kind == TypedConstantKind.Type</c>），<c>Value</c> 即 <see cref="ITypeSymbol"/>。
-    /// </remarks>
     private static INamedTypeSymbol? GetParameterEnumType(AttributeData? attribute)
         => attribute is null ? null : ReadEnumTypeFrom(attribute);
 
@@ -203,8 +180,7 @@ internal static class ParameterSchemaRenderer
 
     /// <summary>该常量字段是否为<b>整型常量</b>（闭集只描述平台整型取值）。</summary>
     /// <remarks>
-    /// 排除 <c>const string</c> 哨兵（供 GetName 对未知值返回的占位成员）与浮点/字符常量。
-    /// <c>HasConstantValue</c> 为真时 <c>ConstantValue</c> 的运行时类型即常量类型。
+    /// 排除 <c>const string</c> 哨兵与浮点/字符常量；<c>HasConstantValue</c> 为真时 <c>ConstantValue</c> 的运行时类型即常量类型。
     /// </remarks>
     private static bool IsIntegralConstant(IFieldSymbol field)
         => field.ConstantValue is sbyte or byte or short or ushort or int or uint or long or ulong;
@@ -213,17 +189,11 @@ internal static class ParameterSchemaRenderer
     /// 渲染取值闭集：<c>{"type":"string","enum":[…]}</c>。
     /// </summary>
     /// <remarks>
-    /// <b>两类来源</b>：
-    /// <list type="bullet">
-    /// <item><b>C# enum</b>：成员取 <c>GetMembers().OfType&lt;IFieldSymbol&gt;()</c>，以 <c>HasConstantValue</c> 过滤
-    /// （滤掉 enum 的 <c>value__</c> 实例字段），渲染<b>成员名</b>（模型的自然语言契约）；</item>
-    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：同样过滤 <c>HasConstantValue</c>，渲染<b>常量名</b>而非数值——
-    /// 模型的入参是<b>字面量字符串</b>（解包期按名字映射），渲染数值会让模型传"2"而解包只认"heading1"。</item>
-    /// </list>
-    /// 返回 <see langword="false"/> 表示"该类型无可用常量成员"⇒ 调用方回退到类型推导片段。
-    /// <para>
-    /// ⚠️ 必须同时过滤非整型常量：只按 <c>HasConstantValue</c> 过滤会把 <c>const string</c> 哨兵渲染进 enum 列表，使闭集多出模型无法使用的值。
-    /// </para>
+    /// 两类来源：<b>C# enum</b> 取成员名（以 <c>HasConstantValue</c> 过滤掉 <c>value__</c> 实例字段）；
+    /// <b>常量类</b>（<c>static class</c> + <c>const int</c>）渲染<b>常量名</b>而非数值——模型入参是字面量字符串
+    /// （解包期按名字映射），渲染数值会让模型传"2"而解包只认"heading1"。返回 <see langword="false"/> 表示
+    /// "该类型无可用常量成员"⇒ 调用方回退到类型推导片段。⚠️ 必须同时过滤非整型常量：只按 <c>HasConstantValue</c>
+    /// 过滤会把 <c>const string</c> 哨兵渲染进 enum 列表，使闭集多出模型无法使用的值。
     /// </remarks>
     private static bool TryRenderClosedSet(INamedTypeSymbol closedSetType, out string fragment, out string members)
     {

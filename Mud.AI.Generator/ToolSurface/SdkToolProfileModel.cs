@@ -14,11 +14,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Mud.AI.ToolSurface;
 
-/// <summary>
-/// 令牌身份推导策略的<b>引擎侧镜像</b>（值必须与 <c>Mud.AI.Attributes.TokenKindDerivationStrategy</c> 逐值一致）。
-/// </summary>
+/// <summary>令牌身份推导策略的<b>引擎侧镜像</b>（值必须与 <c>Mud.AI.Attributes.TokenKindDerivationStrategy</c> 逐值一致）。</summary>
 /// <remarks>
-/// 工程纪律禁止生成器引用任何 <c>Mud.*</c> 运行时程序集，故引擎按 <c>int</c> 读取枚举槽并映射到本镜像；由 <c>ToolSurfaceContractTests</c> 反射比对两枚举的成员名与数值，机械锁定镜像一致。
+/// 工程纪律禁止生成器引用任何 <c>Mud.*</c> 运行时程序集，故引擎按 <c>int</c> 读取枚举槽并映射到本镜像；
+/// 由 <c>ToolSurfaceContractTests</c> 反射比对两枚举的成员名与数值，机械锁定镜像一致。
 /// </remarks>
 internal enum ToolSurfaceTokenKindStrategy
 {
@@ -28,11 +27,10 @@ internal enum ToolSurfaceTokenKindStrategy
     InfixMarker = 3,
 }
 
-/// <summary>
-/// 令牌身份枚举的<b>引擎侧镜像</b>（值与渲染字面量必须与 <c>Mud.AI.SdkTokenKind</c> / <c>SdkTokenKindContract.ToLiteral</c> 逐成员一致）。
-/// </summary>
+/// <summary>令牌身份枚举的<b>引擎侧镜像</b>（值与渲染字面量必须与 <c>Mud.AI.SdkTokenKind</c> 逐成员一致）。</summary>
 /// <remarks>
-/// 渲染字面量进 golden 与 <c>x-{{sdk}}</c> 扩展块，是逐字节契约的一部分；镜像漂移即 golden 漂移，由 <c>ToolSurfaceContractTests</c> 的逐成员比对守卫。
+/// 渲染字面量进 golden 与 <c>x-{{sdk}}</c> 扩展块，是逐字节契约的一部分；镜像漂移即 golden 漂移，
+/// 由 <c>ToolSurfaceContractTests</c> 的逐成员比对守卫。
 /// </remarks>
 internal enum ToolSurfaceTokenKind
 {
@@ -58,12 +56,8 @@ internal static class ToolSurfaceTokenKindContract
     };
 }
 
-/// <summary>
-/// 「标记串 → 令牌身份」表条目（<c>TokenKindMarkers</c> 槽的解析产物）。
-/// </summary>
-/// <remarks>
-/// 不采用 <c>record</c>：netstandard2.0 目标未注入 <c>IsExternalInit</c>（仓库纪律，见 <c>GeneratorConfigSnapshot</c> 同例）。
-/// </remarks>
+/// <summary>「标记串 → 令牌身份」表条目（<c>TokenKindMarkers</c> 槽的解析产物）。</summary>
+/// <remarks>不采用 <c>record</c>：netstandard2.0 目标未注入 <c>IsExternalInit</c>（仓库纪律）。</remarks>
 internal sealed class TokenKindMarker
 {
     public TokenKindMarker(string marker, ToolSurfaceTokenKind kind, ToolSurfaceTokenKindStrategy overrideMode)
@@ -103,16 +97,11 @@ internal sealed class TokenKindMarker
     }
 }
 
-/// <summary>
-/// 从 <c>[SdkToolProfile]</c> 的 <see cref="AttributeData"/> 读出的编译期剖面值对象（引擎唯一消费的剖面载体）。
-/// </summary>
+/// <summary>从 <c>[SdkToolProfile]</c> 读出的编译期剖面值对象（引擎唯一消费的剖面载体）。</summary>
 /// <remarks>
-/// <para>
-/// 全部槽位均为编译期字符串常量（生成器无法执行用户代码）；解析失败/缺槽不抛异常，而是记入 <see cref="MissingRequiredSlots"/>，由入口生成器上报 <c>SDKT002</c>（引擎固定诊断）。
-/// </para>
-/// <para>
-/// 实现 <see cref="IEquatable{T}"/> 全字段值相等：本类型进入增量管道（<c>IncrementalValuesProvider</c>），引用相等会让每条下游路径在每次编辑后重跑。
-/// </para>
+/// 全部槽位均为编译期字符串常量（生成器无法执行用户代码）；解析失败/缺槽不抛异常，而是记入
+/// <see cref="MissingRequiredSlots"/>，由入口生成器上报 <c>SDKT002</c>。
+/// 实现 <see cref="IEquatable{T}"/> 全字段值相等：本类型进入增量管道，引用相等会让每条下游路径在每次编辑后重跑。
 /// </remarks>
 internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
 {
@@ -511,12 +500,10 @@ internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
 
 /// <summary>剖面集合的<b>值相等</b>载体（增量管线的剖面扇出入口）。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么不能直接用 <see cref="ImmutableArray{T}"/></b>：它的相等性实现是<b>底层数组引用比较</b>——一旦把剖面数组直接投进增量图，
-/// 任何一次编译变更（哪怕只是新增一个无关类）都会让 <c>CompilationProvider.Select</c> 的产出被判定为 <c>Modified</c>，
-/// 进而让整条工具面扇出在每个击键上重跑。本类型按元素逐项比较 + 缓存哈希，使「剖面未变但编译变了」退化为 <c>Unchanged</c>，下游保持 Cached。
-/// </para>
-/// <para>顺序敏感比较：<see cref="ProfileDiscovery.ResolveProfiles"/> 已按 <c>Name</c> 排序，故顺序稳定。</para>
+/// 不能直接用 <see cref="ImmutableArray{T}"/>：它的相等性是<b>底层数组引用比较</b>，把剖面数组直接投进增量图会让
+/// 任何一次编译变更（哪怕只是新增一个无关类）把 <c>CompilationProvider.Select</c> 的产出判为 <c>Modified</c>，
+/// 整条工具面扇出在每次击键上重跑；本类型按元素逐项比较 + 缓存哈希，使「剖面未变但编译变了」退化为 <c>Unchanged</c>。
+/// 顺序敏感比较：<see cref="ProfileDiscovery.ResolveProfiles"/> 已按 <c>Name</c> 排序，故顺序稳定。
 /// </remarks>
 internal sealed class SdkToolProfileSet : IEquatable<SdkToolProfileSet>
 {
@@ -597,22 +584,17 @@ internal sealed class SdkToolProfileSet : IEquatable<SdkToolProfileSet>
 }
 
 /// <summary>
-/// 剖面发现：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按 <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。
+/// 剖面发现：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按
+/// <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>为什么走 <c>CompilationProvider</c> 而非 SyntaxProvider 流</b>：扫描变换需要剖面集合参与过滤，而 <c>CreateSyntaxProvider</c>
-/// 的变换签名只有 <c>GeneratorSyntaxContext</c>——剖面必须由变换自行从编译解析（粒度纪律：变换携带 compilation、随编译失效，编辑剖面类同样触发重扫）。
-/// </para>
-/// <para>
-/// <b>空剖面短路（硬性前提）</b>：编译中不存在任何剖面实现时返回空数组，扫描变换拿到空数组后在进入 <c>ToolSurface*</c> 逻辑前直接返回。
-/// <c>ISdkToolProfile</c> 定义于 Abstractions、所有消费方恒引用该程序集，接口存在性判定无法借 <c>GetTypeByMetadataName</c> 早退——
-/// 故解析结果按 <see cref="Compilation"/> 实例缓存（见 <see cref="ResolveProfiles"/>），全程序集类型枚举每编译至多支付一次。
-/// </para>
-/// <para>
-/// 只消费「成对合法」的剖面；不成对的半边由 <see cref="ProfileContractGuardAnalyzer"/>（SDKT001）在分析器侧报错，生成器侧静默忽略
-/// （避免同一问题双重报告）。必填槽缺失的剖面<b>保留在结果中</b>（<see cref="SdkToolProfileModel.MissingRequiredSlots"/> 非空），由入口上报 SDKT002 并从扇出中排除。
-/// </para>
+/// <b>为什么走 <c>CompilationProvider</c></b>：扫描变换需要剖面集合参与过滤，而 <c>CreateSyntaxProvider</c>
+/// 的变换签名只有 <c>GeneratorSyntaxContext</c>——剖面必须由变换自行从编译解析（随编译失效，编辑剖面同样重扫）。
+/// <b>空剖面短路（硬性前提）</b>：无剖面实现时返回空数组，扫描变换在进入 <c>ToolSurface*</c> 逻辑前直接返回；
+/// 接口存在性判定无法借 <c>GetTypeByMetadataName</c> 早退，故解析结果按 <see cref="Compilation"/> 实例缓存
+/// （见 <see cref="ResolveProfiles"/>），全程序集类型枚举每编译至多支付一次。
+/// <b>成对合法性</b>：不成对的半边由 <see cref="ProfileContractGuardAnalyzer"/>（SDKT001）在分析器侧报错、
+/// 生成器侧静默忽略（避免双重报告）；必填槽缺失的剖面<b>保留在结果中</b>，由入口上报 SDKT002 并从扇出排除。
 /// </remarks>
 internal static class ProfileDiscovery
 {
@@ -621,14 +603,10 @@ internal static class ProfileDiscovery
 
     /// <summary>解析当前编译中的全部合法剖面（按 Name 排序；同名去重取首个，防 hintName 撞名）。</summary>
     /// <remarks>
-    /// <para>
-    /// 结果按 <see cref="Compilation"/> 实例经 <see cref="ConditionalWeakTable{TKey, TValue}"/> 缓存：同一编译内的 profiles 节点
-    /// （<c>CompilationProvider</c>）与全部 ScanTool/ScanHandler 变换共享一次全程序集枚举，消除「每候选接口/方法重复枚举」的成本乘数。
-    /// <see cref="Compilation"/> 不可变；缓存值不持有符号引用，条目随编译实例一并被 GC 回收。
-    /// </para>
-    /// <para>
-    /// <see cref="Lazy{T}"/> 保证并发变换下工厂体只执行一次（<c>ConditionalWeakTable</c> 本身不承诺工厂单次执行）；同一编译内解析异常同样只支付一次代价。
-    /// </para>
+    /// 结果按 <see cref="Compilation"/> 实例经 <see cref="ConditionalWeakTable{TKey, TValue}"/> 缓存：同一编译内的
+    /// profiles 节点与全部 ScanTool/ScanHandler 变换共享一次全程序集枚举，消除「每候选重复枚举」的成本乘数；
+    /// 缓存值不持有符号引用，条目随编译实例一并被 GC 回收。<see cref="Lazy{T}"/> 保证并发变换下工厂体只执行一次
+    /// （<c>ConditionalWeakTable</c> 本身不承诺工厂单次执行），同一编译内的解析异常同样只支付一次代价。
     /// </remarks>
     public static ImmutableArray<SdkToolProfileModel> ResolveProfiles(Compilation compilation)
         => ResolutionCache

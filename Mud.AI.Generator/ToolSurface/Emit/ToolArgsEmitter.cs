@@ -11,24 +11,18 @@ using Mud.AI.ToolSurface.Schema;
 namespace Mud.AI.ToolSurface.Emit;
 
 /// <summary>
-/// Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型（<c>{Tool}Args</c>，独立产物文件），把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。
+/// Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型（<c>{Tool}Args</c>，独立产物文件），
+/// 把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。
 /// </summary>
 /// <remarks>
-/// <para>
-/// 泛化点：owner 门槛 → <see cref="SdkToolProfileModel.OwnerAssembly"/> 单一槽；产物命名空间 → <see cref="SdkToolProfileModel.ContractNamespace"/>
-/// （恰与 owner 门槛值同串，但语义不同——门槛是程序集名，此处是产物落点命名空间，独立消费各自的槽）；hintName 前缀 → <c>{ProductPrefix}Args</c>；
-/// 诊断 MUDFT020/021 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。
-/// </para>
-/// <para>
-/// <b>为什么值得生成</b>：参数名在「接口签名」与「执行器里的字符串字面量」两处独立维护，两者漂移的唯一表现是<b>运行期</b> <c>ArgumentException: 缺少必填参数 x</c>
-/// ——编译期零保证。生成 <c>Unpack</c> 后字段名由接口派生，改名即执行器编译失败（从运行期漂移降级为编译期错误）。
-/// </para>
-/// <para>
-/// <b>解包映射表是引擎机制</b>：<see cref="TryResolveReader"/> 的「类型 → 读取器」表保留在引擎内，扩展点从"改某个 SDK 生态源码"变为"改引擎源码 + 加引擎级测试"；读取器指向的 <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名，不复制其实现）。
-/// </para>
-/// <para>
-/// <b>不生成执行器方法体</b>：白名单投影、filter/sort 解析、RFC3339 转换、dry_run 摘要等业务逻辑仍由人写——生成器只搬运「从参数字典取值」这一机械动作。
-/// </para>
+/// 泛化点：owner 门槛与产物命名空间 → <see cref="SdkToolProfileModel.OwnerAssembly"/> /
+/// <see cref="SdkToolProfileModel.ContractNamespace"/>（同串但语义不同：前者是程序集名，后者是产物落点命名空间）；
+/// hintName 前缀 → <c>{ProductPrefix}Args</c>；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。
+/// <b>为什么值得生成</b>：参数名在「接口签名」与「执行器里的字符串字面量」两处独立维护，漂移的唯一表现是<b>运行期</b>
+/// <c>ArgumentException: 缺少必填参数 x</c>；生成 <c>Unpack</c> 后字段名由接口派生，改名即执行器编译失败。
+/// <b>解包映射表是引擎机制</b>：<see cref="TryResolveReader"/> 的「类型 → 读取器」表留在引擎内，读取器指向的
+/// <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名）。
+/// <b>不生成执行器方法体</b>：白名单投影、filter/sort 解析、dry_run 摘要等业务逻辑仍由人写。
 /// </remarks>
 internal static class ToolArgsEmitter
 {
@@ -160,11 +154,8 @@ internal static class ToolArgsEmitter
     /// 参数 → 解包读取器映射表（唯一真相源；与 owner 程序集 <c>ToolArgs</c> 的 helper 集必须一一对应）。
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// 只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> / <c>string[]?</c> / <c>int?</c> / <c>bool?</c>
-    /// （计数以本仓规模守卫实测口径为准）。<c>int</c> 必填与可选映射均提供（<c>RequireInt</c> / <c>OptionalInt</c>）；
-    /// <c>bool</c> 仅提供可选映射（当前无工具声明必填布尔参数）。
-    /// </para>
+    /// 只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> / <c>string[]?</c> /
+    /// <c>int?</c> / <c>bool?</c>。<c>int</c> 必填与可选映射均提供；<c>bool</c> 仅提供可选映射（无工具声明必填布尔参数）。
     /// </remarks>
     private static bool TryResolveReader(CapabilityParameter parameter, out string fieldType, out string reader)
     {
@@ -236,17 +227,12 @@ internal static class ToolArgsEmitter
         }
     }
 
-    /// <summary>渲染取值闭集的读取器。</summary>
-    /// <returns>
-    /// <see langword="true"/> 已产出 <paramref name="reader"/>；<see langword="false"/> "本参数无闭集或闭集不可解"⇒ 调用方<b>回退到类型推导分支</b>（随后可能被槽位 020 拦下）。
-    /// </returns>
+    /// <summary>渲染取值闭集的读取器；返回 <see langword="false"/> 表示"无闭集或闭集不可解"⇒ 调用方回退到类型推导分支。</summary>
     /// <remarks>
-    /// <b>两类闭集</b>：
-    /// <list type="number">
-    /// <item><b>C# enum</b>：参数 C# 类型<b>就是</b>该 enum（同名）⇒ <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> / <c>OptionalEnum&lt;TEnum&gt;</c>，
-    /// 泛型 + <c>Enum.TryParse</c>，AOT 安全；</item>
-    /// <item><b>常量类</b>（<c>static class</c> + <c>const int</c>）：参数类型是 <c>int</c> ⇒ 只能按名字映射，用 <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，映射表由 <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。</item>
-    /// </list>
+    /// 两类闭集：<b>C# enum</b>（参数 C# 类型就是该 enum）⇒ <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> /
+    /// <c>OptionalEnum&lt;TEnum&gt;</c>，泛型 + <c>Enum.TryParse</c>，AOT 安全；<b>常量类</b>（<c>const int</c>）⇒
+    /// 只能按名字映射，用 <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，映射表由
+    /// <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。
     /// </remarks>
     private static bool TryResolveClosedSetReader(
         CapabilityParameter parameter,
@@ -306,13 +292,11 @@ internal static class ToolArgsEmitter
         => "__closedSet_" + enumTypeFullName.Replace("global::", string.Empty).Replace('.', '_');
 
     /// <summary>
-    /// 为参数列表中<b>每个常量类闭集</b>发射一个
-    /// <c>private static readonly IReadOnlyDictionary&lt;string,int&gt;</c> 映射表。
+    /// 为参数列表中<b>每个常量类闭集</b>发射一个 <c>private static readonly IReadOnlyDictionary&lt;string,int&gt;</c> 映射表。
     /// </summary>
     /// <remarks>
-    /// <b>为什么必须发射</b>：模型按 Schema 里的<b>常量名</b>传值，而 SDK 要<b>整型平台值</b>；
-    /// 不发射这层映射就会"Schema 收名字、读取器收数字"⇒ 该参数<b>恒失败</b>。
-    /// <c>static readonly</c> ⇒ <b>零反射</b>（AOT 纪律 IL2026/IL3050 = 0）。
+    /// <b>为什么必须发射</b>：模型按 Schema 里的<b>常量名</b>传值而 SDK 要<b>整型平台值</b>，不发射这层映射就会
+    /// "Schema 收名字、读取器收数字"⇒ 该参数<b>恒失败</b>；<c>static readonly</c> ⇒ <b>零反射</b>（AOT 纪律）。
     /// 成员表取自 <see cref="CapabilityParameter.EnumMembers"/>（<c>"name=value;…"</c>）。
     /// </remarks>
     private static string RenderClosedSetMaps(IReadOnlyList<CapabilityParameter> parameters)
