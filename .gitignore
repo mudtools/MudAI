@@ -9,6 +9,7 @@
 /.docs
 /.scratch
 /artifacts
+/artifacts-debug
 /TestResults
 /bin
 /test-reports

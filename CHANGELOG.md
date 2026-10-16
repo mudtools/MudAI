@@ -7,6 +7,7 @@
 ### 变更
 
 - 手写运行时层（`Mud.AI.Abstractions` / `Mud.AI.Agent` / `Mud.AI.Generator`）的 XML 文档注释全面压缩：多段 `<para>` 合并、`<returns>` 并入 `<summary>`、去除装饰性表述与过程性括注；读代码读不出的约束（守卫锁定点、AOT/TFM 例外、误报依据、失败语义与毒化链）全部保留。台账 `documents/comment-budget-baseline.json` 按同一判据重新固化（仅下压），注释守卫的扫描面地板随实测值同步调整。
+- 新增打包脚本 `scripts/pack.ps1` / `scripts/pack_debug.ps1`：项目清单自动取自 `Mud.AI.slnx` 的 /Sources/ 段（Tests 工程 `IsPackable=false` 不产包）；同版本重打包默认被版本递增强制校验拒绝（探测 NuGet 全局缓存，`-ForceSameVersion` 逃生）；打包前只构建一次、`pack` 全程 `--no-build`，校验基准取构建产物快照，校验包集合完整性与包内 DLL 字节一致性；Debug 档产物落独立 `artifacts-debug` 目录（已入 `.gitignore`），并默认把同版本包同步到本机 NuGet 全局缓存（`.nupkg.metadata` + `.sha512` 齐全）供引用方本地调试，`-SkipCacheSync` / `-SyncOnly` 可控制。
 
 ## [1.0.1] - 2026-10-16
 

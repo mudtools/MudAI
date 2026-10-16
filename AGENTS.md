@@ -43,6 +43,7 @@ CHANGELOG 描述历史批次时**只写内容、不写批次编号**——在解
 - 统一 C# 13.0、`Nullable` enable；XML 文档注释随包分发（公开成员必须有 XML 注释，`cref` 必须可解析）。
 - 依赖方向单向无环：消费方 → `Mud.AI.Agent` → `Mud.AI.Abstractions`；本仓零 `Mud.Feishu*` 依赖。
 - 构建与验证：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-build.ps1`（含注释守卫）。
+- 打包：`scripts/pack.ps1`（Release 发布，清单取自 `Mud.AI.slnx` /Sources/ 段，含版本递增强制校验与包集合/DLL 字节一致性校验）；`scripts/pack_debug.ps1`（Debug 本地调试，产物落 `artifacts-debug` 并可同步本机 NuGet 全局缓存）。两脚本含中文输出，按 UTF-8 with BOM 保存。
 - 手写运行时层 = `Mud.AI.Abstractions` / `Mud.AI.Agent` / `Mud.AI.Generator`；Tests 不在注释预算强制作用域内，但同样适用黑名单。
 
 ## 脚本运行环境注意
