@@ -7,23 +7,17 @@
 
 namespace Mud.AI.Abstractions.Approvals;
 
-/// <summary>
-/// 待人工确认（HITL）项的可持久化快照。
-/// </summary>
+/// <summary>待人工确认（HITL）项的可持久化快照。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么需要它</b>：批准通道是「通知宿主」的同步点，通知完即返回；
-/// 进程重启后宿主<b>无从得知</b>还有哪些写操作停在「等待确认」——这正是孤儿审批形态
-/// （会话历史里有未应答的审批请求）。本快照把待确认项落成<b>可查询、可过期、可幂等消费</b>的数据，
-/// 宿主据此做「重进进程后仍能列出待办」。
+/// <b>为什么需要它</b>：批准通道是「通知宿主」的同步点，通知完即返回；进程重启后宿主<b>无从得知</b>还有哪些写操作停在
+/// 「等待确认」——这正是孤儿审批形态（会话历史里有未应答的审批请求）。本快照把待确认项落成<b>可查询、可过期、可幂等
+/// 消费</b>的数据，宿主据此做「重进进程后仍能列出待办」。
 /// </para>
 /// <para>
-/// <b>不含任何凭据（铁律不变）</b>：快照只带工具名、脱敏入参摘要、租户/会话维度标识与时间——
-/// SDK 不签发批准凭据，也不缓存批准状态；批准状态的所有者仍是宿主授权器。
-/// </para>
-/// <para>
-/// <b>入参摘要（<see cref="ArgumentsDigest"/>）</b>来自既有投影，已由执行链脱敏；
-/// 它<b>不得</b>回灌给模型（仅供宿主审批界面展示）。
+/// <b>不含任何凭据（铁律不变）</b>：快照只带工具名、脱敏入参摘要、租户/会话维度标识与时间——SDK 不签发批准凭据，也不
+/// 缓存批准状态；批准状态的所有者仍是宿主授权器。<see cref="ArgumentsDigest"/> 来自既有投影，已由执行链脱敏，<b>不得</b>
+/// 回灌给模型（仅供宿主审批界面展示）。
 /// </para>
 /// </remarks>
 /// <param name="RequestId">
@@ -55,9 +49,7 @@ public sealed record PendingApprovalSnapshot(
     DateTimeOffset CreatedAt,
     DateTimeOffset ExpiresAt)
 {
-    /// <summary>
-    /// 默认确认有效期（10 分钟）——与 <see cref="ToolApprovalRequest.ExpiresAt"/> 的既有默认值同口径。
-    /// </summary>
+    /// <summary>默认确认有效期（10 分钟）——与 <see cref="ToolApprovalRequest.ExpiresAt"/> 的既有默认值同口径。</summary>
     /// <remarks>宿主可在宿主侧通道实现里按业务调整（本常量只是 SDK 自动登记的默认值）。</remarks>
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(10);
 
@@ -66,9 +58,7 @@ public sealed record PendingApprovalSnapshot(
     /// <returns>是否过期。</returns>
     public bool IsExpired(DateTimeOffset now) => now >= ExpiresAt;
 
-    /// <summary>
-    /// 由框架审批请求投影出快照（执行链自动登记路径的唯一构造入口）。
-    /// </summary>
+    /// <summary>由框架审批请求投影出快照（执行链自动登记路径的唯一构造入口）。</summary>
     /// <param name="request">框架审批请求要素。</param>
     /// <param name="now">当前时间（UTC）。</param>
     /// <param name="ttl">有效期（可空 → <see cref="DefaultTtl"/>）。非正值视为无效，回落默认值。</param>

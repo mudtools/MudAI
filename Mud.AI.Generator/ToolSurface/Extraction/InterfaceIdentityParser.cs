@@ -11,15 +11,12 @@ using System.Text.RegularExpressions;
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>
-/// SDK 接口名令牌结构的引擎侧镜像值对象。
-/// </summary>
+/// <summary>SDK 接口名令牌结构的引擎侧镜像值对象。</summary>
 /// <remarks>
 /// <para>
-/// 与运行时契约 <c>Mud.AI.Abstractions.InterfaceIdentity</c> **逐字段镜像**
-/// （InterfaceName / Kind / Domain / Resource / Version / RawTokenMarker），由
-/// <c>ToolSurfaceContractTests</c> 反射比对机械锁定。镜像的原因：工程纪律禁止生成器
-/// 引用任何 <c>Mud.*</c> 运行时程序集，故引擎持有自己的 <c>ToolSurfaceTokenKind</c> 形态值对象。
+/// 与运行时契约 <c>Mud.AI.Abstractions.InterfaceIdentity</c> <b>逐字段镜像</b>（InterfaceName / Kind / Domain / Resource /
+/// Version / RawTokenMarker），由 <c>ToolSurfaceContractTests</c> 反射比对机械锁定。镜像的原因：工程纪律禁止生成器引用
+/// 任何 <c>Mud.*</c> 运行时程序集，故引擎持有自己的 <c>ToolSurfaceTokenKind</c> 形态值对象。
 /// </para>
 /// <para>不采用 <c>record</c>：netstandard2.0 目标未注入 <c>IsExternalInit</c>（仓库纪律）。</para>
 /// </remarks>
@@ -87,19 +84,15 @@ internal sealed class ToolSurfaceInterfaceIdentity : IEquatable<ToolSurfaceInter
     }
 }
 
-/// <summary>
-/// 接口名 → <see cref="ToolSurfaceInterfaceIdentity"/> 解析器
-/// （泛化自上游 <c>Extractors.TryParseSdkInterfaceName</c>）。
-/// </summary>
+/// <summary>接口名 → <see cref="ToolSurfaceInterfaceIdentity"/> 解析器（泛化自上游 <c>Extractors.TryParseSdkInterfaceName</c>）。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么不从命名空间推导模块名</b>（上游结论保留）：SDK 接口的模块信息只存在于目录结构里、
-/// Roslyn 符号不可见，域名（Domain）是符号层唯一可用的能力轴。
+/// <b>为什么不从命名空间推导模块名</b>：SDK 接口的模块信息只存在于目录结构里、Roslyn 符号不可见，域名（Domain）是符号层
+/// 唯一可用的能力轴。
 /// </para>
 /// <para>
-/// 命名范式正则来自剖面槽 <c>InterfaceNameRegex</c>（组名契约：<c>domain</c> / <c>resource</c> /
-/// <c>version</c> 三个可选命名组）；令牌身份来自 <c>TokenKindStrategy</c> + <c>TokenKindMarkers</c>
-/// 标记表——引擎内部零 SDK 命名字符串。
+/// 命名范式正则来自剖面槽 <c>InterfaceNameRegex</c>（组名契约：<c>domain</c> / <c>resource</c> / <c>version</c> 三个可选
+/// 命名组）；令牌身份来自 <c>TokenKindStrategy</c> + <c>TokenKindMarkers</c> 标记表——引擎内部零 SDK 命名字符串。
 /// </para>
 /// </remarks>
 internal static class InterfaceIdentityParser
@@ -159,17 +152,13 @@ internal static class InterfaceIdentityParser
         }
     }
 
-    /// <summary>
-    /// 按「标记串 → 令牌身份」表推导归一化身份（泛化自上游
-    /// <c>CuratedToolScanner.DeriveIdentityFromSource</c> 的 <c>StartsWith("IFeishuTenant")</c> 硬编码）。
-    /// </summary>
+    /// <summary>按「标记串 → 令牌身份」表推导归一化身份（泛化自上游 <c>CuratedToolScanner.DeriveIdentityFromSource</c>
+    /// 的 <c>StartsWith("IFeishuTenant")</c> 硬编码）。</summary>
     /// <remarks>
-    /// 匹配形态：标记条目带 <c>OverrideMode</c>（非 Unspecified）时按覆写形态匹配
-    /// （NamePrefix=StartsWith、SuffixMarker=EndsWith、InfixMarker=Contains）；
-    /// 否则按 profile 的 <see cref="SdkToolProfileModel.TokenKindStrategy"/> 默认形态
-    /// （策略亦为 Unspecified 时回退 NamePrefix——与上游前缀语义同形）。
-    /// 表按声明序取<b>首个命中</b>；无命中返回 <see cref="ToolSurfaceTokenKind.Both"/>
-    /// 且 <paramref name="rawMarker"/> 为 <see langword="null"/>（上游"双令牌基接口"语义）。
+    /// 匹配形态：标记条目带 <c>OverrideMode</c>（非 Unspecified）时按覆写形态匹配（NamePrefix=StartsWith、SuffixMarker=EndsWith、
+    /// InfixMarker=Contains）；否则按 profile 的 <see cref="SdkToolProfileModel.TokenKindStrategy"/> 默认形态（策略亦为
+    /// Unspecified 时回退 NamePrefix——与上游前缀语义同形）。表按声明序取<b>首个命中</b>；无命中返回
+    /// <see cref="ToolSurfaceTokenKind.Both"/> 且 <paramref name="rawMarker"/> 为 <see langword="null"/>（上游"双令牌基接口"语义）。
     /// </remarks>
     public static ToolSurfaceTokenKind DeriveTokenKind(
         string interfaceName,

@@ -48,31 +48,23 @@ public sealed record ToolPolicyRules(
         || (DomainAllow is { Count: > 0 }) || (DomainDeny is { Count: > 0 });
 }
 
-/// <summary>
-/// <b>glob / 域级策略匹配器</b>（纯函数，零 IO）。
-/// </summary>
+/// <summary><b>glob / 域级策略匹配器</b>（纯函数，零 IO）。</summary>
 /// <remarks>
 /// <para>
-/// <b>中立化说明</b>：匹配算法自产品执行链
-/// （飞书 <c>FeishuToolBinding.EvaluateToolPolicy</c>）原样抽出——「域轴先于工具名轴」
-/// 的判定顺序、Deny 优先于 Allow、空集合语义（Allow 空 = 该轴不启用，**不是**"全拒"）
-/// 全部是<b>产品中立</b>的策略语义；抽走后产品侧只保留 reason_code 映射与文案构造。
+/// <b>中立化说明</b>：匹配算法自产品执行链（飞书 <c>FeishuToolBinding.EvaluateToolPolicy</c>）原样抽出——「域轴先于
+/// 工具名轴」的判定顺序、Deny 优先于 Allow、空集合语义（Allow 空 = 该轴不启用，<b>不是</b>"全拒"）全部是<b>产品中立</b>
+/// 的策略语义；抽走后产品侧只保留 reason_code 映射与文案构造。
 /// </para>
 /// <para>
-/// <b>为什么域轴先于工具名轴</b>：域轴更便宜（单段字符串比较）且拒绝原因更精确——
-/// "该域被宿主禁用"比"该工具未列明"更接近宿主的配置意图，排障路径更短。
-/// </para>
-/// <para>
-/// <b>未配置即零开销</b>：<see cref="ToolPolicyRules.IsConfigured"/> 为 <see langword="false"/>
-/// 时直接返回 <see cref="ToolPolicyDecision.Allowed"/>（等价无策略行为），且不做任何 glob 匹配
-/// （默认部署的工具调用热路径不承担策略面的成本）。
+/// <b>为什么域轴先于工具名轴</b>：域轴更便宜（单段字符串比较）且拒绝原因更精确——"该域被宿主禁用"比"该工具未列明"更
+/// 接近宿主的配置意图，排障路径更短。<b>未配置即零开销</b>：<see cref="ToolPolicyRules.IsConfigured"/> 为
+/// <see langword="false"/> 时直接返回 <see cref="ToolPolicyDecision.Allowed"/>（等价无策略行为），且不做任何 glob 匹配
+/// （默认部署的工具调用热路径不承担策略面成本）。
 /// </para>
 /// </remarks>
 public static class ToolPolicyMatcher
 {
-    /// <summary>
-    /// 对一次工具调用求值策略（四步顺序：域 Deny → 域 Allow → 工具名 Deny → 工具名 Allow）。
-    /// </summary>
+    /// <summary>对一次工具调用求值策略（四步顺序：域 Deny → 域 Allow → 工具名 Deny → 工具名 Allow）。</summary>
     /// <param name="toolName">契约工具名（<c>域.动作</c> 形态）。</param>
     /// <param name="rules">策略规则（四个模式集合）。</param>
     /// <returns>匹配判定结果；放行时为 <see cref="ToolPolicyDecision.Allowed"/>。</returns>

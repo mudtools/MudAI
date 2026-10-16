@@ -36,9 +36,7 @@ public sealed class AgentSessionStore
     private readonly string _historyStateKey;
     private readonly ILogger? _logger;
 
-    /// <summary>
-    /// 初始化 <see cref="AgentSessionStore"/>。
-    /// </summary>
+    /// <summary>初始化 <see cref="AgentSessionStore"/>。</summary>
     /// <param name="codec">序列化 / 反序列化的归属方（持有 <see cref="AgentSession"/> 的 Agent）。</param>
     /// <param name="store">会话持久化端口；为 <see langword="null"/> 时不持久化（仅内存会话）。</param>
     /// <param name="historyStateKey">会话历史在 Agent 状态袋内的状态键（<b>产品事实，由产品侧注入</b>）。</param>
@@ -65,9 +63,7 @@ public sealed class AgentSessionStore
         _logger = logger;
     }
 
-    /// <summary>
-    /// 按会话键读取会话；miss（不存在、TTL 过期、载荷损坏）时创建新会话。
-    /// </summary>
+    /// <summary>按会话键读取会话；miss（不存在、TTL 过期、载荷损坏）时创建新会话。</summary>
     /// <param name="key">会话键（由产品侧的键治理构造）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>可用会话。</returns>
@@ -120,9 +116,7 @@ public sealed class AgentSessionStore
         return await _codec.CreateSessionAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// 序列化并保存会话（刷新存储 TTL）。
-    /// </summary>
+    /// <summary>序列化并保存会话（刷新存储 TTL）。</summary>
     /// <param name="key">会话键（由产品侧的键治理构造）。</param>
     /// <param name="session">要持久化的会话（须由 <see cref="_codec"/> 创建）。</param>
     /// <param name="cancellationToken">取消令牌。</param>

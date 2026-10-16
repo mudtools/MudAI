@@ -11,23 +11,20 @@ using Mud.AI.Abstractions.Conversations;
 
 namespace Mud.AI.Agent.Channels;
 
-/// <summary>
-/// 流式通道降级链：<see cref="IMessageChannel"/> 复合实现——
-/// <see cref="BeginAsync"/> 按注册顺序尝试各子通道（首选卡片流，失败自动尝试编辑通道），
-/// 选中的子通道承载本轮 messageId 生命周期（<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 定向委托）。
-/// </summary>
+/// <summary>流式通道降级链：<see cref="IMessageChannel"/> 复合实现——<see cref="BeginAsync"/> 按注册顺序尝试各子通道
+/// （首选卡片流，失败自动尝试编辑通道），选中的子通道承载本轮 messageId 生命周期（<see cref="WriteStreamAsync"/> /
+/// <see cref="FlushAsync"/> 定向委托）。</summary>
 /// <remarks>
 /// <para>
-/// <b>目标重解析</b>：子通道目标语义不同（卡片流 = 接收用户 open_id、编辑通道 = chat_id）。
-/// 链经 <see cref="StreamingRequestContext"/> 环境量拿到会话请求后，对每个子通道按其
-/// <see cref="IChannelTargetResolver"/> 各自解析目标；解析为 null 表示该子通道对本次事件不适用
-/// （如卡片流不投群聊），直接跳到下一子通道。环境量缺失（外部直调）时按入参原样使用。
-/// <b>互斥语义</b>：同一 messageId 生命周期只落在一个子通道（Begin 时即锁定）；全部子通道 Begin
-/// 失败时抛最后一个异常——事件处理器回退非流式路径（模型尚未调用，零重复成本）。
+/// <b>目标重解析</b>：子通道目标语义不同（卡片流 = 接收用户 open_id、编辑通道 = chat_id）。链经
+/// <see cref="StreamingRequestContext"/> 环境量拿到会话请求后，对每个子通道按其 <see cref="IChannelTargetResolver"/> 各自
+/// 解析目标；解析为 null 表示该子通道对本次事件不适用（如卡片流不投群聊），直接跳到下一子通道。环境量缺失（外部直调）
+/// 时按入参原样使用。<b>互斥语义</b>：同一 messageId 生命周期只落在一个子通道（Begin 时即锁定）；全部子通道 Begin 失败时
+/// 抛最后一个异常——事件处理器回退非流式路径（模型尚未调用，零重复成本）。
 /// </para>
 /// <para>
-/// <b>归属契约</b>：<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 只接受本链 <see cref="BeginAsync"/>
-/// 返回的 messageId——未登记的 messageId 一律 fail-fast（不回退首选通道），杜绝「增量写到非归属子通道」的静默错投。
+/// <b>归属契约</b>：<see cref="WriteStreamAsync"/>/<see cref="FlushAsync"/> 只接受本链 <see cref="BeginAsync"/> 返回的
+/// messageId——未登记的 messageId 一律 fail-fast（不回退首选通道），杜绝「增量写到非归属子通道」的静默错投。
 /// </para>
 /// </remarks>
 public sealed class StreamingChannelChain : IMessageChannel, IChannelTargetResolver
@@ -36,9 +33,7 @@ public sealed class StreamingChannelChain : IMessageChannel, IChannelTargetResol
     private readonly ConcurrentDictionary<string, IMessageChannel> _messageOwners = new(StringComparer.Ordinal);
     private readonly ILogger? _logger;
 
-    /// <summary>
-    /// 初始化 <see cref="StreamingChannelChain"/>。
-    /// </summary>
+    /// <summary>初始化 <see cref="StreamingChannelChain"/>。</summary>
     /// <param name="logger">日志（可空）。</param>
     /// <param name="channels">子通道（按优先级降序；至少一个）。</param>
     public StreamingChannelChain(ILogger? logger, params IReadOnlyList<IMessageChannel> channels)
@@ -123,17 +118,15 @@ public sealed class StreamingChannelChain : IMessageChannel, IChannelTargetResol
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// 并发契约同 <see cref="IMessageChannel"/>：同一 <paramref name="messageId"/> 的写与 Flush 须顺序 <c>await</c>。
-    /// </remarks>
+    /// <remarks>并发契约同 <see cref="IMessageChannel"/>：同一 <paramref name="messageId"/> 的写与 Flush 须顺序 <c>await</c>。</remarks>
     public Task WriteStreamAsync(string tenantKey, string chatId, string messageId, string delta, CancellationToken cancellationToken = default)
         => ResolveOwner(messageId).WriteStreamAsync(tenantKey, ResolveTarget(messageId, chatId), messageId, delta, cancellationToken);
 
     /// <inheritdoc />
     /// <remarks>
-    /// 本链不继承 <c>BufferedMessageChannel</c>（无缓冲语义），故自行承担「终结态落地后清空
-    /// 本 messageId 的归属登记」——且必须在 <c>finally</c> 中：Flush 抛异常时归属同样已终结，
-    /// 留着会让单例字典随流式回复次数线性增长，且额外钉住整条子通道实例引用。
+    /// 本链不继承 <c>BufferedMessageChannel</c>（无缓冲语义），故自行承担「终结态落地后清空本 messageId 的归属登记」——
+    /// 且必须在 <c>finally</c> 中：Flush 抛异常时归属同样已终结，留着会让单例字典随流式回复次数线性增长，
+    /// 且额外钉住整条子通道实例引用。
     /// </remarks>
     public async Task FlushAsync(string tenantKey, string chatId, string messageId, CancellationToken cancellationToken = default)
     {
@@ -148,14 +141,11 @@ public sealed class StreamingChannelChain : IMessageChannel, IChannelTargetResol
         }
     }
 
-    /// <summary>
-    /// 解析 messageId 的归属子通道。
-    /// </summary>
+    /// <summary>解析 messageId 的归属子通道。</summary>
     /// <remarks>
-    /// <b>未登记即抛</b>：<b>不得</b>回退到首选通道（<c>_channels[0]</c>）——把「未经本链 Begin 的
-    /// messageId」静默路由过去，可能把增量写到错误的通道（如降级期由编辑通道承载的
-    /// messageId 落到卡片流）。归属登记是本链的<b>唯一</b>路由依据，缺失即契约违背，fail-fast
-    /// 比静默错投更安全。
+    /// <b>未登记即抛</b>：<b>不得</b>回退到首选通道（<c>_channels[0]</c>）——把「未经本链 Begin 的 messageId」静默路由
+    /// 过去，可能把增量写到错误的通道（如降级期由编辑通道承载的 messageId 落到卡片流）。归属登记是本链的<b>唯一</b>
+    /// 路由依据，缺失即契约违背，fail-fast 比静默错投更安全。
     /// </remarks>
     /// <exception cref="InvalidOperationException">messageId 未在本链登记（未先经 <see cref="BeginAsync"/>）。</exception>
     private IMessageChannel ResolveOwner(string messageId)

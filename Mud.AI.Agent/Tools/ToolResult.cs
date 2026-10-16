@@ -7,23 +7,17 @@
 
 namespace Mud.AI.Agent.Tools;
 
-/// <summary>
-/// 工具执行结果（分型结果契约）：替代 <c>Task&lt;string&gt;</c> 的结构化返回。
-/// </summary>
+/// <summary>工具执行结果（分型结果契约）：替代 <c>Task&lt;string&gt;</c> 的结构化返回。</summary>
 /// <remarks>
 /// <para>
-/// 当前形态只承载 <see cref="Text"/>（人类可读文本，已投影 + 截断）与截断标记：结构化结果一律由各执行器的
-/// <b>有意策展投影</b>转成文本（见下）。<b>不得</b>把 <c>JsonNode</c> 挂在结果上——那属未被消费的
-/// "第二真相源"，会让"模型看到什么"出现两条口径。多模态分片（<c>Parts</c>）如确需引入，再以显式契约新增。
+/// 当前形态只承载 <see cref="Text"/>（人类可读文本，已投影 + 截断）与截断标记：结构化结果一律由各执行器的<b>有意策展
+/// 投影</b>转成文本。<b>不得</b>把 <c>JsonNode</c> 挂在结果上——那属未被消费的"第二真相源"，会让"模型看到什么"出现
+/// 两条口径；多模态分片（<c>Parts</c>）如确需引入，再以显式契约新增。
 /// </para>
 /// <para>
-/// 设计决策：移除 <c>implicit operator string</c>——项目未发布，无需兼容老代码，
-/// 调用方显式使用 <see cref="ToString"/> 获取文本。
-/// </para>
-/// <para>
-/// <b>与 <c>output_schema</c> 无关（已决策）</b>：<b>不得</b>用编译期 <c>x-feishu.output_schema</c>
-/// 在运行期对结构化载荷做字段裁剪——各执行器的<b>有意策展投影</b>才是模型可见结果的真契约，
-/// 叠加 Schema 白名单会把策展后的键（如 <c>task_guid</c>）当作未声明字段丢弃。
+/// <b>与 <c>output_schema</c> 无关（已决策）</b>：<b>不得</b>用编译期 <c>x-feishu.output_schema</c> 在运行期对结构化载荷
+/// 做字段裁剪——各执行器的<b>有意策展投影</b>才是模型可见结果的真契约，叠加 Schema 白名单会把策展后的键（如
+/// <c>task_guid</c>）当作未声明字段丢弃。取文本一律经 <see cref="ToString"/>（无隐式 string 转换）。
 /// </para>
 /// </remarks>
 public sealed class ToolResult
@@ -44,9 +38,7 @@ public sealed class ToolResult
     /// </summary>
     public ToolError? Error { get; init; }
 
-    /// <summary>
-    /// 从文本构造结果（便捷工厂）。
-    /// </summary>
+    /// <summary>从文本构造结果（便捷工厂）。</summary>
     /// <param name="text">结果文本。</param>
     /// <param name="truncated">是否被截断。</param>
     /// <param name="truncationReason">截断原因。</param>
@@ -59,27 +51,20 @@ public sealed class ToolResult
             TruncationReason = truncationReason,
         };
 
-    /// <summary>
-    /// 从错误文本构造结果（便捷工厂）。
-    /// </summary>
+    /// <summary>从错误文本构造结果（便捷工厂）。</summary>
     /// <param name="errorText">结构化错误文本（首行 JSON 载荷 + 人类可读正文）。</param>
     /// <returns>工具结果实例。</returns>
     public static ToolResult FromError(string errorText)
         => new() { Text = errorText };
 
-    /// <summary>
-    /// 从结构化错误载荷构造结果（首行 JSON 载荷 + 人类可读正文）。
-    /// </summary>
+    /// <summary>从结构化错误载荷构造结果（首行 JSON 载荷 + 人类可读正文）。</summary>
     /// <param name="error">结构化错误载荷。</param>
-    /// <param name="humanReadableText">人类可读正文（模型可见，保持向后兼容）。</param>
+    /// <param name="humanReadableText">人类可读正文（模型可见）。</param>
     /// <returns>工具结果实例。</returns>
     public static ToolResult FromError(ToolError error, string humanReadableText)
         => new() { Text = humanReadableText, Error = error };
 
-    /// <summary>
-    /// 返回回填模型的文本（显式方法，替代 implicit operator string）。
-    /// </summary>
-    /// <returns>结果文本（<see cref="Text"/> 为空时返回空串）。</returns>
+    /// <summary>返回回填模型的文本（显式方法；<see cref="Text"/> 为空时返回空串）。</summary>
     public override string ToString()
         => Text ?? string.Empty;
 }

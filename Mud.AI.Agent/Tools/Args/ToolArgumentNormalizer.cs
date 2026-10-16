@@ -10,20 +10,13 @@ using System.Globalization;
 
 namespace Mud.AI.Agent.Tools.Args;
 
-/// <summary>
-/// 工具参数值的形态归一化中心：
-/// 运行时参数值来自模型 tool_call 的 JSON 反序列化，字符串参数实际形态为 <see cref="System.Text.Json.JsonElement"/>。
-/// 本类型是该事实的**唯一认知入口**——净化、摘要一律经此遍历，禁止各自 switch。
-/// </summary>
+/// <summary>工具参数值的形态归一化中心：运行时参数值来自模型 tool_call 的 JSON 反序列化，字符串参数实际形态为
+/// <see cref="System.Text.Json.JsonElement"/>；本类型是该事实的<b>唯一认知入口</b>——净化、摘要一律经此遍历，
+/// 禁止各自 switch。</summary>
 /// <remarks>
-/// <para>
-/// <b>根因</b>：<c>ToolArgumentSanitizer.ValidateValue</c> 只识别 <c>string</c> 与
-/// <c>IEnumerable&lt;string&gt;</c>，不识别 <c>JsonElement</c>（运行时真实形态），导致入站净化
-/// 在真实主路径**从未生效**。本类型把形态遍历变成单一可复用函数，消除"同一事实在三处被分别发现、第三处漏了"的根因。
-/// </para>
-/// <para>
-/// <b>路径形如</b>：<c>text</c> / <c>texts[1]</c> / <c>fields.name</c>——错误消息可直接用于模型自查。
-/// </para>
+/// <b>根因</b>：只识别 <c>string</c> 与 <c>IEnumerable&lt;string&gt;</c>、漏掉 <c>JsonElement</c>（运行时真实形态）会让入站
+/// 净化在主路径上失效——本类型把形态遍历收敛为单一可复用函数，消除"同一事实在多处被分别发现、其中一处漏掉"的根因。
+/// 路径形如 <c>text</c> / <c>texts[1]</c> / <c>fields.name</c>——错误消息可直接用于模型自查。
 /// </remarks>
 public static class ToolArgumentNormalizer
 {
@@ -31,13 +24,11 @@ public static class ToolArgumentNormalizer
     /// 形态判定原语：值是否为 JSON <b>文本</b>元素，并给出文本。
     /// </summary>
     /// <remarks>
-    /// <b>为什么要有这两条原语（收敛点）</b>：<c>JsonElement.ValueKind</c> 的形态判定
-    /// 散落在 6 处（<c>ToolArgs</c> 取值、<c>ToolPagination.TryReadBool/TryReadInt</c>、
-    /// <c>ToolDryRun.IsRequested</c>、<c>ToolArgsDigester.Describe</c>、<c>ToolResultText.ToJsonNode</c>）。
-    /// "同一入参在不同工具里被判成不同形态"是同类根因，故把判定收进本类型
-    /// （唯一认知入口），其余位置只能<b>薄委托</b>——
-    /// <c>ToolArgumentShapeContractGuards</c> 已把"<c>JsonValueKind.String</c> 只允许出现在本文件"
-    /// 钉成机械约束（白名单已收缩为单文件），新增位置立刻报红。
+    /// <b>为什么要有这两条原语（收敛点）</b>：<c>JsonElement.ValueKind</c> 的形态判定散落在 6 处（<c>ToolArgs</c> 取值、
+    /// <c>ToolPagination.TryReadBool/TryReadInt</c>、<c>ToolDryRun.IsRequested</c>、<c>ToolArgsDigester.Describe</c>、
+    /// <c>ToolResultText.ToJsonNode</c>）——"同一入参在不同工具里被判成不同形态"是同类根因，故判定收进本类型（唯一认知
+    /// 入口），其余位置只能<b>薄委托</b>；<c>ToolArgumentShapeContractGuards</c> 已把"<c>JsonValueKind.String</c> 只允许
+    /// 出现在本文件"钉成机械约束，新增位置立刻报红。
     /// </remarks>
     /// <param name="value">参数值（运行时真实形态通常是 <see cref="System.Text.Json.JsonElement"/>）。</param>
     /// <param name="text">命中时的文本（JSON <c>null</c> 之外不会有 null）。</param>
@@ -70,16 +61,13 @@ public static class ToolArgumentNormalizer
         return false;
     }
 
-    /// <summary>
-    /// 以 (参数路径, 文本值) 的形式遍历任意形态的参数值。
-    /// </summary>
+    /// <summary>以 (参数路径, 文本值) 的形式遍历任意形态的参数值。</summary>
     /// <param name="path">当前参数路径（根参数名）。</param>
     /// <param name="value">参数值（可能为 <c>null</c>/<c>string</c>/<c>JsonElement</c>/<c>IEnumerable&lt;string&gt;</c>）。</param>
     /// <returns>(路径, 文本值) 序列——只产出文本值，数值/布尔/null 被跳过。</returns>
     /// <remarks>
-    /// 形态判定一律经 <see cref="IsJsonString"/>/<see cref="IsJsonArray"/>：
-    /// 本方法不再自带 <c>ValueKind</c> 字面量，避免"中心自己也另有一套判定"。
-    /// 分支顺序与被取代的 <c>switch</c> <b>逐字同序</b>（行为等价性由既有用例兜底）。
+    /// 形态判定一律经 <see cref="IsJsonString"/>/<see cref="IsJsonArray"/>：本方法不再自带 <c>ValueKind</c> 字面量，
+    /// 避免"中心自己也另有一套判定"；分支顺序与被取代的 <c>switch</c> <b>逐字同序</b>（行为等价性由既有用例兜底）。
     /// </remarks>
     public static IEnumerable<(string Path, string Text)> EnumerateTexts(string path, object? value)
     {
