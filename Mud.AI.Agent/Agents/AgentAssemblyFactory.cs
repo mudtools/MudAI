@@ -7,33 +7,22 @@
 
 namespace Mud.AI.Agent.Agents;
 
-/// <summary>
-/// 内层 <see cref="ChatClientAgent"/> 的装配工厂：把「Agent 名 / 指令 / 工具 / 历史裁剪窗」四项
-/// 宿主事实组装成 <see cref="ChatClientAgentOptions"/> 并构造内层 Agent。
-/// </summary>
+/// <summary>内层 <see cref="ChatClientAgent"/> 的装配工厂：把「Agent 名 / 指令 / 工具 / 历史裁剪窗」四项宿主事实组装成
+/// <see cref="ChatClientAgentOptions"/> 并构造内层 Agent。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么这一层必须中立</b>：<c>Name</c> / <c>ChatOptions{Instructions, Tools}</c> /
-/// <c>ChatHistoryProvider</c> 三件套的构造与产品无关；产品侧只负责喂产品事实
-/// （名字、指令、历史状态键、裁剪窗上限）与配置 fail-fast。
-/// </para>
-/// <para>
-/// <b>为什么事实经参数传入</b>：历史状态键与裁剪窗上限都是产品事实，中立层不得硬编码任何产品命名面
-/// （中立侧零状态键前缀字面量，由产品侧守卫机械锁定）。装配器只做"事实 → MAF 类型"的翻译。
-/// </para>
-/// <para>
-/// <b>调用方保证</b>：<c>chatClient</c> 非空、<c>instructions</c> 非空——
-/// 空值守卫与配置校验留在产品侧（fail-fast 的归属是产品配置面），本层不重复校验。
+/// <b>为什么这一层必须中立</b>：<c>Name</c> / <c>ChatOptions{Instructions, Tools}</c> / <c>ChatHistoryProvider</c> 三件套的构造与
+/// 产品无关；产品侧只负责喂产品事实（名字、指令、历史状态键、裁剪窗上限）与配置 fail-fast。<b>为什么事实经参数传入</b>：历史状态
+/// 键与裁剪窗上限都是产品事实，中立层不得硬编码任何产品命名面（中立侧零状态键前缀字面量，由产品侧守卫机械锁定）；装配器只做
+/// "事实 → MAF 类型"的翻译。<b>调用方保证</b>：<c>chatClient</c> 非空、<c>instructions</c> 非空——空值守卫与配置校验留在产品侧
+/// （fail-fast 的归属是产品配置面），本层不重复校验。
 /// </para>
 /// </remarks>
 public static class AgentAssemblyFactory
 {
-    /// <summary>
-    /// 构造内层 Agent：指令装入 <see cref="ChatOptions.Instructions"/>，工具装入
-    /// <see cref="ChatOptions.Tools"/>（空集与 <see langword="null"/> 同义，保持裸模型行为），
-    /// 历史由 <see cref="InMemoryChatHistoryProvider"/> 按状态键读写、按
-    /// <paramref name="maxHistoryMessages"/> 施加裁剪窗。
-    /// </summary>
+    /// <summary>构造内层 Agent：指令装入 <see cref="ChatOptions.Instructions"/>，工具装入 <see cref="ChatOptions.Tools"/>（空集与
+    /// <see langword="null"/> 同义，保持裸模型行为），历史由 <see cref="InMemoryChatHistoryProvider"/> 按状态键读写、按
+    /// <paramref name="maxHistoryMessages"/> 施加裁剪窗。</summary>
     /// <param name="chatClient">模型客户端。</param>
     /// <param name="name">Agent 展示名（可空：MAF 允许无名字的 Agent）。</param>
     /// <param name="instructions">已组装完成的系统指令（含宿主指令与域 guidance）。</param>

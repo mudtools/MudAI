@@ -7,30 +7,24 @@
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>
-/// <c>Source</c> 源挂钩归一与 SDK 成员解析（引擎经本单元把
-/// 「<c>nameof</c> 或字符串」两种合法输入归一为 <c>(InterfaceName, MethodName)</c>）。
-/// </summary>
+/// <summary><c>Source</c> 源挂钩归一与 SDK 成员解析（引擎经本单元把「<c>nameof</c> 或字符串」两种合法输入归一为
+/// <c>(InterfaceName, MethodName)</c>）。</summary>
 /// <remarks>
 /// <para>
-/// 泛化自上游 <c>Extractors.ResolveSourceMember</c> 与 <c>CuratedToolScanner</c> 的内联切分：
-/// 命名空间前缀切分用剖面槽 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>
-/// （替代硬编码 <c>"Mud.Feishu."</c>）。解析本身是固定两步（先全名命中，失败再全局按名兜底），
-/// 两步逻辑平台无关（刻意不设 <c>SourceResolutionStrategy</c> 槽）。
+/// 泛化自上游 <c>Extractors.ResolveSourceMember</c> 与 <c>CuratedToolScanner</c> 的内联切分：命名空间前缀切分用剖面槽
+/// <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>（替代硬编码 <c>"Mud.Feishu."</c>）。解析本身是固定两步（先全名命中，
+/// 失败再全局按名兜底），两步逻辑平台无关（刻意不设 <c>SourceResolutionStrategy</c> 槽）。
 /// </para>
 /// <para>
-/// <b>引擎不变量（不得被任何 profile 关闭）</b>：方法查找必须并入 <c>AllInterfaces</c>——
-/// 令牌派生接口常为空接口、方法声明在基接口上，只查 <c>GetMembers(name)</c> 会恒返回空
-/// （否则聚合路径恒产出空条目——该不变量由 <c>ToolSurfaceShapeContractGuards</c> 机械锁定）。
+/// <b>引擎不变量（不得被任何 profile 关闭）</b>：方法查找必须并入 <c>AllInterfaces</c>——令牌派生接口常为空接口、方法声明在
+/// 基接口上，只查 <c>GetMembers(name)</c> 会恒返回空（否则聚合路径恒产出空条目——该不变量由
+/// <c>ToolSurfaceShapeContractGuards</c> 机械锁定）。
 /// </para>
 /// </remarks>
 internal static class SourceResolver
 {
-    /// <summary>
-    /// 归一 <c>Source</c> 声明为 <c>(InterfaceName, MethodName)</c>：
-    /// 先剥 <c>{SdkNamespaceRoot}.</c> 前缀（全限定字符串形态），再按最后一个 <c>.</c> 切分。
-    /// 无 <c>.</c> 时方法名为空串（交由 <see cref="Resolve"/> 报「未找到方法」）。
-    /// </summary>
+    /// <summary>归一 <c>Source</c> 声明为 <c>(InterfaceName, MethodName)</c>：先剥 <c>{SdkNamespaceRoot}.</c> 前缀（全限定
+    /// 字符串形态），再按最后一个 <c>.</c> 切分。无 <c>.</c> 时方法名为空串（交由 <see cref="Resolve"/> 报「未找到方法」）。</summary>
     public static bool TryNormalize(string? source, SdkToolProfileModel profile, out string interfaceName, out string methodName)
     {
         interfaceName = string.Empty;
@@ -71,12 +65,7 @@ internal static class SourceResolver
         }
     }
 
-    /// <summary>
-    /// 按「接口名.方法名」解析 SDK 成员（源挂钩的解析器）。
-    /// </summary>
-    /// <remarks>
-    /// 重载选择：取参数最多者（canonical 形态）。
-    /// </remarks>
+    /// <summary>按「接口名.方法名」解析 SDK 成员（源挂钩的解析器；重载选择：取参数最多者，canonical 形态）。</summary>
     /// <param name="compilation">当前编译。</param>
     /// <param name="typeName">接口名（如 <c>IFeishuTenantV3User</c>）。</param>
     /// <param name="methodName">方法名（如 <c>GetBatchUsersAsync</c>）。</param>

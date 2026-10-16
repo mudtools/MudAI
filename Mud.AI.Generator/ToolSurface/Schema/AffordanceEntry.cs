@@ -7,23 +7,18 @@
 
 namespace Mud.AI.ToolSurface.Schema;
 
-/// <summary>
-/// 单工具的 <b>per-tool affordance</b>（决策指导）值对象：由 <c>{AffordanceDirectory}{工具名}.md</c>
-/// 编译期解析而来，与工具描述符<b>同 pass</b> 发射。
-/// </summary>
+/// <summary>单工具的 <b>per-tool affordance</b>（决策指导）值对象：由 <c>{AffordanceDirectory}{工具名}.md</c> 编译期解析而来，
+/// 与工具描述符<b>同 pass</b> 发射。</summary>
 /// <remarks>
 /// <para>
-/// <b>值相等</b>：本类型参与增量管线（作为 <c>EmitToolSurface</c> 输入的组成部分），
-/// 引用相等会让每次击键都判定为 <c>Modified</c>。
+/// <b>值相等</b>：本类型参与增量管线（作为 <c>EmitToolSurface</c> 输入的组成部分），引用相等会让每次击键都判定为 <c>Modified</c>。
+/// <b>四节恒存在且非空</b>（由 <see cref="AffordanceAssets"/> 的结构校验保证）⇒ JSON 四键恒出现，无需"缺键"分支；这也让下游
+/// （宿主渲染 / MCP 客户端 / 守卫）可以无条件按四键读取。
 /// </para>
 /// <para>
-/// <b>四节恒存在且非空</b>（由 <see cref="AffordanceAssets"/> 的结构校验保证）⇒ JSON 四键恒出现，
-/// 无需"缺键"分支；这也让下游（宿主渲染 / MCP 客户端 / 守卫）可以无条件按四键读取。
-/// </para>
-/// <para>
-/// <b>为什么不与 guidance 合并</b>：guidance 是域级/跨工具的工作流资产，按域键读取、按需拉取；
-/// affordance 是单工具的选型与前置条件，随描述符<b>推</b>给模型可见面。两者的键空间、消费时机、
-/// 预算口径都不同，合并会让"域变宽即压缩文案"与"单工具变胖即压缩文案"互相污染。
+/// <b>为什么不与 guidance 合并</b>：guidance 是域级/跨工具的工作流资产，按域键读取、按需拉取；affordance 是单工具的选型与前置
+/// 条件，随描述符<b>推</b>给模型可见面。两者的键空间、消费时机、预算口径都不同，合并会让"域变宽即压缩文案"与"单工具变胖即压缩
+/// 文案"互相污染。
 /// </para>
 /// </remarks>
 internal sealed class AffordanceEntry : IEquatable<AffordanceEntry?>
@@ -62,9 +57,8 @@ internal sealed class AffordanceEntry : IEquatable<AffordanceEntry?>
     /// 渲染 <c>x-{sdk}.affordance</c> 的 JSON 对象片段（四键恒出现，全部为字符串数组）。
     /// </summary>
     /// <remarks>
-    /// 手工拼接而非序列化器：与 <see cref="SchemaWriter"/> 同款纪律——生成器运行在编译器进程内
-    /// （<c>netstandard2.0</c>、AOT 无关），反射式序列化既不可用也无必要；转义统一走
-    /// <see cref="JsonText.Quote"/>（全工程唯一转义实现）。
+    /// 手工拼接而非序列化器：与 <see cref="SchemaWriter"/> 同款纪律——生成器运行在编译器进程内（<c>netstandard2.0</c>、AOT 无关），
+    /// 反射式序列化既不可用也无必要；转义统一走 <see cref="JsonText.Quote"/>（全工程唯一转义实现）。
     /// </remarks>
     public string ToJson()
     {

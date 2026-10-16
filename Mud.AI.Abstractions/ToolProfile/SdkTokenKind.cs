@@ -7,21 +7,17 @@
 
 namespace Mud.AI;
 
-/// <summary>
-/// 工具面令牌身份枚举——<c>Mud.AI.Generator</c> 工具面引擎唯一消费的令牌形态抽象。
-/// </summary>
+/// <summary>工具面令牌身份枚举——<c>Mud.AI.Generator</c> 工具面引擎唯一消费的令牌形态抽象。</summary>
 /// <remarks>
 /// <para>
-/// 核心不变量：<b>令牌身份是枚举槽而非命名前缀</b>。飞书 <c>[Tenant|User]</c> 与
-/// 微信 <c>_Provider/_ThirdParty/_Internal</c> 的差异由各 SDK profile 的「令牌身份推导策略」吸收，
-/// 引擎内部只消费本枚举，永远不看任何 SDK 的命名前缀/后缀字符串。
+/// 核心不变量：<b>令牌身份是枚举槽而非命名前缀</b>。飞书 <c>[Tenant|User]</c> 与微信 <c>_Provider/_ThirdParty/_Internal</c>
+/// 的差异由各 SDK profile 的「令牌身份推导策略」吸收，引擎内部只消费本枚举，永远不看任何 SDK 的命名前缀/后缀字符串。
 /// </para>
 /// <para>
-/// <b>序列化契约</b>：成员的渲染字面量（<c>ToLowerInvariant()</c>：
-/// <c>unspecified</c>/<c>tenant</c>/<c>user</c>/<c>third_party</c>/<c>internal</c>/<c>both</c>）
-/// 进入工具描述符 JSON 与 golden 快照，是逐字节契约的一部分——成员改名 = golden 漂移。
-/// 其中 <c>ThirdParty</c> 渲染为 <c>third_party</c>（snake_case），由引擎的映射表固定，
-/// 与 <c>Enum.ToString().ToLowerInvariant()</c>（<c>thirdparty</c>）不同，属有意的契约字面量。
+/// <b>序列化契约</b>：成员的渲染字面量（<c>unspecified</c>/<c>tenant</c>/<c>user</c>/<c>third_party</c>/<c>internal</c>/<c>both</c>）
+/// 进入工具描述符 JSON 与 golden 快照，是逐字节契约的一部分——成员改名 = golden 漂移。其中 <c>ThirdParty</c> 渲染为
+/// <c>third_party</c>（snake_case），由引擎的映射表固定，与 <c>Enum.ToString().ToLowerInvariant()</c>（<c>thirdparty</c>）不同，
+/// 属有意的契约字面量。
 /// </para>
 /// </remarks>
 public enum SdkTokenKind
@@ -53,9 +49,7 @@ public enum SdkTokenKind
 /// </summary>
 public static class SdkTokenKindContract
 {
-    /// <summary>
-    /// 求 <paramref name="kind"/> 的描述符渲染字面量（进 JSON 与 golden，改名即漂移）。
-    /// </summary>
+    /// <summary>求 <paramref name="kind"/> 的描述符渲染字面量（进 JSON 与 golden，改名即漂移）。</summary>
     /// <param name="kind">令牌身份。</param>
     /// <returns>契约字面量：unspecified/tenant/user/third_party/internal/both。</returns>
     public static string ToLiteral(SdkTokenKind kind) => kind switch

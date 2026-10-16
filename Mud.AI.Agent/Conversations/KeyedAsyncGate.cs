@@ -9,24 +9,19 @@ using System.Collections.Concurrent;
 
 namespace Mud.AI.Agent.Conversations;
 
-/// <summary>
-/// 进程内键控串行闸门引擎：<see cref="ConcurrentDictionary{TKey, TValue}"/> 键控
-/// <see cref="SemaphoreSlim"/>——同键串行、跨键并行；键空闲（无活跃持有者）即回收信号量，
-/// 防 long-tail 键泄漏。
-/// </summary>
+/// <summary>进程内键控串行闸门引擎：<see cref="ConcurrentDictionary{TKey, TValue}"/> 键控 <see cref="SemaphoreSlim"/>——同键
+/// 串行、跨键并行；键空闲（无活跃持有者）即回收信号量，防 long-tail 键泄漏。</summary>
 /// <remarks>
 /// <para>
-/// <b>形状（第七式「三段分离」的引擎段）</b>：只做"按 key 串行"这一机械语义；键构造与"空键怎么办"由调用方决定，
-/// 引擎只拒绝 <see langword="null"/>/空白。等待时长由被守护的工作决定，故引擎<b>不</b>快速失败——需要它的宿主
-/// 应在外层替换为带租约的实现（如分布式闸门），而非给引擎加超时配置。
+/// <b>形状（第七式「三段分离」的引擎段）</b>：只做"按 key 串行"这一机械语义；键构造与"空键怎么办"由调用方决定，引擎只拒绝
+/// <see langword="null"/>/空白。等待时长由被守护的工作决定，故引擎<b>不</b>快速失败——需要它的宿主应在外层替换为带租约的实现
+/// （如分布式闸门），而非给引擎加超时配置。<b>回收语义</b>：活跃计数归零即在全局锁内条件移除并 Dispose；条件移除（KVP 重载）
+/// 同时保证「归零判定 → 移除」原子。
 /// </para>
 /// <para>
-/// <b>回收语义</b>：活跃计数归零即在全局锁内条件移除并 Dispose；条件移除（KVP 重载）同时保证「归零判定 → 移除」原子。
-/// </para>
-/// <para>
-/// <b>取消语义</b>：等待被取消时只放弃登记、<b>不</b> Release——依赖 <see cref="SemaphoreSlim"/>
-/// 「取消与获取竞态时许可不会丢失」的运行时契约（再 Release 会抛 <see cref="SemaphoreFullException"/>）；
-/// 由 <c>KeyedAsyncGateCancellationStressTests</c> 在每个 TFM 上实证守护（备选方案见 <see cref="AcquireAsync"/> 内注释）。
+/// <b>取消语义</b>：等待被取消时只放弃登记、<b>不</b> Release——依赖 <see cref="SemaphoreSlim"/>「取消与获取竞态时许可不会
+/// 丢失」的运行时契约（再 Release 会抛 <see cref="SemaphoreFullException"/>）；由 <c>KeyedAsyncGateCancellationStressTests</c>
+/// 在每个 TFM 上实证守护（备选方案见 <see cref="AcquireAsync"/> 内注释）。
 /// </para>
 /// </remarks>
 public sealed class KeyedAsyncGate
@@ -34,10 +29,8 @@ public sealed class KeyedAsyncGate
     private readonly ConcurrentDictionary<string, GateEntry> _entries = new(StringComparer.Ordinal);
     private readonly object _collectLock = new();
 
-    /// <summary>
-    /// 取得 <paramref name="key"/> 的独占权；返回的句柄 <see cref="IDisposable.Dispose"/> 即放行。
-    /// 同键串行、跨键并行；键空闲即回收其信号量。
-    /// </summary>
+    /// <summary>取得 <paramref name="key"/> 的独占权；返回的句柄 <see cref="IDisposable.Dispose"/> 即放行。同键串行、跨键并行；
+    /// 键空闲即回收其信号量。</summary>
     /// <param name="key">闸门键（非空；键的构造归调用方）。</param>
     /// <param name="cancellationToken">等待期间取消：只放弃登记、不 Release（见类备注）。</param>
     public async Task<IDisposable> AcquireAsync(string key, CancellationToken cancellationToken = default)

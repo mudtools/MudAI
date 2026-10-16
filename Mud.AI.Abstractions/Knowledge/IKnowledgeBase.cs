@@ -66,9 +66,7 @@ public sealed record KnowledgeAnswer(
 /// </summary>
 public interface IKnowledgeBase
 {
-    /// <summary>
-    /// 执行知识问答。
-    /// </summary>
+    /// <summary>执行知识问答。</summary>
     /// <param name="query">用户问题。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>答案 + 召回切片（引用回链）。</returns>
@@ -80,9 +78,7 @@ public interface IKnowledgeBase
 /// </summary>
 public interface IRetriever
 {
-    /// <summary>
-    /// 检索与问题相关的知识切片。
-    /// </summary>
+    /// <summary>检索与问题相关的知识切片。</summary>
     /// <param name="query">用户问题。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>召回切片（按相关性排序）。</returns>

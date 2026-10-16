@@ -12,22 +12,20 @@ using Mud.AI.Agent.Tools.Security;
 
 namespace Mud.AI.Agent.Tools.Results;
 
-/// <summary>
-/// 出站净化阶段（工具结果 → 模型上下文）：剥离控制字符与 ANSI 转义、脱敏通信凭据与手机号。
-/// </summary>
+/// <summary>出站净化阶段（工具结果 → 模型上下文）：剥离控制字符与 ANSI 转义、脱敏通信凭据与手机号。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么是强制阶段而非钩子</b>：净化保护"模型上下文"这一<b>不可撤销</b>的出口——凭据/手机号一旦进入
-/// 上下文就无法召回（可能被复述、被上游日志留存）。故由调用方无条件调用、<b>不提供关闭开关</b>，也不能被
-/// 替换（需要额外整形请用 <c>IToolResultShaper</c>，它在净化<b>之后</b>执行）。
+/// <b>为什么是强制阶段而非钩子</b>：净化保护"模型上下文"这一<b>不可撤销</b>的出口——凭据/手机号一旦进入上下文就无法召回
+/// （可能被复述、被上游日志留存）。故由调用方无条件调用、<b>不提供关闭开关</b>，也不能被替换（需要额外整形请用
+/// <c>IToolResultShaper</c>，它在净化<b>之后</b>执行）。
 /// </para>
 /// <list type="number">
 /// <item><b>邮箱不脱敏</b>：邮箱是平台的<b>寻址货币</b>（按邮箱发消息/查人、邮件收件人），属通讯录信息；脱掉会让一整类多步流程失效。</item>
 /// <item><b>标识类字段不脱敏</b>：<c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c> 等是多步调用链的必需凭据——脱敏只认完整键名精确匹配，不含 <c>*_token</c> 通配。</item>
 /// <item><b>手机号脱敏牺牲"按手机号找人"</b>：有意取舍——手机号属个人隐私，而寻址可由邮箱或 <c>open_id</c> 替代。</item>
 /// </list>
-/// <para><b>误伤是脱敏最大的风险</b>，上面三类"看起来敏感但业务必需"的内容是<b>有意保留</b>的。</para>
-/// <para>匹配一律带边界断言，不命中更长数字串或标识内部，也不改变 JSON 结构。</para>
+/// <para><b>误伤是脱敏最大的风险</b>，上面三类"看起来敏感但业务必需"的内容是<b>有意保留</b>的；匹配一律带边界断言，不命中
+/// 更长数字串或标识内部，也不改变 JSON 结构。</para>
 /// </remarks>
 public static class ToolResultSanitizer
 {
@@ -55,9 +53,7 @@ public static class ToolResultSanitizer
         RegexOptions.Compiled,
         SecurityTextPrimitives.MatchTimeout);
 
-    /// <summary>
-    /// 净化工具结果文本。
-    /// </summary>
+    /// <summary>净化工具结果文本。</summary>
     /// <param name="text">下游执行器回填的原始文本（可能为 null/空）。</param>
     /// <returns>净化后的文本；输入为空时返回空串。</returns>
     public static string Sanitize(string? text)
@@ -78,9 +74,7 @@ public static class ToolResultSanitizer
         return sanitized;
     }
 
-    /// <summary>
-    /// 剥离 C0/C1 控制字符（保留 <c>\n</c> / <c>\r</c> / <c>\t</c>）。
-    /// </summary>
+    /// <summary>剥离 C0/C1 控制字符（保留 <c>\n</c> / <c>\r</c> / <c>\t</c>）。</summary>
     /// <remarks>
     /// 控制字符对模型无信息价值，却可被用来伪造工具输出的视觉结构（提示注入面的常见载体）。
     /// </remarks>

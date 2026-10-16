@@ -12,9 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Mud.AI.ToolSurface;
 
-/// <summary>
-/// 剖面契约守卫分析器（<c>SDKT001</c>）。
-/// </summary>
+/// <summary>剖面契约守卫分析器（<c>SDKT001</c>）。</summary>
 /// <remarks>
 /// <para>
 /// 强制 <c>ISdkToolProfile</c>（标记接口）与 <c>[SdkToolProfile]</c>（数据特性）<b>成对出现</b>：
@@ -24,12 +22,9 @@ namespace Mud.AI.ToolSurface;
 ///   <item>标特性却未实现接口 —— 引擎按接口识别剖面，该类型会被完全忽略，特性写错位置。</item>
 /// </list>
 /// <para>
-/// <b>为什么用「全名单字符串」判定而非 <c>typeof</c></b>：本程序集是编译器扩展，
-/// 设计纪律禁止引用任何 <c>Mud.*</c> 运行时程序集，故与组件仓 HTTP 分析器（<c>TokenManagerLifetimeAnalyzer</c>）同例，按
-/// <c>GetTypeByMetadataName</c> + 特性「简单名 + 命名空间」双重判定。
-/// </para>
-/// <para>
-/// 本分析器随 <c>Mud.AI.Generator</c> 的 <c>analyzers/dotnet/cs</c> 路径分发。
+/// <b>为什么用「全名单字符串」判定而非 <c>typeof</c></b>：本程序集是编译器扩展，设计纪律禁止引用任何 <c>Mud.*</c> 运行时程序集，
+/// 故与组件仓 HTTP 分析器（<c>TokenManagerLifetimeAnalyzer</c>）同例，按 <c>GetTypeByMetadataName</c> + 特性「简单名 + 命名空间」
+/// 双重判定。本分析器随 <c>Mud.AI.Generator</c> 的 <c>analyzers/dotnet/cs</c> 路径分发。
 /// </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -119,10 +114,7 @@ public sealed class ProfileContractGuardAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    /// <summary>
-    /// 按「简单名 + 命名空间」双重判定剖面特性（防同名特性误命中，与上游
-    /// <c>Extractors.GetFeishuToolAttribute</c> 同纪律）。
-    /// </summary>
+    /// <summary>按「简单名 + 命名空间」双重判定剖面特性（防同名特性误命中，与上游 <c>Extractors.GetFeishuToolAttribute</c> 同纪律）。</summary>
     private static bool HasProfileAttribute(INamedTypeSymbol symbol)
     {
         foreach (var attribute in symbol.GetAttributes())
