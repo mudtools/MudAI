@@ -9,31 +9,26 @@ using Mud.AI.ToolSurface.Extraction;
 
 namespace Mud.AI.ToolSurface.Schema;
 
-/// <summary>
-/// L4 描述符校验器（对齐 CLI <c>internal/schema/lint.go</c> 的分层思路；移植自上游
-/// <c>Mud.Feishu.AI.Tools.Schema.DescriptorValidator</c>）。
-/// </summary>
+/// <summary>L4 描述符校验器（对齐 CLI <c>internal/schema/lint.go</c> 的分层思路；移植自上游
+/// <c>Mud.Feishu.AI.Tools.Schema.DescriptorValidator</c>）。</summary>
 /// <remarks>
 /// <para>数据驱动：输入是 <see cref="CapabilityEntry"/> 集合，输出是验证结果列表，不依赖具体工具。</para>
 /// <para>
-/// <b>诊断同源纪律</b>：校验结果直接携带 <see cref="DiagnosticDescriptor"/>（而非裸 ID 字符串）——
-/// 描述符经 <see cref="ToolSurfaceDiagnostics.Factory"/> 按剖面实例化（槽位 001/003/015/016/027），
-/// 字符串 ID 无法机械校验"定义 ↔ 上报点"是否一致。
+/// <b>诊断同源纪律</b>：校验结果直接携带 <see cref="DiagnosticDescriptor"/>（而非裸 ID 字符串）——描述符经
+/// <see cref="ToolSurfaceDiagnostics.Factory"/> 按剖面实例化（槽位 001/003/015/016/027），字符串 ID 无法机械校验
+/// "定义 ↔ 上报点"是否一致。
 /// </para>
 /// <para>
-/// <b>泛化点</b>（上游硬编码 → 剖面槽/委托）：
-/// ① L3 的 <c>StartsWith("IFeishuUser")</c> → 经 <see cref="InterfaceIdentityParser.DeriveTokenKind"/>
-/// 用剖面标记表（<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c>）推导承载接口的令牌身份再比对；
-/// ② L1 的派生常量名规则属 Emit 层（<c>SchemaEmitter.BuildNameConstant</c>），
-/// 经 <c>ValidateAll</c> 的可选委托参数 <c>nameConstantBuilder</c> 注入——为 <see langword="null"/> 时跳过槽位 027
-/// 检查（该检查的产物派生规则必须与产物同源，Schema 层不复刻）。
+/// <b>泛化点</b>（上游硬编码 → 剖面槽/委托）：① L3 的 <c>StartsWith("IFeishuUser")</c> → 经
+/// <see cref="InterfaceIdentityParser.DeriveTokenKind"/> 用剖面标记表（<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c>）
+/// 推导承载接口的令牌身份再比对；② L1 的派生常量名规则属 Emit 层（<c>SchemaEmitter.BuildNameConstant</c>），
+/// 经 <c>ValidateAll</c> 的可选委托参数 <c>nameConstantBuilder</c> 注入——为 <see langword="null"/> 时跳过槽位 027 检查
+/// （该检查的产物派生规则必须与产物同源，Schema 层不复刻）。
 /// </para>
 /// </remarks>
 internal static class DescriptorValidator
 {
-    /// <summary>
-    /// 校验全部条目，返回违规列表。
-    /// </summary>
+    /// <summary>校验全部条目，返回违规列表。</summary>
     /// <param name="entries">能力条目集合。</param>
     /// <param name="profile">当前剖面（L3 令牌身份推导需要标记表）。</param>
     /// <param name="factory">当前剖面的诊断工厂（描述符按 {prefix}{slot:D3} 实例化）。</param>
@@ -62,9 +57,7 @@ internal static class DescriptorValidator
         }
     }
 
-    /// <summary>
-    /// 计算覆盖率度量。
-    /// </summary>
+    /// <summary>计算覆盖率度量。</summary>
     public static CoverageReport ComputeCoverage(IEnumerable<CapabilityEntry> entries, int totalMethodCount)
     {
         try
@@ -162,24 +155,15 @@ internal static class DescriptorValidator
 
     // ────────── L2 类型一致校验 ──────────
 
-    /// <summary>
-    /// L2：<c>required ⊆ properties</c>，两个<b>独立</b>来源比对。
-    /// </summary>
+    /// <summary>L2：<c>required ⊆ properties</c>，两个<b>独立</b>来源比对：① 意图模型
+    /// <see cref="CapabilityParameter.IsRequired"/>（来自参数特性 / C# 可空性）；② 渲染产物
+    /// <see cref="SchemaWriter.WriteInputSchema"/> 的 JSON 字符串（用 <see cref="RenderedPropertiesKeys"/> 从文本
+    /// 提取 <c>properties</c> 段顶层键）。</summary>
     /// <remarks>
-    /// <para>
     /// <b>两个来源必须独立</b>：若 <c>propertyNames</c> 与 <c>required</c> 都取自 <c>entry.Parameters</c>——同一集合自比，
     /// 条件恒为假；"有上报点的假门禁"比死定义更危险：它让门禁清单看起来已被覆盖。
-    /// </para>
-    /// <para>
-    /// <b>两个来源</b>：
-    /// ① <b>意图模型</b>——<see cref="CapabilityParameter.IsRequired"/>（来自参数特性 / C# 可空性）；
-    /// ② <b>渲染产物</b>——<see cref="SchemaWriter.WriteInputSchema"/> 产出的 JSON 字符串，
-    /// 用 <see cref="RenderedPropertiesKeys"/> 从<b>文本</b>中提取 <c>properties</c> 段顶层键。
-    /// </para>
-    /// <para>
     /// 由此新增的真实检出能力：<b>参数名归一后重名</b>（如 <c>userId</c> 与 <c>user_id</c> 都归一为 <c>user_id</c>）会让
     /// <c>properties</c> 出现重复键、<c>required</c> 与模型看到的键集不一致——这在单源实现下完全静默。
-    /// </para>
     /// </remarks>
     private static void ValidateL2TypeConsistency(
         List<CapabilityEntry> entries,
@@ -238,10 +222,10 @@ internal static class DescriptorValidator
     // ────────── L3 跨字段一致校验 ──────────
 
     /// <remarks>
-    /// <b>泛化</b>（上游 <c>StartsWith("IFeishuUser")</c> / <c>ToolIdentity.Both</c> 硬编码）：
-    /// 承载接口的令牌身份经剖面标记表推导（<see cref="InterfaceIdentityParser.DeriveTokenKind"/>），
-    /// 与条目声明身份比对；双令牌基接口（推导无命中标记 → <see cref="ToolSurfaceTokenKind.Both"/>）
-    /// 不应直接产工具。身份字面量一律经 <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>。
+    /// <b>泛化</b>（上游 <c>StartsWith("IFeishuUser")</c> / <c>ToolIdentity.Both</c> 硬编码）：承载接口的令牌身份经剖面
+    /// 标记表推导（<see cref="InterfaceIdentityParser.DeriveTokenKind"/>），与条目声明身份比对；双令牌基接口（推导无命中
+    /// 标记 → <see cref="ToolSurfaceTokenKind.Both"/>）不应直接产工具。身份字面量一律经
+    /// <see cref="ToolSurfaceTokenKindContract.ToLiteral"/>。
     /// </remarks>
     private static void ValidateL3CrossFieldConsistency(
         List<CapabilityEntry> entries,
@@ -295,8 +279,8 @@ internal sealed class ValidationResult
 
     /// <summary>构造校验结果（级别由 <see cref="Descriptor"/> 自身的 <c>DefaultSeverity</c> 表达）。</summary>
     /// <remarks>
-    /// 只提供 <c>Error(...)</c> 一个工厂：全部校验项都走 Error，且严重级已在描述符里定义——
-    /// 不得再添加无读取方的级别开关或属性（如接口名，已作为消息实参之一）。
+    /// 只提供 <c>Error(...)</c> 一个工厂：全部校验项都走 Error，且严重级已在描述符里定义——不得再添加无读取方的
+    /// 级别开关或属性（如接口名，已作为消息实参之一）。
     /// </remarks>
     public static ValidationResult Error(DiagnosticDescriptor descriptor, params object[] arguments)
         => new(descriptor, arguments);

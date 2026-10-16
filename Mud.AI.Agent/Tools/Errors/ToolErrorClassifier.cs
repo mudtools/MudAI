@@ -10,9 +10,7 @@ using Mud.AI.Abstractions.Tools.Errors;
 
 namespace Mud.AI.Agent.Tools.Errors;
 
-/// <summary>
-/// 工具错误大类（8 类闭集）：对齐官方 <c>errs/ERROR_CONTRACT.md</c> 的 9 类语义后，收敛为工具面所需。
-/// </summary>
+/// <summary>工具错误大类（8 类闭集）：对齐官方 <c>errs/ERROR_CONTRACT.md</c> 的 9 类语义后，收敛为工具面所需。</summary>
 public enum ToolErrorCategory
 {
     /// <summary>参数验证失败：参数缺失/类型错/filter、sort 文法错——模型应换参数而非重试。</summary>
@@ -40,10 +38,8 @@ public enum ToolErrorCategory
     ContentSafety,
 }
 
-/// <summary>
-/// 工具错误子类常量：与 <see cref="ToolErrorCategory"/> 配对使用，
-/// 提供更细粒度的错误原因。新增常量须评审 + 守卫断言（消费方按字符串匹配，改动即破坏契约）。
-/// </summary>
+/// <summary>工具错误子类常量：与 <see cref="ToolErrorCategory"/> 配对使用，提供更细粒度的错误原因；新增常量须评审
+/// + 守卫断言（消费方按字符串匹配，改动即破坏契约）。</summary>
 public static class ToolErrorSubtype
 {
     // Validation
@@ -118,21 +114,13 @@ public static class ToolErrorSubtype
     public const string InjectedContentBlocked = "injected_content_blocked";
 }
 
-/// <summary>
-/// 工具错误分类器：纯函数——从异常类型 / 传输故障状态码（中立端口
-/// <see cref="ITransportFault"/>）映射到 <see cref="ToolErrorCategory"/> 与
-/// <see cref="ToolErrorSubtype"/>，无配置，<b>不认识任何产品的码表</b>。
-/// </summary>
+/// <summary>工具错误分类器：纯函数——从异常类型 / 传输故障状态码（中立端口 <see cref="ITransportFault"/>）映射到
+/// <see cref="ToolErrorCategory"/> 与 <see cref="ToolErrorSubtype"/>，无配置，<b>不认识任何产品的码表</b>。</summary>
 /// <remarks>
-/// <para>
 /// <b>授权拒绝与参数错误必须可区分</b>——这是模型自我修正（重试 or 换参数 or 放弃）的前提。
-/// </para>
-/// <para>
-/// <b>产品业务码不在这里（独立产品线纪律）</b>：产品码 → 段位的映射<b>由产品侧</b>
-/// 在读取自家信封时完成（读数载体 = <see cref="ToolApiFailure"/>），中立层只消费已分类的结果。
-/// 本类<b>不持有任何产品码表</b>：否则中立包被上游化时码表会被一并带走，
-/// 且只能由"知道全部产品"的中立包维护。
-/// </para>
+/// <b>产品业务码不在这里（独立产品线纪律）</b>：产品码 → 段位的映射<b>由产品侧</b>在读取自家信封时完成（读数载体 =
+/// <see cref="ToolApiFailure"/>），中立层只消费已分类的结果；本类<b>不持有任何产品码表</b>——否则中立包被上游化时
+/// 码表会被一并带走，且只能由"知道全部产品"的中立包维护。
 /// </remarks>
 public static class ToolErrorClassifier
 {
@@ -140,13 +128,11 @@ public static class ToolErrorClassifier
     /// <param name="exception">被分类的异常。</param>
     /// <param name="transportFault">传输层故障（产品中立端口）：由产品适配层把自身的传输异常适配后传入；<see langword="null"/> 表示该异常不携带传输层语义。</param>
     /// <remarks>
-    /// <b>为什么状态码经端口传入、而不是判定异常类型</b>：本类住在产品中立的
-    /// <c>Mud.AI.Agent</c>，独立产品线纪律要求它<b>不得认识任何具体 HTTP 组件的异常类型</b>
-    /// （判定具体 HTTP 客户端异常类型即违反该纪律）；
-    /// "状态码"是唯一的跨产品事实，故经 <see cref="ITransportFault"/> 由适配层供给。
-    /// <b>漏接适配的后果</b>：传输异常会落到 <see cref="System.Net.Http.HttpRequestException"/>
-    /// 兜底分支（<c>retryable/transient</c>）——403 会被误判为可重试，故该接线由消费方的
-    /// 端到端用例锁定（不是靠这里的注释）。
+    /// <b>为什么状态码经端口传入、而不是判定异常类型</b>：本类住在产品中立的 <c>Mud.AI.Agent</c>，独立产品线纪律
+    /// 要求它<b>不得认识任何具体 HTTP 组件的异常类型</b>（判定具体 HTTP 客户端异常类型即违反该纪律）；"状态码"
+    /// 是唯一的跨产品事实，故经 <see cref="ITransportFault"/> 由适配层供给。<b>漏接适配的后果</b>：传输异常会落到
+    /// <see cref="System.Net.Http.HttpRequestException"/> 兜底分支（<c>retryable/transient</c>）——403 会被误判为
+    /// 可重试，故该接线由消费方的端到端用例锁定（不是靠这里的注释）。
     /// </remarks>
     public static (ToolErrorCategory Category, string Subtype) Classify(
         Exception exception, ITransportFault? transportFault = null)
