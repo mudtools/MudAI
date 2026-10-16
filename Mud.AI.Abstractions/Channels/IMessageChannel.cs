@@ -7,40 +7,30 @@
 
 namespace Mud.AI.Abstractions.Channels;
 
-/// <summary>
-/// 流式回复通道抽象：把模型增量 token 桥接给 IM 平台的消息面（SDK 不预设通道，实现方决定
-/// 「占位消息怎么建、增量怎么落」）。
-/// </summary>
+/// <summary>流式回复通道抽象：把模型增量 token 桥接给 IM 平台的消息面（SDK 不预设通道，实现方决定「占位消息怎么建、
+/// 增量怎么落」）。</summary>
 /// <remarks>
 /// <para>
-/// 失败语义（对齐事件派发异常隔离）：<b>单次增量写入失败不中断模型流</b>——实现方记日志后继续；
-/// <see cref="BeginAsync"/> 失败由调用方回退非流式路径（模型尚未调用，零重复成本）。
+/// 失败语义（对齐事件派发异常隔离）：<b>单次增量写入失败不中断模型流</b>——实现方记日志后继续；<see cref="BeginAsync"/>
+/// 失败由调用方回退非流式路径（模型尚未调用，零重复成本）。
+/// <b>并发契约</b>：同一 <c>messageId</c> 上的 <see cref="WriteStreamAsync"/> 与 <see cref="FlushAsync"/> <b>必须由调用方
+/// 顺序 <c>await</c></b>——并发调用<b>不在契约内</b>（实现方为无锁乐观路径：缓冲摘除后仍持引用的并发写会永久滞留半截文本）。
 /// </para>
 /// <para>
-/// <b>并发契约</b>：同一 <c>messageId</c> 上的 <see cref="WriteStreamAsync"/> 与
-/// <see cref="FlushAsync"/> <b>必须由调用方顺序 <c>await</c></b>——并发调用<b>不在契约内</b>
-/// （实现方为无锁乐观路径：缓冲摘除后仍持引用的并发写会永久滞留半截文本）。
-/// </para>
-/// <para>
-/// <b>状态生命周期契约</b>：实现方若为 <c>Singleton</c>，per-messageId 状态<b>必须在
-/// <see cref="FlushAsync"/> 内清理</b>，任何终止路径（正常/异常/取消）都必须归零——
-/// 取消路径由调用方经补偿 <see cref="FlushAsync"/> 确保（以不可取消令牌调用）。
+/// <b>状态生命周期契约</b>：实现方若为 <c>Singleton</c>，per-messageId 状态<b>必须在 <see cref="FlushAsync"/> 内清理</b>，
+/// 任何终止路径（正常/异常/取消）都必须归零——取消路径由调用方经补偿 <see cref="FlushAsync"/> 确保（以不可取消令牌调用）。
 /// </para>
 /// </remarks>
 public interface IMessageChannel
 {
-    /// <summary>
-    /// 创建占位消息（流式回复的载体），返回消息 ID。
-    /// </summary>
+    /// <summary>创建占位消息（流式回复的载体），返回消息 ID。</summary>
     /// <param name="tenantKey">租户/应用标识（租户上下文切换由实现方经作用域承担）。</param>
     /// <param name="chatId">目标会话 ID。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>占位消息 ID。</returns>
     Task<string> BeginAsync(string tenantKey, string chatId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 写入一段模型增量文本（实现方按需缓冲/分片落盘；实现必须自带失败隔离，不向上抛业务异常）。
-    /// </summary>
+    /// <summary>写入一段模型增量文本（实现方按需缓冲/分片落盘；实现必须自带失败隔离，不向上抛业务异常）。</summary>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="chatId">目标会话 ID。</param>
     /// <param name="messageId"><see cref="BeginAsync"/> 返回的占位消息 ID。</param>
@@ -48,9 +38,7 @@ public interface IMessageChannel
     /// <param name="cancellationToken">取消令牌。</param>
     Task WriteStreamAsync(string tenantKey, string chatId, string messageId, string delta, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 结束流式回复：落地最终完整文本/结束态（卡片收尾等）。
-    /// </summary>
+    /// <summary>结束流式回复：落地最终完整文本/结束态（卡片收尾等）。</summary>
     /// <param name="tenantKey">租户/应用标识。</param>
     /// <param name="chatId">目标会话 ID。</param>
     /// <param name="messageId"><see cref="BeginAsync"/> 返回的占位消息 ID。</param>

@@ -11,33 +11,23 @@ using Mud.AI.Agent.Tools.Security;
 
 namespace Mud.AI.Agent.Tools.Results;
 
-/// <summary>
-/// 出站内容安全检测：识别工具结果中"试图指挥模型"的注入载荷，按模式标注或阻断。
-/// </summary>
+/// <summary>出站内容安全检测：识别工具结果中"试图指挥模型"的注入载荷，按模式标注或阻断。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么与净化分属两段</b>：净化（<see cref="ToolResultSanitizer"/>）是<b>安全基线</b>（强制、无开关）；
-/// 内容安全是<b>策略</b>——它改变工具语义（标注 vs 阻断），故允许 <c>off</c> 且默认 <c>warn</c>。
-/// </para>
-/// <para>
-/// <b>顺序（不变量 A9）</b>：必须在净化<b>之前</b>——净化会剥离控制字符与 ANSI，而注入载荷常用不可见
-/// 字符把关键词拆开（<c>ignore\u200Bprevious</c>），先净化就检测不到了。
-/// </para>
-/// <para>
-/// <b>按行扫描而非递归</b>：工具结果到达本阶段时已是文本（执行器已完成白名单投影并序列化），递归遍历
+/// <b>为什么与净化分属两段</b>：净化（<see cref="ToolResultSanitizer"/>）是<b>安全基线</b>（强制、无开关）；内容安全是
+/// <b>策略</b>——它改变工具语义（标注 vs 阻断），故允许 <c>off</c> 且默认 <c>warn</c>。<b>顺序（不变量 A9）</b>：必须在
+/// 净化<b>之前</b>——净化会剥离控制字符与 ANSI，而注入载荷常用不可见字符把关键词拆开（<c>ignore\u200Bprevious</c>），
+/// 先净化就检测不到了。<b>按行扫描而非递归</b>：工具结果到达本阶段时已是文本（执行器已完成白名单投影并序列化），递归遍历
 /// 没有额外收益却引入解析失败分支；逐行对自然语言载荷的检出率等价。
-/// </para>
-/// <para><b>检出即标注而非默认阻断</b>：结果中完全可能合法出现"忽略上一段"这类字面文本（例如评审文档），阻断会误伤；默认 <c>warn</c> 让模型自行判断，并把"这段内容不可信"显式交给模型。</para>
+/// <b>检出即标注而非默认阻断</b>：结果中完全可能合法出现"忽略上一段"这类字面文本（例如评审文档），阻断会误伤；默认
+/// <c>warn</c> 让模型自行判断，并把"这段内容不可信"显式交给模型。
 /// </remarks>
 public static class ToolResultContentSafety
 {
     /// <summary>标注前缀（命中时加在结果首行；<c>{rules}</c> 为命中规则名逗号串）。</summary>
     public const string AnnotationPrefix = "[untrusted_content:";
 
-    /// <summary>
-    /// 「不检测」的开关字面量：模式<b>闭集</b>属调用方的策略词汇（配置面取值由调用方校验），
-    /// 本类型只识别这一个约定的关闭值；其余取值（含 <see langword="null"/>）一律进入检测。
-    /// </summary>
+    /// <summary>「不检测」的开关字面量：模式<b>闭集</b>属调用方的策略词汇（配置面取值由调用方校验），本类型只识别这一个
+    /// 约定的关闭值；其余取值（含 <see langword="null"/>）一律进入检测。</summary>
     public const string DisabledMode = "off";
 
     /// <summary>单行扫描的长度上限（超长行只取前缀——注入载荷都在行首附近，避免对超长行做全文正则）。</summary>

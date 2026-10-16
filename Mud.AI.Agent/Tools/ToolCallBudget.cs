@@ -7,23 +7,18 @@
 
 namespace Mud.AI.Agent.Tools;
 
-/// <summary>
-/// 单轮工具调用预算：经 <see cref="System.Threading.AsyncLocal{T}"/> 在事件入口开启、随
-/// <see langword="using"/> 释放，工具执行链通过 <see cref="TryConsume"/> 原子递增并判定是否越限。
-/// </summary>
+/// <summary>单轮工具调用预算：经 <see cref="System.Threading.AsyncLocal{T}"/> 在事件入口开启、随 <see langword="using"/> 释放，
+/// 工具执行链通过 <see cref="TryConsume"/> 原子递增并判定是否越限。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么不用 MAF 内建上限</b>：MAF <c>ChatClientAgent</c> 的内建上限约 40 次且<b>不可配</b>，成本过高；
-/// 本类型给<b>可配的、更收紧的</b>每轮预算（默认 10），耗尽时短路返回结构化错误（不抛异常，防重复计费）。
+/// <b>为什么不用 MAF 内建上限</b>：MAF <c>ChatClientAgent</c> 的内建上限约 40 次且<b>不可配</b>，成本过高；本类型给
+/// <b>可配的、更收紧的</b>每轮预算（默认 10），耗尽时短路返回结构化错误（不抛异常，防重复计费）。
+/// <b>per-run</b>：预算是「一轮 <c>RunAsync</c> 的总工具数」，由事件层开启、随 <c>finally</c> 释放（与工具执行上下文同一
+/// 生命周期与 AsyncLocal 纪律）。
 /// </para>
 /// <para>
-/// <b>per-run</b>：预算是「一轮 <c>RunAsync</c> 的总工具数」，由事件层开启、随 <c>finally</c> 释放
-/// （与工具执行上下文同一生命周期与 AsyncLocal 纪律）。
-/// </para>
-/// <para>
-/// <b>并发与边界</b>：计数经 <see cref="Interlocked"/> 保证原子性——MAF 的工具调用同轮内可能并行
-/// （当前实现是串行的，但不可依赖该实现细节）；<c>maxToolCalls = 0</c> 视为「不限制」，
-/// 与宿主配置的 <c>MaxToolCallsPerTurn = 0</c> 一致。
+/// <b>并发与边界</b>：计数经 <see cref="Interlocked"/> 保证原子性——MAF 的工具调用同轮内可能并行（当前实现是串行的，
+/// 但不可依赖该实现细节）；<c>maxToolCalls = 0</c> 视为「不限制」，与宿主配置的 <c>MaxToolCallsPerTurn = 0</c> 一致。
 /// </para>
 /// </remarks>
 public sealed class ToolCallBudget
@@ -33,9 +28,7 @@ public sealed class ToolCallBudget
 
     private static readonly AsyncLocal<ToolCallBudget?> _ambient = new();
 
-    /// <summary>
-    /// 当前异步流的工具调用预算（未设置时为 <see langword="null"/>——不限制）。
-    /// </summary>
+    /// <summary>当前异步流的工具调用预算（未设置时为 <see langword="null"/>——不限制）。</summary>
     public static ToolCallBudget? Current => _ambient.Value;
 
     /// <summary>
@@ -48,9 +41,7 @@ public sealed class ToolCallBudget
         _used = 0;
     }
 
-    /// <summary>
-    /// 开始一轮预算：把自身设为当前异步流值，返回的作用域释放时恢复。
-    /// </summary>
+    /// <summary>开始一轮预算：把自身设为当前异步流值，返回的作用域释放时恢复。</summary>
     /// <returns>作用域（<see cref="IDisposable.Dispose"/> 恢复原值）。</returns>
     public IDisposable Begin()
     {
@@ -59,12 +50,8 @@ public sealed class ToolCallBudget
         return new BudgetScope(previous, this);
     }
 
-    /// <summary>
-    /// 原子递增并判定是否越限。
-    /// </summary>
-    /// <returns>
-    /// <see langword="true"/> = 预算未耗尽，可执行；<see langword="false"/> = 越限，应短路返回结构化错误。
-    /// </returns>
+    /// <summary>原子递增并判定是否越限。</summary>
+    /// <returns><see langword="true"/> = 预算未耗尽，可执行；<see langword="false"/> = 越限，应短路返回结构化错误。</returns>
     public bool TryConsume()
     {
         // 0 = 不限制

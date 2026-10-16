@@ -38,12 +38,12 @@ public class CommentConventionContractGuards
 
     /// <summary>扫描面下界：文件数与注释行数（低于即视为扫描面被截断/过滤器坏掉的假绿）。</summary>
     /// <remarks>
-    /// 作用域为三个 <c>Mud.AI.*</c> 工程（实测 126 文件 / 约 5860 注释行；注释压缩后按同一约 3% 余量
+    /// 作用域为三个 <c>Mud.AI.*</c> 工程（实测 126 文件 / 约 5780 注释行；注释压缩后按同一约 3% 余量
     /// 下压地板），下界取"接近实测值"的硬地板，不是随手可越过的空断言。
     /// </remarks>
     private const int MinimumScannedFiles = 120;
 
-    private const int MinimumCommentLines = 5680;
+    private const int MinimumCommentLines = 5600;
 
     private static readonly string[] ScopedProjects =
     [

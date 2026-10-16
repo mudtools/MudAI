@@ -7,23 +7,18 @@
 
 namespace Mud.AI.Agent.Events;
 
-/// <summary>
-/// <b>会话取/建/存端口</b>（中立管线与审批续跑闭环共用的会话面）。
-/// </summary>
+/// <summary><b>会话取/建/存端口</b>（中立管线与审批续跑闭环共用的会话面）。</summary>
 /// <remarks>
 /// <para>
-/// <b>为什么落 <c>Mud.AI.Agent</c> 而不是 <c>Mud.AI.Abstractions</c></b>：
-/// 本端口的方法签名承载 MAF <c>AgentSession</c>，而 <c>Mud.AI.Abstractions</c> 是<b>零 MAF</b>
-/// 的编译期契约层——故本端口与 <c>ITurnScopeFactory</c> 一起落在 <c>Mud.AI.Agent/Events/</c>，
-/// 这是「零 MAF 硬纪律」与迁移目标树共同决定的位置。
+/// <b>为什么落 <c>Mud.AI.Agent</c> 而不是 <c>Mud.AI.Abstractions</c></b>：本端口的方法签名承载 MAF <c>AgentSession</c>，
+/// 而 <c>Mud.AI.Abstractions</c> 是<b>零 MAF</b> 的编译期契约层——故本端口与 <c>ITurnScopeFactory</c> 一起落在
+/// <c>Mud.AI.Agent/Events/</c>，这是「零 MAF 硬纪律」与迁移目标树共同决定的位置。<b>产品实现</b>：飞书侧
+/// <c>FeishuAgent</c> 直接实现本端口（其 <c>GetOrCreateSessionAsync</c> / <c>SaveSessionAsync</c> 早于本端口存在，
+/// 签名逐字一致 ⇒ 零改造），故中立管线不引用任何产品类型。
 /// </para>
 /// <para>
-/// <b>产品实现</b>：飞书侧 <c>FeishuAgent</c> 直接实现本端口（其 <c>GetOrCreateSessionAsync</c> /
-/// <c>SaveSessionAsync</c> 早于本端口存在，签名逐字一致 ⇒ 零改造），故中立管线不引用任何产品类型。
-/// </para>
-/// <para>
-/// <b>失败语义</b>：实现自行决定"坏值 ⇒ 重建"等自愈策略（飞书侧既有语义：载荷损坏按 miss 处理），
-/// 端口只定形，不吞异常——异常照常传播给调用方（管线/续跑闭环据此决定补偿）。
+/// <b>失败语义</b>：实现自行决定"坏值 ⇒ 重建"等自愈策略（飞书侧既有语义：载荷损坏按 miss 处理），端口只定形，不吞异常
+/// ——异常照常传播给调用方（管线/续跑闭环据此决定补偿）。
 /// </para>
 /// </remarks>
 public interface IAgentSessionFacade
@@ -32,9 +27,8 @@ public interface IAgentSessionFacade
     /// 会话历史在框架状态袋内的状态键（<b>产品事实</b>：飞书侧是 <c>feishu.agent.history</c>）。
     /// </summary>
     /// <remarks>
-    /// <b>为什么它属于本端口</b>：历史存取（<c>TryGetInMemoryChatHistory</c>）是本门面封装的能力，
-    /// 历史键是它的实现细节；审批续跑闭环需要该键做「孤儿审批判定」——让封装者自己回答，
-    /// 好过把它再散成各处形参（宿主不必知道键名）。
+    /// <b>为什么它属于本端口</b>：历史存取（<c>TryGetInMemoryChatHistory</c>）是本门面封装的能力，历史键是它的实现细节；
+    /// 审批续跑闭环需要该键做「孤儿审批判定」——让封装者自己回答，好过把它再散成各处形参（宿主不必知道键名）。
     /// </remarks>
     string HistoryStateKey { get; }
 

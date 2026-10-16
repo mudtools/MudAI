@@ -12,23 +12,18 @@ using Mud.AI.Abstractions.Knowledge;
 
 namespace Mud.AI.Agent.Context;
 
-/// <summary>
-/// 知识检索上下文装配器（注入模式）的<b>中立实现</b>：把 <see cref="IRetriever"/>
-/// 召回切片以编号参考块形式注入 Prompt——「检索 → Prompt 注入桥」。
-/// </summary>
+/// <summary>知识检索上下文装配器（注入模式）的<b>中立实现</b>：把 <see cref="IRetriever"/> 召回切片以编号参考块形式注入
+/// Prompt——「检索 → Prompt 注入桥」。</summary>
 /// <remarks>
 /// <para>
-/// 机制（检索 → minScore 过滤 → 编号 → 三级预算 → untrusted 头）在此一份实现；头部/尾部文案是产品事实，
-/// 由构造参数注入——产品子类传入自有文案即保行为逐字节一致。
+/// 机制（检索 → minScore 过滤 → 编号 → 三级预算 → untrusted 头）在此一份实现；头部/尾部文案是产品事实，由构造参数注入
+/// ——产品子类传入自有文案即保行为逐字节一致。
 /// </para>
 /// <para>
-/// <b>三级预算（取值单一源 <see cref="RetrievalBudgets"/>）</b>：条数闸、总长闸、单条闸各自可达——
-/// 短切片撞条数闸、长切片撞总预算、超长单条撞单条闸；每条以 <c>[n] source=&lt;来源&gt; 文本</c> 成对输出，
-/// 模型按编号引用时宿主可回链原文。
-/// </para>
-/// <para>
-/// <b>失败隔离</b>：装配器自身失败由事件层既有异常隔离承接；检索无结果返回 <see langword="null"/>
-/// （本装配器对本次事件无贡献）。<see cref="IContextAssembler.Order"/> = 100（缺省）：问题文本先于知识注入。
+/// <b>三级预算（取值单一源 <see cref="RetrievalBudgets"/>）</b>：条数闸、总长闸、单条闸各自可达——短切片撞条数闸、长切片撞总
+/// 预算、超长单条撞单条闸；每条以 <c>[n] source=&lt;来源&gt; 文本</c> 成对输出，模型按编号引用时宿主可回链原文。
+/// <b>失败隔离</b>：装配器自身失败由事件层既有异常隔离承接；检索无结果返回 <see langword="null"/>（本装配器对本次事件无贡献）。
+/// <see cref="IContextAssembler.Order"/> = 100（缺省）：问题文本先于知识注入。
 /// </para>
 /// </remarks>
 public class RetrievalContextAssembler : IContextAssembler
@@ -39,9 +34,7 @@ public class RetrievalContextAssembler : IContextAssembler
     private readonly int _order;
     private readonly double? _minScore;
 
-    /// <summary>
-    /// 初始化 <see cref="RetrievalContextAssembler"/>。
-    /// </summary>
+    /// <summary>初始化 <see cref="RetrievalContextAssembler"/>。</summary>
     /// <param name="retriever">知识检索门面。</param>
     /// <param name="header">注入块头部（<b>产品事实</b>：untrusted 标注文案）。</param>
     /// <param name="footer">注入块尾部（<b>产品事实</b>）。</param>

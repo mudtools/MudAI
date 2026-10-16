@@ -9,15 +9,13 @@ using System.Text.RegularExpressions;
 
 namespace Mud.AI.Agent.Tools.Security;
 
-/// <summary>
-/// 安全文本基线单源——敏感键 / 控制字符判定 / 正则超时统一来源。
-/// </summary>
+/// <summary>安全文本基线单源——敏感键 / 控制字符判定 / 正则超时统一来源。</summary>
 /// <remarks>
 /// <para><b>判据隔离</b>（防误伤）：</para>
 /// <list type="bullet">
 ///   <item><b>出站脱敏键</b>（<see cref="CredentialKeys"/>）：JSON 键名精确匹配 + 非 JSON 形态（key=value）。
-///   <b>不含</b> <c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c> 等标识类字段——
-///   这些是飞书 API 响应的合法结构字段，掩码会让模型无法读取正常的分页/标识信息。</item>
+///   <b>不含</b> <c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c> 等标识类字段——这些是飞书 API 响应的
+///   合法结构字段，掩码会让模型无法读取正常的分页/标识信息。</item>
 ///   <item><b>入站审计键</b>（<see cref="Args.ToolArgsDigester.SensitiveKeys"/>）：子串匹配（宁可多掩），
 ///   属独立口径（刻意不合并，仅交叉引用）。</item>
 /// </list>
@@ -33,8 +31,8 @@ public static class SecurityTextPrimitives
     /// 控制字符判定<b>单源</b>（出站剥离 / 入站拒绝共用同一事实）。
     /// </summary>
     /// <remarks>
-    /// 剥离 C0/C1 控制字符（保留 \n / \r / \t）。控制字符对模型无信息价值，
-    /// 却可被用来伪造工具输出的视觉结构（提示注入面的常见载体）。
+    /// 剥离 C0/C1 控制字符（保留 \n / \r / \t）。控制字符对模型无信息价值，却可被用来伪造工具输出的视觉结构
+    /// （提示注入面的常见载体）。
     /// </remarks>
     public static bool IsControl(char ch)
         => (ch < ' ' && ch is not ('\n' or '\r' or '\t')) || ch == '\u007F' || (ch >= '\u0080' && ch <= '\u009F');
@@ -43,10 +41,9 @@ public static class SecurityTextPrimitives
     /// 出站脱敏键集（<b>并集</b>语义）：JSON 键名精确匹配 + 非 JSON 形态（key=value / key: value）。
     /// </summary>
     /// <remarks>
-    /// <para>在既有 13 项基础上新增 <c>api_key</c>/<c>apikey</c>/<c>credential</c>/<c>client_id</c>
-    /// ——这些在入站审计 <see cref="Args.ToolArgsDigester.SensitiveKeys"/> 中已覆盖，出站侧须同样覆盖。</para>
-    /// <para><b>不含</b> <c>open_id</c>/<c>chat_id</c>/<c>app_token</c>/<c>page_token</c>——
-    /// 误伤会让模型无法读取正常的分页/标识信息。</para>
+    /// <para>在既有 13 项基础上新增 <c>api_key</c>/<c>apikey</c>/<c>credential</c>/<c>client_id</c>——这些在入站审计
+    /// <see cref="Args.ToolArgsDigester.SensitiveKeys"/> 中已覆盖，出站侧须同样覆盖。<b>不含</b> <c>open_id</c>/
+    /// <c>chat_id</c>/<c>app_token</c>/<c>page_token</c>——误伤会让模型无法读取正常的分页/标识信息。</para>
     /// </remarks>
     public static readonly string[] CredentialKeys =
     [

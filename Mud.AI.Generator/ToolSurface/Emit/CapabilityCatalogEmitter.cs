@@ -11,31 +11,26 @@ using Mud.AI.ToolSurface.Schema;
 
 namespace Mud.AI.ToolSurface.Emit;
 
-/// <summary>
-/// Tier R 能力目录发射器（<b>可选</b>，由 <c>build_property.{CapabilityCatalogPropertyName}=true</c> 开启）：
-/// 遍历 SDK 根程序集的全部接口，产出<b>聚合</b>能力目录。
-/// </summary>
+/// <summary>Tier R 能力目录发射器（<b>可选</b>，由 <c>build_property.{CapabilityCatalogPropertyName}=true</c> 开启）：遍历
+/// SDK 根程序集的全部接口，产出<b>聚合</b>能力目录。</summary>
 /// <remarks>
 /// <para>
 /// 泛化点：SDK 程序集定位 → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>；接口扫描前缀 →
 /// <see cref="SdkToolProfileModel.SdkInterfacePrefix"/>；接口名解析（domain 轴）→ <see cref="InterfaceIdentityParser.TryParse"/>；
-/// 开关属性名 → <see cref="SdkToolProfileModel.CapabilityCatalogPropertyName"/>（<c>build_property</c> 读取由<b>入口生成器</b>完成，本发射器只接收 <c>catalogEnabled</c> bool）；诊断 → factory 槽位 018（消息第 5 实参 = 开关属性名槽）。
+/// 开关属性名 → <see cref="SdkToolProfileModel.CapabilityCatalogPropertyName"/>（<c>build_property</c> 读取由<b>入口生成器</b>
+/// 完成，本发射器只接收 <c>catalogEnabled</c> bool）；诊断 → factory 槽位 018（消息第 5 实参 = 开关属性名槽）。
 /// </para>
 /// <para>
-/// <b>为什么不逐方法发射</b>：执行器承载的是<b>有意的策展</b>——哪些字段回填模型、JSON 键怎么命名、错误如何归类
-/// ——这恰恰是护城河（白名单投影），生成器无从得知；逐方法发射全部 Schema 还会把编译期成本与程序集体积推高一个量级。
-/// 故 Tier R 只交付<b>可度量的目录事实</b>：SDK 能力总量、模块分布、策展覆盖率——使"能力面差距"变成构建期可见的数字。
-/// </para>
-/// <para>
-/// <b>粒度纪律</b>：枚举只统计各接口<b>自身声明</b>的方法（<c>GetMembers()</c>，不含 <c>AllInterfaces</c>）——
-/// SDK 的方法声明在基接口上时，把继承算进来会让同一方法被每个派生接口重复计数。
+/// <b>为什么不逐方法发射</b>：执行器承载的是<b>有意的策展</b>——哪些字段回填模型、JSON 键怎么命名、错误如何归类——这恰恰是
+/// 护城河（白名单投影），生成器无从得知；逐方法发射全部 Schema 还会把编译期成本与程序集体积推高一个量级。故 Tier R 只交付
+/// <b>可度量的目录事实</b>：SDK 能力总量、模块分布、策展覆盖率——使"能力面差距"变成构建期可见的数字。
+/// <b>粒度纪律</b>：枚举只统计各接口<b>自身声明</b>的方法（<c>GetMembers()</c>，不含 <c>AllInterfaces</c>）——SDK 的方法
+/// 声明在基接口上时，把继承算进来会让同一方法被每个派生接口重复计数。
 /// </para>
 /// </remarks>
 internal static class CapabilityCatalogEmitter
 {
-    /// <summary>
-    /// 扫描 SDK 程序集并产出能力目录源；未引用 SDK 根程序集或未开启开关时静默跳过。
-    /// </summary>
+    /// <summary>扫描 SDK 程序集并产出能力目录源；未引用 SDK 根程序集或未开启开关时静默跳过。</summary>
     /// <param name="context">源产出上下文。</param>
     /// <param name="compilation">当前编译。</param>
     /// <param name="curatedModels">Tier C 已策展模型集合（覆盖率分母事实源）。</param>
