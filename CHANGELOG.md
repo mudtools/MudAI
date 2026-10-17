@@ -2,23 +2,22 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本规范](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
-
-### 变更
-
-- 手写运行时层（`Mud.AI.Abstractions` / `Mud.AI.Agent` / `Mud.AI.Generator`）的 XML 文档注释全面压缩：多段 `<para>` 合并、`<returns>` 并入 `<summary>`、去除装饰性表述与过程性括注；读代码读不出的约束（守卫锁定点、AOT/TFM 例外、误报依据、失败语义与毒化链）全部保留。台账 `documents/comment-budget-baseline.json` 按同一判据重新固化（仅下压），注释守卫的扫描面地板随实测值同步调整。
-- 新增打包脚本 `scripts/pack.ps1` / `scripts/pack_debug.ps1`：项目清单自动取自 `Mud.AI.slnx` 的 /Sources/ 段（Tests 工程 `IsPackable=false` 不产包）；同版本重打包默认被版本递增强制校验拒绝（探测 NuGet 全局缓存，`-ForceSameVersion` 逃生）；打包前只构建一次、`pack` 全程 `--no-build`，校验基准取构建产物快照，校验包集合完整性与包内 DLL 字节一致性；Debug 档产物落独立 `artifacts-debug` 目录（已入 `.gitignore`），并默认把同版本包同步到本机 NuGet 全局缓存（`.nupkg.metadata` + `.sha512` 齐全）供引用方本地调试，`-SkipCacheSync` / `-SyncOnly` 可控制。
-
 ## [1.0.1] - 2026-10-16
 
 ### 新增
 
-- `Mud.AI.Abstractions`：`AgentToolAttribute.OutputSchema`（可空字符串）——返回结构 Schema 的**声明覆盖**。
-- `Mud.AI.Generator`：源生成器读取 `OutputSchema`；非空时**原样采用**并跳过 Source 返回类型推导（连同其截断样本）。
+- `Mud.AI.Abstractions`：`AgentToolAttribute.OutputSchema`（可空字符串）——返回结构 Schema 的**声明覆盖**。适用场景：工具真实回传结果无法从 Source 返回类型推导时（如 SDK 返回字节流、由宿主暂存后回传落盘路径/大小/内容类型等元数据），由策展接口显式声明输出契约。
+- `Mud.AI.Generator`：源生成器读取 `OutputSchema`；非空时**原样采用**并跳过 Source 返回类型推导（连同其截断样本）。声明覆盖不参与「返回契约覆盖统计」（推导截断已丢弃），不污染 `OutputSchemaCoveredToolCount` 口径。
+- `Mud.AI.Generator`：工具名常量发射描述注释，与契约表 / Schema 的 description 同源（取 `DocSummary`，折成单行并 XML 转义，防描述里的换行与尖括号破坏产物语法；无描述时不发射）。
+- 打包脚本 `scripts/pack.ps1` / `scripts/pack_debug.ps1`：
+  - Release 档：项目清单自动取自 `Mud.AI.slnx` 的 /Sources/ 段（Tests 工程 `IsPackable=false` 不产包）；同版本重打包默认被版本递增强制校验拒绝（探测 NuGet 全局缓存，`-ForceSameVersion` 逃生）；打包前只构建一次、`pack` 全程 `--no-build`，校验基准取构建产物快照，校验包集合完整性与包内 DLL 字节一致性。
+  - Debug 档：产物落独立 `artifacts-debug` 目录（已入 `.gitignore`）；默认把同版本包同步到本机 NuGet 全局缓存（`.nupkg.metadata` + `.sha512` 齐全）供引用方本地调试，`-SkipCacheSync` / `-SyncOnly` 可控制。
 
-### 说明
+### 变更
 
-- 适用场景：工具真实回传结果无法从 Source 返回类型推导时（如 SDK 返回字节流、由宿主暂存后回传落盘路径/大小/内容类型等元数据），可由策展接口显式声明输出契约。声明覆盖不参与「返回契约覆盖统计」（推导截断已丢弃），避免污染 `OutputSchemaCoveredToolCount` 口径。
+- 手写运行时层（`Mud.AI.Abstractions` / `Mud.AI.Agent` / `Mud.AI.Generator`）XML 文档注释压缩：多段 `<para>` 合并、`<returns>` 并入 `<summary>`、去除装饰性表述与过程性括注；读代码读不出的约束（守卫锁定点、AOT/TFM 例外、误报依据、失败语义与毒化链）全部保留。
+- 注释预算台账 `documents/comment-budget-baseline.json` 按同一判据重新固化（仅下压），注释守卫的扫描面地板随实测值同步调整。
+- 注释纪律守卫：评审批次编号判据收敛至编号闭集，覆盖全部既有批次形态；`P95/P99` 百分位与 `C0/C1` 控制字符块作为合法记号显式排除，守卫自证用例按同一闭集补齐。
 
 [1.0.1]: https://github.com/mudtools/Mud.AI/releases/tag/v1.0.1
 
