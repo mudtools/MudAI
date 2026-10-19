@@ -9,29 +9,17 @@ using System.Text.RegularExpressions;
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>L1 抽取器：从 Roslyn <see cref="INamedTypeSymbol"/>（接口）提取方法级 <see cref="CapabilityEntry"/> 所需的
-/// 平台无关事实。</summary>
+/// <summary>L1 抽取器：从 Roslyn <see cref="INamedTypeSymbol"/>（接口）提取方法级 <see cref="CapabilityEntry"/> 所需的平台无关事实。</summary>
 /// <remarks>
-/// 泛化点：工具特性识别（硬编码特性名 + 命名空间）→ 剖面槽 <see cref="SdkToolProfileModel.ToolAttributeName"/> /
-/// <see cref="SdkToolProfileModel.ToolAttributeNamespace"/>（含 <c>Attribute</c> 后缀剥离双形态匹配）；源符号解析 →
-/// <see cref="SourceResolver"/>（经 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>）；接口命名正则 →
-/// <see cref="InterfaceIdentityParser"/>（经 <see cref="SdkToolProfileModel.InterfaceNameRegex"/> + 令牌标记表）；
-/// 危险词表 → 剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。
-/// <b>两条扫描路径的真实分工</b>：① 手写工具特性接口——<b>唯一</b>的"产工具"路径（经 <see cref="ToolSurfaceScanner"/>），
-/// 工具名/描述/scope 由人策展，其余事实（HTTP 路由、风险、返回形状）从 SDK 符号派生；② SDK 接口——<b>仅</b>聚合成
-/// 能力目录事实，<b>不产任何工具</b>：执行器承载的是<b>有意的策展</b>（哪些字段回填模型、JSON 键怎么命名、错误如何
-/// 归类），生成器无从得知。
+/// 泛化点：工具特性识别（硬编码特性名 + 命名空间）→ 剖面槽 <see cref="SdkToolProfileModel.ToolAttributeName"/> / <see cref="SdkToolProfileModel.ToolAttributeNamespace"/>（含 <c>Attribute</c> 后缀剥离双形态匹配）；源符号解析 → <see cref="SourceResolver"/>（经 <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>）；接口命名正则 → <see cref="InterfaceIdentityParser"/>（经 <see cref="SdkToolProfileModel.InterfaceNameRegex"/> + 令牌标记表）；危险词表 → 剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。
+/// <b>两条扫描路径的真实分工</b>：① 手写工具特性接口——<b>唯一</b>的"产工具"路径（经 <see cref="ToolSurfaceScanner"/>），工具名/描述/scope 由人策展，其余事实（HTTP 路由、风险、返回形状）从 SDK 符号派生；② SDK 接口——<b>仅</b>聚合成能力目录事实，<b>不产任何工具</b>：执行器承载的是<b>有意的策展</b>（哪些字段回填模型、JSON 键怎么命名、错误如何归类），生成器无从得知。
 /// </remarks>
 internal static class Extractors
 {
     // ────────── 工具名推导 ──────────
 
     /// <summary>取工具特性数据（唯一识别点：按「简单名 + 命名空间」双重判定，防同名特性误命中）。</summary>
-    /// <remarks>
-    /// 简单名匹配<b>双形态</b>：<c>{ToolAttributeName}</c>（C# 源码书写名）与 <c>{ToolAttributeName}Attribute</c>
-    /// （特性类 CLR 名）——消费方既可写 <c>[AgentTool]</c> 也可写 <c>[AgentToolAttribute]</c>，两种形态都必须命中
-    /// （按 <c>Attribute</c> 后缀剥离补齐双形态）。
-    /// </remarks>
+    /// <remarks>简单名匹配<b>双形态</b>：<c>{ToolAttributeName}</c>（C# 源码书写名）与 <c>{ToolAttributeName}Attribute</c>（特性类 CLR 名）——消费方既可写 <c>[AgentTool]</c> 也可写 <c>[AgentToolAttribute]</c>，两种形态都必须命中（按 <c>Attribute</c> 后缀剥离补齐双形态）。</remarks>
     public static AttributeData? GetToolAttribute(INamedTypeSymbol symbol, SdkToolProfileModel profile)
     {
         try
@@ -71,11 +59,7 @@ internal static class Extractors
 
     /// <summary>从 SDK 事实推导风险分级（危险词命中 → <c>high-risk-write</c>；变更动词 → <c>write</c>）。</summary>
     /// <remarks>
-    /// 危险词表来自剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。
-    /// <b>只匹配方法名，不匹配路由</b>：SDK 路由里普遍带 <c>{app_token}</c> 这类占位段，而危险词表含
-    /// <c>token</c>/<c>secret</c>——把路由纳入匹配会让大量只读工具被误判为 <c>high-risk-write</c>（实测 100% 误报）。
-    /// <b>POST 不视为写</b>：只读批量/查询 API 大量使用 POST，按动词判"写"会把只读工具误判为写面；真正的写面由
-    /// 工具特性的 <c>IsWrite</c> 声明，本方法只负责<b>升级</b>风险。
+    /// 危险词表来自剖面槽 <see cref="SdkToolProfileModel.WriteVerbKeywords"/>。<b>只匹配方法名，不匹配路由</b>：SDK 路由里普遍带 <c>{app_token}</c> 这类占位段，而危险词表含 <c>token</c>/<c>secret</c>——把路由纳入匹配会让大量只读工具被误判为 <c>high-risk-write</c>（实测 100% 误报）。<b>POST 不视为写</b>：只读批量/查询 API 大量使用 POST，按动词判"写"会把只读工具误判为写面；真正的写面由工具特性的 <c>IsWrite</c> 声明，本方法只负责<b>升级</b>风险。
     /// </remarks>
     /// <param name="httpMethod">HTTP 方法（GET/POST/PUT/PATCH/DELETE）。</param>
     /// <param name="methodName">SDK 方法名。</param>
@@ -145,14 +129,9 @@ internal static class Extractors
         }
     }
 
-    /// <summary>取方法的文档注释文本：<b>语义途径优先</b>（<see cref="ISymbol.GetDocumentationCommentXml"/>，支持
-    /// <c>inheritdoc</c> 展开与正式 XML 转义），语义结果为空时<b>回退语法树</b>。</summary>
+    /// <summary>取方法的文档注释文本：<b>语义途径优先</b>（<see cref="ISymbol.GetDocumentationCommentXml"/>，支持 <c>inheritdoc</c> 展开与正式 XML 转义），语义结果为空时<b>回退语法树</b>。</summary>
     /// <remarks>
-    /// <b>为什么需要回退</b>：csc 在未开启 <c>/doc</c>（消费方 <c>GenerateDocumentationFile=false</c>，如本仓库
-    /// Demos）时把 <c>CSharpCompilationOptions.DocumentationMode</c> 置为 <c>DocumentationMode.None</c>——语义模型
-    /// 不解析文档注释，<c>GetDocumentationCommentXml()</c> 恒返回空；而文档注释作为普通注释 trivia 仍完整保留在语法
-    /// 树里，不回退会让槽位 005（summary 缺失）/006（param 缺失）在此类消费方编译中全部误报。回退产物是<b>伪 XML
-    /// 文本</b>（原始注释体），上层的标签提取本就是正则匹配，两途共用。
+    /// <b>为什么需要回退</b>：csc 在未开启 <c>/doc</c>（消费方 <c>GenerateDocumentationFile=false</c>，如本仓库 Demos）时把 <c>CSharpCompilationOptions.DocumentationMode</c> 置为 <c>DocumentationMode.None</c>——语义模型不解析文档注释，<c>GetDocumentationCommentXml()</c> 恒返回空；而文档注释作为普通注释 trivia 仍完整保留在语法树里，不回退会让槽位 005（summary 缺失）/006（param 缺失）在此类消费方编译中全部误报。回退产物是<b>伪 XML 文本</b>（原始注释体），上层的标签提取本就是正则匹配，两途共用。
     /// </remarks>
     private static string? GetDocXmlWithSyntaxFallback(IMethodSymbol method)
     {
@@ -175,10 +154,7 @@ internal static class Extractors
     }
 
     /// <summary>从声明节点的先行 trivia 收集 <c>///</c> 单行与 <c>/** */</c> 块状文档注释（逐行拼为伪 XML 文本）。</summary>
-    /// <remarks>
-    /// 文档注释无论 <see cref="DocumentationMode"/> 如何都附着在声明<b>首 token</b> 的先行 trivia 上
-    /// （注释与方法之间隔着特性列表时同样成立——trivia 附着于 <c>[</c>，它是节点首 token）。
-    /// </remarks>
+    /// <remarks>文档注释无论 <see cref="DocumentationMode"/> 如何都附着在声明<b>首 token</b> 的先行 trivia 上（注释与方法之间隔着特性列表时同样成立——trivia 附着于 <c>[</c>，它是节点首 token）。</remarks>
     private static string? ExtractRawDocCommentText(SyntaxNode node)
     {
         var lines = new List<string>();
@@ -203,9 +179,7 @@ internal static class Extractors
 
     // ────────── HTTP 方法与路由 ──────────
 
-    /// <summary>
-    /// 从方法特性提取 HTTP 方法和路由模板（Mud.AI 声明式 HTTP 特性族，平台无关机制）。
-    /// </summary>
+    /// <summary>从方法特性提取 HTTP 方法和路由模板（Mud.AI 声明式 HTTP 特性族，平台无关机制）。</summary>
     public static (string HttpMethod, string RouteTemplate) ExtractHttpInfo(IMethodSymbol method)
     {
         try
@@ -239,10 +213,7 @@ internal static class Extractors
     // ────────── 返回类型元数据 ──────────
 
     /// <summary>解包返回类型：<c>Task&lt;T&gt;</c> / <c>ValueTask&lt;T&gt;</c> → 载荷类型 T。</summary>
-    /// <remarks>
-    /// <b>按「名称 + 元数 + 命名空间」判定，不比对 DisplayString</b>：BCL 的泛型参数名是 <c>TResult</c>
-    /// （<c>System.Threading.Tasks.Task&lt;TResult&gt;</c>），任何 <c>== "…Task&lt;T&gt;"</c> 的字面比对恒为 false。
-    /// </remarks>
+    /// <remarks><b>按「名称 + 元数 + 命名空间」判定，不比对 DisplayString</b>：BCL 的泛型参数名是 <c>TResult</c>（<c>System.Threading.Tasks.Task&lt;TResult&gt;</c>），任何 <c>== "…Task&lt;T&gt;"</c> 的字面比对恒为 false。</remarks>
     public static ITypeSymbol? UnwrapTaskType(ITypeSymbol returnType)
     {
         if (returnType is not INamedTypeSymbol named
@@ -288,9 +259,7 @@ internal static class Extractors
 
     // ────────── 私有工具方法 ──────────
 
-    /// <summary>
-    /// PascalCase → snake_case（危险词匹配与工具名派生的公共拼写规则）。
-    /// </summary>
+    /// <summary>PascalCase → snake_case（危险词匹配与工具名派生的公共拼写规则）。</summary>
     private static string ToSnakeCase(string input)
     {
         if (string.IsNullOrEmpty(input))

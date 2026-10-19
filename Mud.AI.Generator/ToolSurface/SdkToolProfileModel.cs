@@ -15,10 +15,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Mud.AI.ToolSurface;
 
 /// <summary>令牌身份推导策略的<b>引擎侧镜像</b>（值必须与 <c>Mud.AI.Attributes.TokenKindDerivationStrategy</c> 逐值一致）。</summary>
-/// <remarks>
-/// 工程纪律禁止生成器引用任何 <c>Mud.*</c> 运行时程序集，故引擎按 <c>int</c> 读取枚举槽并映射到本镜像；
-/// 由 <c>ToolSurfaceContractTests</c> 反射比对两枚举的成员名与数值，机械锁定镜像一致。
-/// </remarks>
+/// <remarks>工程纪律禁止生成器引用任何 <c>Mud.*</c> 运行时程序集，故引擎按 <c>int</c> 读取枚举槽并映射到本镜像；由 <c>ToolSurfaceContractTests</c> 反射比对两枚举的成员名与数值，机械锁定镜像一致。</remarks>
 internal enum ToolSurfaceTokenKindStrategy
 {
     Unspecified = 0,
@@ -28,10 +25,7 @@ internal enum ToolSurfaceTokenKindStrategy
 }
 
 /// <summary>令牌身份枚举的<b>引擎侧镜像</b>（值与渲染字面量必须与 <c>Mud.AI.SdkTokenKind</c> 逐成员一致）。</summary>
-/// <remarks>
-/// 渲染字面量进 golden 与 <c>x-{{sdk}}</c> 扩展块，是逐字节契约的一部分；镜像漂移即 golden 漂移，
-/// 由 <c>ToolSurfaceContractTests</c> 的逐成员比对守卫。
-/// </remarks>
+/// <remarks>渲染字面量进 golden 与 <c>x-{{sdk}}</c> 扩展块，是逐字节契约的一部分；镜像漂移即 golden 漂移，由 <c>ToolSurfaceContractTests</c> 的逐成员比对守卫。</remarks>
 internal enum ToolSurfaceTokenKind
 {
     Unspecified = 0,
@@ -99,9 +93,7 @@ internal sealed class TokenKindMarker
 
 /// <summary>从 <c>[SdkToolProfile]</c> 读出的编译期剖面值对象（引擎唯一消费的剖面载体）。</summary>
 /// <remarks>
-/// 全部槽位均为编译期字符串常量（生成器无法执行用户代码）；解析失败/缺槽不抛异常，而是记入
-/// <see cref="MissingRequiredSlots"/>，由入口生成器上报 <c>SDKT002</c>。
-/// 实现 <see cref="IEquatable{T}"/> 全字段值相等：本类型进入增量管道，引用相等会让每条下游路径在每次编辑后重跑。
+/// 全部槽位均为编译期字符串常量（生成器无法执行用户代码）；解析失败/缺槽不抛异常，而是记入 <see cref="MissingRequiredSlots"/>，由入口生成器上报 <c>SDKT002</c>。实现 <see cref="IEquatable{T}"/> 全字段值相等：本类型进入增量管道，引用相等会让每条下游路径在每次编辑后重跑。
 /// </remarks>
 internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
 {
@@ -173,9 +165,7 @@ internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
     public string SdkNamespaceRoot { get; private set; }
 
     /// <summary>额外「可软缺席」命名空间根（剖面槽 <c>SoftAbsentNamespaceRoots</c>）。</summary>
-    /// <remarks>
-    /// 见 <c>SdkToolProfileAttribute.SoftAbsentNamespaceRoots</c>：软缺席判定 = <see cref="SdkNamespaceRoot"/> 或本集合任一根的前缀命中。
-    /// </remarks>
+    /// <remarks>见 <c>SdkToolProfileAttribute.SoftAbsentNamespaceRoots</c>：软缺席判定 = <see cref="SdkNamespaceRoot"/> 或本集合任一根的前缀命中。</remarks>
     public ImmutableArray<string> SoftAbsentNamespaceRoots { get; private set; }
 
     public string InterfaceNameRegex { get; private set; }
@@ -223,9 +213,7 @@ internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
     public string DiagnosticId(int slot)
         => DiagnosticPrefix + slot.ToString("D3", CultureInfo.InvariantCulture);
 
-    /// <summary>
-    /// 从 <see cref="AttributeData"/> 解析剖面模型。永不抛异常（解析失败反映在 <see cref="MissingRequiredSlots"/>；类型不匹配的单槽按空串处理）。
-    /// </summary>
+    /// <summary>从 <see cref="AttributeData"/> 解析剖面模型。永不抛异常（解析失败反映在 <see cref="MissingRequiredSlots"/>；类型不匹配的单槽按空串处理）。</summary>
     public static SdkToolProfileModel FromAttributeData(AttributeData attribute)
     {
         if (attribute is null)
@@ -316,10 +304,7 @@ internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
         return model;
     }
 
-    /// <summary>
-    /// 解析「标记串=Kind 成员名」表（<c>;</c> 分隔）。标记串可带 <c>prefix:</c> / <c>suffix:</c> / <c>infix:</c> 前缀覆写匹配形态
-    /// （微信双形态并存即 <c>"suffix:_Provider=ThirdParty;infix:Provider=ThirdParty"</c>）。无法识别的条目静默跳过（由 SDKT002 的必填槽守卫兜住结构性错误，不在此处报错）。
-    /// </summary>
+    /// <summary>解析「标记串=Kind 成员名」表（<c>;</c> 分隔）。标记串可带 <c>prefix:</c> / <c>suffix:</c> / <c>infix:</c> 前缀覆写匹配形态（微信双形态并存即 <c>"suffix:_Provider=ThirdParty;infix:Provider=ThirdParty"</c>）。无法识别的条目静默跳过（由 SDKT002 的必填槽守卫兜住结构性错误，不在此处报错）。</summary>
     private static ImmutableArray<TokenKindMarker> ParseMarkers(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
@@ -500,10 +485,7 @@ internal sealed class SdkToolProfileModel : IEquatable<SdkToolProfileModel>
 
 /// <summary>剖面集合的<b>值相等</b>载体（增量管线的剖面扇出入口）。</summary>
 /// <remarks>
-/// 不能直接用 <see cref="ImmutableArray{T}"/>：它的相等性是<b>底层数组引用比较</b>，把剖面数组直接投进增量图会让
-/// 任何一次编译变更（哪怕只是新增一个无关类）把 <c>CompilationProvider.Select</c> 的产出判为 <c>Modified</c>，
-/// 整条工具面扇出在每次击键上重跑；本类型按元素逐项比较 + 缓存哈希，使「剖面未变但编译变了」退化为 <c>Unchanged</c>。
-/// 顺序敏感比较：<see cref="ProfileDiscovery.ResolveProfiles"/> 已按 <c>Name</c> 排序，故顺序稳定。
+/// 不能直接用 <see cref="ImmutableArray{T}"/>：它的相等性是<b>底层数组引用比较</b>，把剖面数组直接投进增量图会让任何一次编译变更（哪怕只是新增一个无关类）把 <c>CompilationProvider.Select</c> 的产出判为 <c>Modified</c>，整条工具面扇出在每次击键上重跑；本类型按元素逐项比较 + 缓存哈希，使「剖面未变但编译变了」退化为 <c>Unchanged</c>。顺序敏感比较：<see cref="ProfileDiscovery.ResolveProfiles"/> 已按 <c>Name</c> 排序，故顺序稳定。
 /// </remarks>
 internal sealed class SdkToolProfileSet : IEquatable<SdkToolProfileSet>
 {
@@ -583,18 +565,11 @@ internal sealed class SdkToolProfileSet : IEquatable<SdkToolProfileSet>
     }
 }
 
-/// <summary>
-/// 剖面发现：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按
-/// <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。
-/// </summary>
+/// <summary>剖面发现：在编译中找出「实现 <c>ISdkToolProfile</c> 且标注 <c>[SdkToolProfile]</c>」的类，产出按 <see cref="SdkToolProfileModel.Name"/> 排序的剖面数组（确定性扇出顺序）。</summary>
 /// <remarks>
-/// <b>为什么走 <c>CompilationProvider</c></b>：扫描变换需要剖面集合参与过滤，而 <c>CreateSyntaxProvider</c>
-/// 的变换签名只有 <c>GeneratorSyntaxContext</c>——剖面必须由变换自行从编译解析（随编译失效，编辑剖面同样重扫）。
-/// <b>空剖面短路（硬性前提）</b>：无剖面实现时返回空数组，扫描变换在进入 <c>ToolSurface*</c> 逻辑前直接返回；
-/// 接口存在性判定无法借 <c>GetTypeByMetadataName</c> 早退，故解析结果按 <see cref="Compilation"/> 实例缓存
-/// （见 <see cref="ResolveProfiles"/>），全程序集类型枚举每编译至多支付一次。
-/// <b>成对合法性</b>：不成对的半边由 <see cref="ProfileContractGuardAnalyzer"/>（SDKT001）在分析器侧报错、
-/// 生成器侧静默忽略（避免双重报告）；必填槽缺失的剖面<b>保留在结果中</b>，由入口上报 SDKT002 并从扇出排除。
+/// <b>为什么走 <c>CompilationProvider</c></b>：扫描变换需要剖面集合参与过滤，而 <c>CreateSyntaxProvider</c> 的变换签名只有 <c>GeneratorSyntaxContext</c>——剖面必须由变换自行从编译解析（随编译失效，编辑剖面同样重扫）。
+/// <b>空剖面短路（硬性前提）</b>：无剖面实现时返回空数组，扫描变换在进入 <c>ToolSurface*</c> 逻辑前直接返回；接口存在性判定无法借 <c>GetTypeByMetadataName</c> 早退，故解析结果按 <see cref="Compilation"/> 实例缓存（见 <see cref="ResolveProfiles"/>），全程序集类型枚举每编译至多支付一次。
+/// <b>成对合法性</b>：不成对的半边由 <see cref="ProfileContractGuardAnalyzer"/>（SDKT001）在分析器侧报错、生成器侧静默忽略（避免双重报告）；必填槽缺失的剖面<b>保留在结果中</b>，由入口上报 SDKT002 并从扇出排除。
 /// </remarks>
 internal static class ProfileDiscovery
 {
@@ -602,12 +577,7 @@ internal static class ProfileDiscovery
     internal const string ProfileAttributeNamespace = "Mud.AI.Attributes";
 
     /// <summary>解析当前编译中的全部合法剖面（按 Name 排序；同名去重取首个，防 hintName 撞名）。</summary>
-    /// <remarks>
-    /// 结果按 <see cref="Compilation"/> 实例经 <see cref="ConditionalWeakTable{TKey, TValue}"/> 缓存：同一编译内的
-    /// profiles 节点与全部 ScanTool/ScanHandler 变换共享一次全程序集枚举，消除「每候选重复枚举」的成本乘数；
-    /// 缓存值不持有符号引用，条目随编译实例一并被 GC 回收。<see cref="Lazy{T}"/> 保证并发变换下工厂体只执行一次
-    /// （<c>ConditionalWeakTable</c> 本身不承诺工厂单次执行），同一编译内的解析异常同样只支付一次代价。
-    /// </remarks>
+    /// <remarks>结果按 <see cref="Compilation"/> 实例经 <see cref="ConditionalWeakTable{TKey, TValue}"/> 缓存：同一编译内的 profiles 节点与全部 ScanTool/ScanHandler 变换共享一次全程序集枚举，消除「每候选重复枚举」的成本乘数；缓存值不持有符号引用，条目随编译实例一并被 GC 回收。<see cref="Lazy{T}"/> 保证并发变换下工厂体只执行一次（<c>ConditionalWeakTable</c> 本身不承诺工厂单次执行），同一编译内的解析异常同样只支付一次代价。</remarks>
     public static ImmutableArray<SdkToolProfileModel> ResolveProfiles(Compilation compilation)
         => ResolutionCache
             .GetValue(compilation, static c => new Lazy<ImmutableArray<SdkToolProfileModel>>(() => ResolveProfilesCore(c)))

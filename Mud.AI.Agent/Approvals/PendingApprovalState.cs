@@ -9,16 +9,9 @@ namespace Mud.AI.Agent.Approvals;
 
 /// <summary>框架（MAF <c>ApprovalResponseBindingChatClient</c>）记录的「待人工确认的工具调用」状态桥。</summary>
 /// <remarks>
-/// <b>为什么读框架自身的记录而非 SDK 另建一份</b>：MAF 绑定层在<b>产出审批请求的那一轮</b>就把模型原始
-/// <see cref="ToolApprovalRequestContent"/>（含真实 <see cref="ToolCallContent"/>）写进<b>会话状态袋</b>，并在下一轮按
-/// <c>RequestId</c> 绑定人类响应——这是批准资格的唯一权威。SDK 再存副本会产生<b>两个真相来源</b>：MAF 的消费/清理
-/// 时机（成功轮之后、callId 冲突毒化、会话重建）SDK 无法完整观测 ⇒ 副本必然漂移，后果是 SDK 以为「仍待确认」而框架
-/// 已遗忘，续跑轮被绑定层丢弃响应 ⇒ 框架抛错。故本类只做「读取 + 清理」的桥接，<b>不新增任何 SDK 状态键</b>。
-/// <b>对框架内部键的耦合与守卫</b>：<see cref="FrameworkStateKey"/> 取自 MAF 的
-/// <c>ApprovalResponseBindingChatClient.StateBagKey</c>（该类型为 <c>internal</c>，无法在编译期引用）；耦合由契约守卫
-/// 以反射锁定——MAF 改名即用例转红，避免静默失效。
-/// <b>读失败一律按「无待确认项」处理</b>：状态袋值是惰性反序列化的，坏值只在首次类型化读取时抛，不得让本桥成为新的
-/// 毒化点；取消原样传播。
+/// <b>为什么读框架自身的记录而非 SDK 另建一份</b>：MAF 绑定层在<b>产出审批请求的那一轮</b>就把模型原始 <see cref="ToolApprovalRequestContent"/>（含真实 <see cref="ToolCallContent"/>）写进<b>会话状态袋</b>，并在下一轮按 <c>RequestId</c> 绑定人类响应——这是批准资格的唯一权威。SDK 再存副本会产生<b>两个真相来源</b>：MAF 的消费/清理时机（成功轮之后、callId 冲突毒化、会话重建）SDK 无法完整观测 ⇒ 副本必然漂移，后果是 SDK 以为「仍待确认」而框架已遗忘，续跑轮被绑定层丢弃响应 ⇒ 框架抛错。故本类只做「读取 + 清理」的桥接，<b>不新增任何 SDK 状态键</b>。
+/// <b>对框架内部键的耦合与守卫</b>：<see cref="FrameworkStateKey"/> 取自 MAF 的 <c>ApprovalResponseBindingChatClient.StateBagKey</c>（该类型为 <c>internal</c>，无法在编译期引用）；耦合由契约守卫以反射锁定——MAF 改名即用例转红，避免静默失效。
+/// <b>读失败一律按「无待确认项」处理</b>：状态袋值是惰性反序列化的，坏值只在首次类型化读取时抛，不得让本桥成为新的毒化点；取消原样传播。
 /// </remarks>
 /// <param name="historyStateKey">会话历史在 MAF 状态袋内的状态键（产品事实，由宿主注入）。</param>
 public sealed class PendingApprovalState(string historyStateKey)
@@ -76,13 +69,7 @@ public sealed class PendingApprovalState(string historyStateKey)
 
     /// <summary>会话是否处于「有待确认的写操作」状态（放弃判定的判据）。</summary>
     /// <remarks>
-    /// <b>两个判据取并集</b>，二者不可互相替代：
-    /// <list type="bullet">
-    /// <item><b>历史中存在孤儿审批请求</b>（非 <c>InformationalOnly</c>）：会让框架在<b>整段入站历史</b>的配对校验中
-    /// 抛错，是「会话被毒化」的直接原因，必须摘除；</item>
-    /// <item><b>框架仍记录着待审批请求</b>：历史可能已被历史裁剪窗挤掉（看不到孤儿），但记录仍在——若不清空，
-    /// <b>迟到的批准</b>仍会被绑定层接受并把一轮已被用户放弃的写操作真正执行（越权方向），必须一并清空。</item>
-    /// </list>
+    /// <b>两个判据取并集</b>，二者不可互相替代：<b>历史中存在孤儿审批请求</b>（非 <c>InformationalOnly</c>）会让框架在<b>整段入站历史</b>的配对校验中抛错，是「会话被毒化」的直接原因，必须摘除；<b>框架仍记录着待审批请求</b>时，历史可能已被裁剪窗挤掉（看不到孤儿）但记录仍在——若不清空，<b>迟到的批准</b>仍会被绑定层接受并把一轮已被用户放弃的写操作真正执行（越权方向），必须一并清空。
     /// </remarks>
     /// <param name="session">MAF 会话。</param>
     /// <returns>处于待确认状态返回 <see langword="true"/>。</returns>
@@ -156,14 +143,8 @@ public sealed class PendingApprovalState(string historyStateKey)
 
     /// <summary><b>放弃</b>尚未应答的审批：从会话历史中摘除孤儿审批请求内容，并清空框架待审批记录。</summary>
     /// <remarks>
-    /// <b>必须做的理由</b>：MEAI <c>FunctionInvokingChatClient</c> 在处理入站消息时对<b>整段输入历史</b>做一次配对
-    /// 校验——历史里只要残留「非 <c>InformationalOnly</c> 的 <c>ToolApprovalRequestContent</c> 且无对应响应」，就直接
-    /// <c>InvalidOperationException</c>（"ToolApprovalRequestContent found with FunctionCall.CallId(s) … that have no
-    /// matching ToolApprovalResponseContent."）。宿主不续跑时该孤儿会随历史落库，于是<b>该会话此后每一轮都抛</b>
-    /// （异常早于任何新消息落库 ⇒ 永远不会自愈）⇒ 幂等回滚 + 重投递 = 事件永久毒化循环。
-    /// 只摘除 <c>InformationalOnly == false</c> 的审批请求（与框架校验集合完全一致）；只含该类内容的助手消息整条移除
-    /// （留一条「只有工具调用、没有结果」的助手消息会被 OpenAI 兼容端点 400 拒绝）。清空框架记录是为了让<b>迟到的批准</b>
-    /// 在绑定层被丢弃（fail-closed），而不会把一轮已放弃的写操作重新执行。
+    /// <b>必须做的理由</b>：MEAI <c>FunctionInvokingChatClient</c> 在处理入站消息时对<b>整段输入历史</b>做一次配对校验——历史里只要残留「非 <c>InformationalOnly</c> 的 <c>ToolApprovalRequestContent</c> 且无对应响应」，就直接 <c>InvalidOperationException</c>（"ToolApprovalRequestContent found with FunctionCall.CallId(s) … that have no matching ToolApprovalResponseContent."）。宿主不续跑时该孤儿会随历史落库，于是<b>该会话此后每一轮都抛</b>（异常早于任何新消息落库 ⇒ 永远不会自愈）⇒ 幂等回滚 + 重投递 = 事件永久毒化循环。
+    /// 只摘除 <c>InformationalOnly == false</c> 的审批请求（与框架校验集合完全一致）；只含该类内容的助手消息整条移除（留一条「只有工具调用、没有结果」的助手消息会被 OpenAI 兼容端点 400 拒绝）。清空框架记录是为了让<b>迟到的批准</b>在绑定层被丢弃（fail-closed），而不会把一轮已放弃的写操作重新执行。
     /// </remarks>
     /// <param name="session">MAF 会话。</param>
     /// <returns>被摘除的孤儿审批请求条数。</returns>

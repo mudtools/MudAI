@@ -12,18 +12,8 @@ namespace Mud.AI.ToolSurface;
 
 /// <summary>工具面引擎的<b>动态诊断槽位表</b>（档位 2「引擎通用槽位」）。</summary>
 /// <remarks>
-/// <para>
-/// 与静态 <c>DiagnosticIds.cs</c> 的边界：profile 注入的 ID 是<b>动态组装</b>（<c>{profile.DiagnosticPrefix}{槽位号:D3}</c>），
-/// 不进静态常量表；「槽位号 ↔ 语义 ↔ 上报点」的完全相等关系由本表 + <c>ToolSurfaceContractTests</c> 契约守卫锁定
-/// （等同上游 <c>Diagnostics_ShouldNotDeclareUnreportedDiagnostics</c> 纪律）。
-/// </para>
-/// <para>
-/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），使上游 <c>MUDFT001..027</c>
-/// 与 zero-tolerance 基线可零漂移映射；微信侧得到 <c>MUDWX001..</c> 的同构但独立序列。
-/// <b>槽位表携带「是否零容忍」列</b>：上游零容忍集不含 009/018/021（Warning/Info），缺该列会让微信侧误把截断告警
-/// 升级为构建阻断。<b>类别例外</b>：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c> 而非 <c>DiagnosticCategory</c>
-/// （上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
-/// </para>
+/// 与静态 <c>DiagnosticIds.cs</c> 的边界：profile 注入的 ID 是<b>动态组装</b>（<c>{profile.DiagnosticPrefix}{槽位号:D3}</c>），不进静态常量表；「槽位号 ↔ 语义 ↔ 上报点」的完全相等关系由本表 + <c>ToolSurfaceContractTests</c> 契约守卫锁定（等同上游 <c>Diagnostics_ShouldNotDeclareUnreportedDiagnostics</c> 纪律）。
+/// 槽位序号以飞书 <c>MUDFT</c> 既有序号为<b>规范序号</b>（001 缺名、002 命名、003 冲突……），使上游 <c>MUDFT001..027</c> 与 zero-tolerance 基线可零漂移映射；微信侧得到 <c>MUDWX001..</c> 的同构但独立序列。<b>槽位表携带「是否零容忍」列</b>：上游零容忍集不含 009/018/021（Warning/Info），缺该列会让微信侧误把截断告警升级为构建阻断。<b>类别例外</b>：兜底槽 026 的 category 是 <c>ToolingDiagnosticCategory</c> 而非 <c>DiagnosticCategory</c>（上游 <c>MUDFT026</c> = <c>MudFeishu.Tooling</c>，其余 = <c>MudFeishu.AI</c>）。
 /// </remarks>
 internal static class ToolSurfaceDiagnostics
 {
@@ -176,10 +166,7 @@ internal static class ToolSurfaceDiagnostics
     ];
 
     /// <summary>按剖面实例化描述符工厂：同一槽位号在不同 profile 下得到 <c>{prefix}{slot:D3}</c> 的独立 ID。</summary>
-    /// <remarks>
-    /// 描述符按 (profile, slot) 缓存于实例内——<see cref="DiagnosticDescriptor"/> 进入 <c>Diagnostic.Create</c> 后其
-    /// ID/category/级别即固化，缓存避免每条上报路径重复构造。
-    /// </remarks>
+    /// <remarks>描述符按 (profile, slot) 缓存于实例内——<see cref="DiagnosticDescriptor"/> 进入 <c>Diagnostic.Create</c> 后其 ID/category/级别即固化，缓存避免每条上报路径重复构造。</remarks>
     internal sealed class Factory
     {
         private readonly SdkToolProfileModel _profile;
@@ -219,12 +206,7 @@ internal static class ToolSurfaceDiagnostics
                     ? _profile.ToolingDiagnosticCategory
                     : _profile.DiagnosticCategory;
 
-                // 兜底槽 026 与 PAYLOAD001 同为「引擎内部异常」语义，但刻意**不加**
-                // WellKnownDiagnosticTags.NotConfigurable（与 PAYLOAD001 不同待遇的显式取舍）：
-                // 该标签会封死 #pragma/NoWarn/.editorconfig 全部抑制通道，而 026 报告的是剖面引擎
-                // 内部异常，消费方可能需先经 .editorconfig 降级恢复构建再排查根因；且无标签不会触发
-                // csc 对「不可抑制 Error」的提前 return，避免同编译中其他分析器诊断被连坐隐藏
-                // （见 Diagnostics.cs 诊断治理说明 / DiagnosticTagPolicyTests）。
+                // 兜底槽 026 与 PAYLOAD001 同为「引擎内部异常」语义，但刻意**不加** WellKnownDiagnosticTags.NotConfigurable（与 PAYLOAD001 不同待遇的显式取舍）：该标签会封死 #pragma/NoWarn/.editorconfig 全部抑制通道，而 026 报告的是剖面引擎内部异常，消费方可能需先经 .editorconfig 降级恢复构建再排查根因；且无标签不会触发 csc 对「不可抑制 Error」的提前 return，避免同编译中其他分析器诊断被连坐隐藏（见 Diagnostics.cs 诊断治理说明 / DiagnosticTagPolicyTests）。
                 var descriptor = new DiagnosticDescriptor(
                     id: _profile.DiagnosticId(slot),
                     title: definition.Title,
