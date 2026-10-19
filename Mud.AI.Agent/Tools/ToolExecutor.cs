@@ -5,24 +5,27 @@
 //  不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 // -----------------------------------------------------------------------
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Mud.AI.Abstractions.Observability;
 
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>执行器骨架：参数校验失败回填 / JSON 解析失败回填 / ApiResult 解包（失败回填 + 成功投影 + 截断）三段机械骨架；投影是有意策展的，留在各执行器。</summary>
 /// <remarks>
-/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）：本类型不比较长度、不拼装标记——截断是出口的性质，而不是某个执行器记得写的一步。
-/// <b>per-method 实例</b>：工具名 + 截断上限构造时绑定一次，执行器方法内 <c>FeishuToolNames.X</c> 只出现 1 处（守卫机械断言防回归）。
+/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）：本类型不比较长度、不拼装标记——截断是出口的性质，而不是某个执行器记得写的一步。<b>per-method 实例</b>：工具名 + 截断上限构造时绑定一次，执行器方法内 <c>FeishuToolNames.X</c> 只出现 1 处（守卫机械断言防回归）。
 /// </remarks>
 /// <param name="toolName">工具名（结构化错误的锚点）。</param>
 /// <param name="maxResultLength">结果截断上限（来自 <c>FeishuAgentOptions.MaxToolResultLength</c>；≤ 0 = 无预算）。</param>
-public readonly struct ToolExecutor(string toolName, int maxResultLength)
+/// <param name="telemetry">遥测端口（可空；未实现 <see cref="IAgentToolTelemetry"/> 时零埋点零异常——旧替身不因端口拆分而失效）。</param>
+/// <param name="isWrite">读写分类（遥测维度；单参"写工具构造"自动置真，无需调用方重复声明）。</param>
+public readonly struct ToolExecutor(string toolName, int maxResultLength, IAgentTelemetry? telemetry = null, bool isWrite = false)
 {
-    /// <summary>写工具构造：写工具载荷小（单 ID），无截断语义，不注入截断上限。</summary>
-    public ToolExecutor(string toolName)
-        : this(toolName, 0)
+    /// <summary>写工具构造：写工具载荷小（单 ID），无截断语义，不注入截断上限；读写分类经本构造自动携带（遥测维度，调用方无需重复声明）。</summary>
+    public ToolExecutor(string toolName, IAgentTelemetry? telemetry = null)
+        : this(toolName, 0, telemetry, isWrite: true)
     {
     }
 
@@ -45,25 +48,50 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     public string ToolName => toolName;
 
     /// <summary>统一执行骨架：参数校验失败（<see cref="ArgumentException"/>）与 JSON 解析失败（<see cref="JsonException"/>）的结构化回填；行为与逐方法 try/catch 同构——catch 覆盖整个方法体（校验、下游调用与投影），补偿性回填不替换原始异常的"结构化错误"语义。</summary>
-    public async Task<ToolResult> RunAsync(Func<Task<ToolResult>> body)
+    /// <remarks><b>取消语义</b>：<see cref="OperationCanceledException"/> 不在 catch 面内——它本就不被转换为结构化错误，原样传播给调用方（取消不是"模型可自我修正的失败"）；body 可经形参令牌协作取消，也可继续闭包捕获既有令牌（旧形态等价）。</remarks>
+    public async Task<ToolResult> RunAsync(
+        Func<CancellationToken, Task<ToolResult>> body,
+        CancellationToken cancellationToken = default)
     {
+        var startedAt = Stopwatch.GetTimestamp();
         try
         {
-            return await body().ConfigureAwait(false);
+            var result = await body(cancellationToken).ConfigureAwait(false);
+            ReportToolInvoked(startedAt, result);
+            return result;
         }
         catch (ArgumentException ex)
         {
-            // 有意静默（守卫白名单）：异常被**转换**为模型可见的结构化错误文本（换了一条上报通道：
-            // 回填模型 + 调用方侧同样计 Error 指标与审计），不是吞掉；闭集非法值的候选随载荷回填模型。
-            return FromStructuredError(
+            // 有意静默（守卫白名单）：异常被**转换**为模型可见的结构化错误文本（换了一条上报通道：回填模型 + 调用方侧同样计 Error 指标与审计），不是吞掉；闭集非法值的候选随载荷回填模型。
+            var failure = FromStructuredError(
                 ToolErrorCategory.Validation, ToolErrorSubtype.InvalidArgs, ex.Message,
                 suggestions: (ex as ToolArgumentException)?.Suggestions);
+            ReportToolInvoked(startedAt, failure);
+            return failure;
         }
         catch (JsonException ex)
         {
             // 有意静默（守卫白名单）：同 ArgumentException 分支——转为结构化错误文本回填模型。
-            return FromStructuredError(ToolErrorCategory.Validation, ToolErrorSubtype.ShapeMismatch, $"参数不是合法 JSON: {ex.Message}");
+            var failure = FromStructuredError(ToolErrorCategory.Validation, ToolErrorSubtype.ShapeMismatch, $"参数不是合法 JSON: {ex.Message}");
+            ReportToolInvoked(startedAt, failure);
+            return failure;
         }
+    }
+
+    /// <summary>统一执行骨架（无取消令牌形态）：委托 <see cref="RunAsync(Func{CancellationToken, Task{ToolResult}}, CancellationToken)"/>——body 闭包自行捕获令牌时行为等价。</summary>
+    public Task<ToolResult> RunAsync(Func<Task<ToolResult>> body)
+        => RunAsync(_ => body(), default);
+
+    /// <summary>工具调用埋点（<see cref="IAgentToolTelemetry"/> 空安全消费）：成功/被转换失败都记一次（失败样本不得缺席，否则错误率指标失真）；时长经 <see cref="Stopwatch"/> 时间戳差计算，不分配计时器对象。</summary>
+    private void ReportToolInvoked(long startedAt, ToolResult result)
+    {
+        if (telemetry is not IAgentToolTelemetry toolTelemetry)
+        {
+            return;
+        }
+
+        var elapsedMs = (Stopwatch.GetTimestamp() - startedAt) * 1000L / Stopwatch.Frequency;
+        toolTelemetry.ToolInvoked(toolName, isWrite, elapsedMs, result.Truncated, result.Error?.Category);
     }
 
     /// <summary>统一 ApiResult 解包路径（<b>纯文本载荷</b>）：失败回填 + 成功取文本 + 截断；适用不做字段投影的出参（如 docx 正文纯文本——信封投影会改变行为）。</summary>

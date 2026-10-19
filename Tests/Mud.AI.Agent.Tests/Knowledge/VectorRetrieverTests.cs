@@ -33,6 +33,96 @@ public class VectorRetrieverTests
         return store;
     }
 
+    /// <summary>记录型工具遥测替身（实现新端口）。</summary>
+    private sealed class RecordingToolTelemetry : IAgentToolTelemetry
+    {
+        public List<(int Chunks, int InjectedChars)> Retrievals { get; } = [];
+
+        public void ToolInvoked(string toolName, bool isWrite, long durationMs, bool truncated, string? errorCategory)
+        {
+        }
+
+        public void ToolRetried(string toolName, int attempt)
+        {
+        }
+
+        public void RetrievalPerformed(int chunks, int injectedChars) => Retrievals.Add((chunks, injectedChars));
+
+        public void ApprovalRequested(string toolName)
+        {
+        }
+
+        public void ApprovalResolved(string toolName, bool approved, long waitMs)
+        {
+        }
+
+        public IDisposable? StartTurn(string conversationKey, string? tenantKey) => null;
+        public void GateWaited(IDisposable? turn, double milliseconds)
+        {
+        }
+
+        public void Replayed(IDisposable? turn)
+        {
+        }
+
+        public void Streamed(IDisposable? turn)
+        {
+        }
+
+        public void LlmDuration(string agentName, long milliseconds)
+        {
+        }
+
+        public void Degraded(string reason)
+        {
+        }
+
+        public IDisposable? StartSummarize(int summarizedCount, int retainedCount) => null;
+        public void SummarizeCompleted(IDisposable? scope, bool converged)
+        {
+        }
+
+        public IDisposable? StartRun(string agentName, bool streaming) => null;
+        public void RunCompleted(IDisposable? scope, bool failed, long? inputTokens, long? outputTokens, long? totalTokens)
+        {
+        }
+    }
+
+    /// <summary>旧替身：只实现主端口（未 opt-in 新端口）。</summary>
+    private sealed class LegacyTelemetry : IAgentTelemetry
+    {
+        public IDisposable? StartTurn(string conversationKey, string? tenantKey) => null;
+        public void GateWaited(IDisposable? turn, double milliseconds)
+        {
+        }
+
+        public void Replayed(IDisposable? turn)
+        {
+        }
+
+        public void Streamed(IDisposable? turn)
+        {
+        }
+
+        public void LlmDuration(string agentName, long milliseconds)
+        {
+        }
+
+        public void Degraded(string reason)
+        {
+        }
+
+        public IDisposable? StartSummarize(int summarizedCount, int retainedCount) => null;
+        public void SummarizeCompleted(IDisposable? scope, bool converged)
+        {
+        }
+
+        public IDisposable? StartRun(string agentName, bool streaming) => null;
+        public void RunCompleted(IDisposable? scope, bool failed, long? inputTokens, long? outputTokens, long? totalTokens)
+        {
+        }
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -116,6 +206,50 @@ public class VectorRetrieverTests
     [Fact]
     public void Constructor_Should_Reject_NullStore()
         => ((Action)(() => new VectorRetriever(null!))).Should().Throw<ArgumentNullException>();
+
+    [Fact]
+    public async Task RetrieveAsync_Should_ReportRetrievalPerformed_WhenToolTelemetryOptsIn()
+    {
+        var telemetry = new RecordingToolTelemetry();
+        var hits = new[]
+        {
+            new RetrievedChunk("命中内容一，足够长以通过长度闸。"),
+            new RetrievedChunk("命中内容二，足够长以通过长度闸。"),
+        };
+
+        var results = await new VectorRetriever(Store(hits).Object, topK: 5, telemetry: telemetry)
+            .RetrieveAsync("问题");
+
+        results.Should().HaveCount(2);
+        telemetry.Retrievals.Should().ContainSingle("每次检索恰好一次埋点");
+        telemetry.Retrievals.Single().Chunks.Should().Be(2, "召回条数进埋点");
+        telemetry.Retrievals.Single().InjectedChars.Should().Be(results.Sum(c => c.Text.Length),
+            "注入字符数进埋点（三级闸全拦截时为 0——静默零知识因此可观测）");
+    }
+
+    [Fact]
+    public async Task RetrieveAsync_ZeroHits_ShouldStillReportRetrievalPerformedWithZero()
+    {
+        var telemetry = new RecordingToolTelemetry();
+
+        var results = await new VectorRetriever(Store().Object, telemetry: telemetry).RetrieveAsync("问题");
+
+        results.Should().BeEmpty();
+        telemetry.Retrievals.Should().ContainSingle(
+            "已查询但零命中同样是「检索完成」样本——漏报会让「向量库配错 ⇒ 永远零知识」在指标上完全隐形");
+        telemetry.Retrievals.Single().Chunks.Should().Be(0);
+        telemetry.Retrievals.Single().InjectedChars.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RetrieveAsync_LegacyTelemetryWithoutNewInterface_ShouldBeSilentAndSafe()
+    {
+        var store = Store(new RetrievedChunk("命中内容，足够长以通过长度闸。"));
+
+        var results = await new VectorRetriever(store.Object, telemetry: new LegacyTelemetry()).RetrieveAsync("问题");
+
+        results.Should().ContainSingle("未 opt-in 新端口的旧替身：零埋点、零异常、行为不变");
+    }
 
     // ────────── 索引管线 ──────────
 

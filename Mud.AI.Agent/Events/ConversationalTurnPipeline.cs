@@ -169,12 +169,14 @@ public sealed class ConversationalTurnPipeline
 
             // ⑨ 工具执行上下文/预算作用域：必须在上下文装配**之前**生效——知识/引用类装配器经租户上下文切租户
             // （顺序颠倒会让装配器抛错并被隔离吞为 Warning，表现为「注入模式每轮零知识注入」且仅日志可见）。
+            // Facts 由产品经 BuildScopeFacts 委托生产（租户凭证之外的维度）；委托缺席即不传（同现状）。
             using var _toolScope = _scopeFactory?.BeginToolScope(new TurnScopeContext(
                 request.AppKey,
                 conversationKey,
                 ChatIdTarget(request),
                 request.SenderId,
-                request.ThreadId));
+                request.ThreadId,
+                _turnOptions.BuildScopeFacts?.Invoke(request)));
 
             // 单轮工具调用预算——在模型调用前开启、随 using 释放（0 = 不限制）。
             using var _budgetScope = _options.MaxToolCallsPerTurn > 0
@@ -514,8 +516,16 @@ public sealed class ConversationalTurnPipeline
     private Task NotifyApprovalRequestsAsync(
         IReadOnlyList<FrameworkToolApprovalRequest> pending,
         CancellationToken cancellationToken)
-        => ApprovalRequestProjector.NotifyAsync(
+    {
+        // HITL 入口埋点（空安全消费）：逐项按其自身工具名上报——首轮产出审批的主路径与续跑轮同口径，指标不得只覆盖续跑轮。
+        foreach (var item in pending)
+        {
+            (_telemetry as IAgentToolTelemetry)?.ApprovalRequested(item.ToolName);
+        }
+
+        return ApprovalRequestProjector.NotifyAsync(
             _approvalChannel, _approvalStore, _logger, pending, cancellationToken);
+    }
 
     /// <summary>构造「等待人工确认」的用户可见答复（文案委托缺省 ⇒ 内建默认）。</summary>
     /// <remarks>该文本会下发给用户/发回模型，故必须<b>不含任何批准要素</b>（不含 requestId、入参原文或任何令牌）——否则「批准只能来自宿主」的前提被破坏。</remarks>

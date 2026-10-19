@@ -43,6 +43,14 @@ Mud.AI/
 `Mud.AI.Agent` 对 `Microsoft.Agents.AI`（MAF）的直引为白名单内收敛式放宽，且不得因此获得任何
 `Mud.Feishu*` 引用——上述纪律由 `Tests/Mud.AI.Agent.Tests/ContractGuards/` 机械锁定。
 
+## 契约演进军规
+
+1. **主端口冻结，新能力走新接口**：给已分发端口加成员即 breaking 全部既有实现——新能力一律"新接口继承旧端口 + 调用点 `as` 空安全消费"。首个样板：`IAgentToolTelemetry : IAgentTelemetry`（未实现新接口的旧实现零埋点零异常）。
+2. **加法优先**：新重载 / 新可选参数 / 新记录尾参；确需移除的走 `[Obsolete]` 警告 → 次大版本移除的两段式，并在 CHANGELOG 登记迁移路径。
+3. **`netstandard2.0` 无默认接口成员（DIM）**：能力拆分用接口继承，不用 DIM；ns2.0 目标上的新 API 必须在该 TFM 可编译、可调用。
+4. **产包必递增版本**：NuGet 同版本覆盖不使下游缓存失效（ADR-0005）；破坏性 diff 须附 CHANGELOG 条目与迁移说明。
+5. **注释预算只下压**：新增注释写"现在必须怎样"与"读代码读不出的陷阱"，不写批次编号与过程叙事；冻结台账见 `documents/comment-budget-baseline.json`，重固化走 `scripts/comment-audit.ps1 -UpdateBaseline`。
+
 ## 构建与测试
 
 ```pwsh

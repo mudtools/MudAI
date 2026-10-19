@@ -105,9 +105,13 @@ public static class ToolResultPipeline
     /// <param name="maxLength">预算上限；≤ 0 表示无预算。</param>
     /// <returns>错误结果。</returns>
     public static ToolResult FromErrorText(ToolError payload, string combined, int maxLength)
-        => ToolResult.FromError(
-            payload,
-            maxLength > 0 ? ToolResultText.Truncate(combined, maxLength) : combined);
+        => IsOverBudget(combined, maxLength)
+            ? ToolResult.FromError(
+                payload,
+                ToolResultText.Truncate(combined, maxLength),
+                truncated: true,
+                PlainTextTruncationReason)
+            : ToolResult.FromError(payload, combined);
 
     /// <summary>单源截断判据：文本长度是否超过预算。<b>不得改用"截断后长度比较"</b>——两个截断器的标记/提示文本都<b>附加</b>在结果里（JSON 感知截断还会保留末尾 <c>truncated</c>/<c>hint</c> 键），故"截断后更长"完全可能（101 字符截到 100 再附约 80 字符标记）而漏判；本判据与两个截断器的进入条件逐字一致。</summary>
     /// <param name="text">原始文本。</param>

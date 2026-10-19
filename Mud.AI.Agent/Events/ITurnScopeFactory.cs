@@ -13,16 +13,17 @@ namespace Mud.AI.Agent.Events;
 /// <param name="ChatId">触发会话的会话目标 ID（可空）。</param>
 /// <param name="UserId">触发用户（可空）。</param>
 /// <param name="ThreadId">话题（thread）维度（可空；末尾可选参数追加 ⇒ 既有构造点源码兼容；回复进话题等平台特性由产品工具执行链按本维度取用）。</param>
+/// <param name="Facts">产品维度事实（可空；键值对形态，由产品经 <c>ConversationalTurnOptions.BuildScopeFacts</c> 生产）：租户凭证之外的维度（企业标识、应用凭证槽位等）经此透传，产品不必自建第二个上下文槽位；中立管线不认识任何键的语义，只负责搬运。</param>
 /// <remarks>
-/// <b>字段全是中立表述</b>：不出现任何生态专有名词（飞书的 <c>AppKey</c> 语义已中性化为 <see cref="TenantKey"/>），
-/// 故本类型可安全落在中立包。
+/// <b>字段全是中立表述</b>：不出现任何生态专有名词（飞书的 <c>AppKey</c> 语义已中性化为 <see cref="TenantKey"/>），故本类型可安全落在中立包。
 /// </remarks>
 public readonly record struct TurnScopeContext(
     string TenantKey,
     string ConversationKey,
     string? ChatId,
     string? UserId,
-    string? ThreadId = null);
+    string? ThreadId = null,
+    IReadOnlyDictionary<string, string?>? Facts = null);
 
 /// <summary><b>产品作用域端口</b>：中立管线在「工具执行上下文 / 租户隔离 / 预算」这类<b>产品事实</b>上的唯一接缝（③ 式委托的
 /// 接口化形态——产品实现持有 <c>AsyncLocal</c> 等具体手段，中立侧只知<b>进出</b>）。</summary>
@@ -30,7 +31,7 @@ public readonly record struct TurnScopeContext(
 /// <para>
 /// <b>为什么必须由产品实现</b>：工具执行上下文承载租户凭证语义（飞书侧是 <c>IFeishuToolContextAccessor</c> 的
 /// <c>AsyncLocal</c>，唯一建立点在事件层）。中立管线不能命名它（撞 <c>MudAiFamily_ShouldNotDependOnFeishuProjects</c>），也不该
-/// 自建第二个上下文槽位（两个槽位 ⇒ 宿主该初始化哪个？）。
+/// 自建第二套恢复语义（两套恢复 ⇒ 宿主该配对哪个？）——产品专属环境量的官方形态是中立侧 <c>AmbientScope&lt;T&gt;</c>（栈式恢复 + 所有权校验），产品只用、不另造。
 /// </para>
 /// <para>
 /// <b>作用域语义</b>：<see cref="BeginToolScope"/> 返回的作用域释放时<b>必须</b>恢复进入前的状态（既有实现是

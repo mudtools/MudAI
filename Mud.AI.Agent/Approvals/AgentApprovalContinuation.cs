@@ -6,6 +6,7 @@
 // -----------------------------------------------------------------------
 
 using Mud.AI.Abstractions.Approvals;
+using Mud.AI.Abstractions.Observability;
 using Mud.AI.Agent.Events;
 
 namespace Mud.AI.Agent.Approvals;
@@ -27,8 +28,7 @@ public static class AgentApprovalContinuation
     /// 回灌一次人工批准（或拒绝）并续跑同一会话。
     /// </summary>
     /// <remarks>
-    /// <b>参数注入而非构造注入</b>：依赖显式、构造面零变更；闸门经产品委托 <paramref name="acquireGate"/> 消费，中立侧不命名闸门类型，满额上抛的产品异常原样传播。
-    /// <b>fail-closed 边界（全部显式抛错，绝不静默降级或凭空放行）</b>：<paramref name="scopeFactory"/> 为 null ⇒ 装配缺陷抛错；<paramref name="approval"/> 缺 <c>RequestId</c>/<c>ConversationKey</c>/<c>TenantKey</c> ⇒ 异常；框架已不再记录该 <c>RequestId</c> ⇒ 失效抛出（引导用户重新发起，绝不凭空构造批准响应）；<paramref name="approvalChannel"/> 缺席只记 Warning。
+    /// <b>参数注入而非构造注入</b>：依赖显式、构造面零变更；闸门经产品委托 <paramref name="acquireGate"/> 消费，中立侧不命名闸门类型，满额上抛的产品异常原样传播。<b>fail-closed 边界（全部显式抛错，绝不静默降级或凭空放行）</b>：<paramref name="scopeFactory"/> 为 null ⇒ 装配缺陷抛错；<paramref name="approval"/> 缺 <c>RequestId</c>/<c>ConversationKey</c>/<c>TenantKey</c> ⇒ 异常；框架已不再记录该 <c>RequestId</c> ⇒ 失效抛出（引导用户重新发起，绝不凭空构造批准响应）；<paramref name="approvalChannel"/> 缺席只记 Warning。
     /// </remarks>
     /// <param name="agent">目标 Agent（须与发起确认时同一实例/同一会话存储）。</param>
     /// <param name="sessions">会话取/建/存端口（发起轮与续跑轮必须同键）。</param>
@@ -44,6 +44,8 @@ public static class AgentApprovalContinuation
     /// 不存在 / 已过期 / 已被消费三者一律 fail-closed（丢弃迟到批准）。未传入则保持既有行为。
     /// </param>
     /// <param name="cancellationToken">取消令牌。</param>
+    /// <param name="telemetry">遥测端口（可空；实现 <c>IAgentToolTelemetry</c> 时埋点 HITL 入口——续跑轮再产出的审批请求）。</param>
+    /// <param name="restoreScope">产品环境量恢复委托（可空）：发起轮由产品经 <see cref="ITurnScopeFactory"/> 自行决定保存什么，续跑轮内、模型调用前调用一次，作用域覆盖续跑全程；先于 <see cref="ITurnScopeFactory.BeginToolScope"/> 建立（外层——工具作用域的建立可能依赖它），释放时内层先退、外层后退。</param>
     /// <returns>续跑轮的模型回应（含可能新增的审批请求内容）。</returns>
     /// <exception cref="ArgumentNullException"><paramref name="agent"/>、<paramref name="sessions"/> 或 <paramref name="approval"/> 为 null。</exception>
     /// <exception cref="ArgumentException">审批请求要素不完整（缺 RequestId / ConversationKey / TenantKey）。</exception>
@@ -59,7 +61,9 @@ public static class AgentApprovalContinuation
         IToolApprovalChannel? approvalChannel = null,
         ILogger? logger = null,
         IPendingApprovalStore? pendingApprovalStore = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IAgentTelemetry? telemetry = null,
+        Func<TurnScopeContext, IDisposable>? restoreScope = null)
     {
         if (agent is null)
         {
@@ -145,11 +149,16 @@ public static class AgentApprovalContinuation
             var messages = new List<ChatMessage>(1) { new(ChatRole.User, [responseContent]) };
 
             // 续跑轮不在事件流内：工具执行上下文必须在此显式重建（否则工具 fail-closed 结构化拒绝）。
-            using var _toolScope = scopeFactory.BeginToolScope(new TurnScopeContext(
+            var scopeContext = new TurnScopeContext(
                 approval.TenantKey,
                 conversationKey,
                 approval.ChatId,
-                approval.UserId));
+                approval.UserId);
+
+            // 产品环境量恢复（外层作用域）：先于工具作用域建立——工具作用域的建立可能依赖它；两个 using 声明按声明逆序释放 ⇒ 工具作用域先退、恢复的环境量后退，覆盖续跑全程（含模型调用与落库）。
+            using var _restoredScope = restoreScope?.Invoke(scopeContext);
+
+            using var _toolScope = scopeFactory.BeginToolScope(scopeContext);
 
             var response = await agent
                 .RunAsync(messages, session, options: null, cancellationToken)
@@ -165,6 +174,12 @@ public static class AgentApprovalContinuation
 
             if (nextPending.Count > 0)
             {
+                // HITL 入口埋点（空安全消费）：逐项按其自身工具名上报——"一次批准引出多个待确认写工具"时不得只记首个。
+                foreach (var item in nextPending)
+                {
+                    (telemetry as IAgentToolTelemetry)?.ApprovalRequested(item.ToolName);
+                }
+
                 await ApprovalRequestProjector
                     .NotifyAsync(approvalChannel, pendingApprovalStore, logger, nextPending, cancellationToken)
                     .ConfigureAwait(false);

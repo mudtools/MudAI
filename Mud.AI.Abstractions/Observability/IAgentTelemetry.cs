@@ -10,15 +10,13 @@ namespace Mud.AI.Abstractions.Observability;
 /// <summary>中立遥测端口：把「运行管线要埋的事件点」与「具体遥测实现与命名面」解耦。</summary>
 /// <remarks>
 /// <b>为什么是端口而不是直接调 <c>ActivitySource</c></b>：中立包不得认识任何产品的遥测命名面（<c>xxx.agent.*</c> 键、Span 名、Meter 名都是产品资产——改名会让已依赖它的宿主仪表盘失效）；端口只提供<b>调用入口</b>，键名/单位/聚合口径由产品侧决定。
-/// <b>句柄语义</b>：各 <c>Start*</c> 返回的 <see cref="IDisposable"/> 是阶段作用域（产品侧通常映射为一个 <c>Activity</c>），<see langword="null"/> 表示不采集；作用域必须及时 <c>Dispose</c>，且<b>不得</b>承载业务状态——丢失/为 null 时业务行为必须零差异。
-/// <b>维度纪律</b>：租户/会话等键<b>只进 Span 属性</b>，绝不进 Metrics tag（高基数维度会让指标后端爆炸）：<c>conversationKey</c>/<c>tenantKey</c> 只出现在 <see cref="StartTurn"/>，<see cref="LlmDuration"/> 只有数值与 agent 名，<see cref="RunCompleted"/> 只带标量用量。
+/// <b>句柄语义</b>：各 <c>Start*</c> 返回的 <see cref="IDisposable"/> 是阶段作用域（产品侧通常映射为一个 <c>Activity</c>），<see langword="null"/> 表示不采集；作用域必须及时 <c>Dispose</c>，且<b>不得</b>承载业务状态——丢失/为 null 时业务行为必须零差异。<b>维度纪律</b>：租户/会话等键<b>只进 Span 属性</b>，绝不进 Metrics tag（高基数维度会让指标后端爆炸）：<c>conversationKey</c>/<c>tenantKey</c> 只出现在 <see cref="StartTurn"/>，<see cref="LlmDuration"/> 只有数值与 agent 名，<see cref="RunCompleted"/> 只带标量用量。
 /// </remarks>
 public interface IAgentTelemetry
 {
-    /// <summary>开启一轮会话的遥测作用域。</summary>
+    /// <summary>开启一轮会话的遥测作用域（实现返回 <see langword="null"/> 表示不采集；释放即结束本轮）。</summary>
     /// <param name="conversationKey">会话键（只应落 Span 属性，不入 Metrics tag）。</param>
     /// <param name="tenantKey">租户/应用标识（可空；同上）。</param>
-    /// <returns>作用域（实现返回 <see langword="null"/> 表示不采集）；释放即结束本轮。</returns>
     IDisposable? StartTurn(string conversationKey, string? tenantKey);
 
     /// <summary>记录闸门等待耗时（毫秒）——只进当前作用域，不作为指标 tag。</summary>
@@ -43,11 +41,10 @@ public interface IAgentTelemetry
     /// <param name="reason">降级原因（产品侧决定具体文案与指标名）。</param>
     void Degraded(string reason);
 
-    /// <summary>开启一次「会话历史摘要」阶段作用域（命名面由产品实现决定）。</summary>
+    /// <summary>开启一次「会话历史摘要」阶段作用域（命名面由产品实现决定；实现返回 <see langword="null"/> 表示不采集）。</summary>
     /// <remarks><b>为什么不复用 <see cref="StartTurn"/></b>：摘要是<b>嵌套在回合内</b>的子阶段（回合 → 摘要 → 模型调用），产品侧的 Span 名与标签集合都不同（条数标签 + 「是否已摘要」「是否不可收敛」两个结果标记）——复用回合作用域会把子阶段语义塞进父 Span，宿主再也分不出「这一轮到底摘要了没有」。</remarks>
     /// <param name="summarizedCount">被压缩的旧消息条数。</param>
     /// <param name="retainedCount">保留的最近消息条数。</param>
-    /// <returns>作用域（实现返回 <see langword="null"/> 表示不采集）。</returns>
     IDisposable? StartSummarize(int summarizedCount, int retainedCount);
 
     /// <summary>收口一次摘要作用域。</summary>
@@ -56,10 +53,9 @@ public interface IAgentTelemetry
     /// <param name="converged">重建后是否已收敛到 token 预算内（<see langword="false"/> = 「单条消息即超预算」，产品侧应标记出来以区分它与"摘要失效"）。</param>
     void SummarizeCompleted(IDisposable? scope, bool converged);
 
-    /// <summary>开启一次 Agent 运行（模型运行段）的遥测作用域；<paramref name="streaming"/> 供实现选择操作名。</summary>
+    /// <summary>开启一次 Agent 运行（模型运行段）的遥测作用域；<paramref name="streaming"/> 供实现选择操作名（实现返回 <see langword="null"/> 表示不采集）。</summary>
     /// <param name="agentName">Agent 展示名。</param>
     /// <param name="streaming">本轮是否走流式运行。</param>
-    /// <returns>作用域（实现返回 <see langword="null"/> 表示不采集）。</returns>
     IDisposable? StartRun(string agentName, bool streaming);
 
     /// <summary>收口一次运行作用域：记录成败与 token 用量（实现侧决定标签名与单位；未上报的项传 <see langword="null"/>，不得填 0）。</summary>
@@ -72,8 +68,10 @@ public interface IAgentTelemetry
 }
 
 /// <summary>默认遥测实现：全部为空操作。</summary>
-/// <remarks>中立侧的默认值必须是"零开销且零副作用"——没有遥测宿主的部署不应因为缺少实现而失败，也不应付出分配成本（<see cref="Instance"/> 是无状态单例）。</remarks>
-public sealed class NoopAgentTelemetry : IAgentTelemetry
+/// <remarks>
+/// 中立侧的默认值必须是"零开销且零副作用"——没有遥测宿主的部署不应因为缺少实现而失败，也不应付出分配成本（<see cref="Instance"/> 是无状态单例）。同时实现 <see cref="IAgentToolTelemetry"/>：工具面埋点因此开箱即用（给既有类加接口不破坏二进制兼容，且避免再养一个伴生 Noop 类型）。
+/// </remarks>
+public sealed class NoopAgentTelemetry : IAgentTelemetry, IAgentToolTelemetry
 {
     /// <summary>共享单例（无状态）。</summary>
     public static readonly NoopAgentTelemetry Instance = new();
@@ -123,6 +121,31 @@ public sealed class NoopAgentTelemetry : IAgentTelemetry
 
     /// <inheritdoc />
     public void RunCompleted(IDisposable? scope, bool failed, long? inputTokens, long? outputTokens, long? totalTokens)
+    {
+    }
+
+    /// <inheritdoc />
+    public void ToolInvoked(string toolName, bool isWrite, long durationMs, bool truncated, string? errorCategory)
+    {
+    }
+
+    /// <inheritdoc />
+    public void ToolRetried(string toolName, int attempt)
+    {
+    }
+
+    /// <inheritdoc />
+    public void RetrievalPerformed(int chunks, int injectedChars)
+    {
+    }
+
+    /// <inheritdoc />
+    public void ApprovalRequested(string toolName)
+    {
+    }
+
+    /// <inheritdoc />
+    public void ApprovalResolved(string toolName, bool approved, long waitMs)
     {
     }
 }

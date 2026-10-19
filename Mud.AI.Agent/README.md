@@ -144,10 +144,26 @@ per-method 实例）把三段机械骨架从执行器方法中抽出：
 - `AddAgentRuntimeCore`：中立 DI 骨架，全部 `TryAdd`（先注册者生效）。默认件：
   `IAgentTelemetry → NoopAgentTelemetry.Instance`、`ISessionStore → MemorySessionStore`（单实例）、
   `IPendingApprovalStore → InMemoryPendingApprovalStore`。**刻意不含会话闸门**（留产品侧）。
+- **主体机制装配官方路径**（新接入应走扩展方法；手工 `new` 仍合法）：
+  - `AddAgentSessionStore(agent, historyStateKey)`：注册 `IAgentSessionFacade` 中立默认件（`AgentSessionStoreFacade`，薄委派 `AgentSessionStore`）。
+  - `AddConcurrencyLimiter()`：注册 `ConcurrencyLimiter`（在途上限）+ `KeyedAsyncGate`（同键串行），旋钮机械映射 `AgentRuntimeOptions.MaxConcurrentTurns` / `TurnQueueTimeoutSeconds`。
+  - `AddToolRetryPolicy()`：注册 `ToolRetryPolicy`，旋钮取 `AgentRuntimeOptions.ToolRetry`。
+  - `AddConversationalTurnPipeline(agent, sessions, keyBuilder, acquireGate?, turnOptions?)`：注册 `ConversationalTurnPipeline` 单例——两个"容器不可能知道"的依赖（Agent 实例、会话键治理委托）显式传入，其余（Options / 遥测 / 装配器 / 通道 / 审批端口 / 作用域端口 / 会话门面）从容器解析。
+    `sessions` 传 `null` 即取容器内的 `IAgentSessionFacade`（`AddAgentSessionStore` 的中立默认件或宿主实现）——两个官方扩展因此可组合；门面缺位在**解析期**抛错（注册期取不到容器实例，不静默造内存件）。
+  - 前置条件：须先注册 `AgentRuntimeOptions`（产品 Options 投影）；缺失即 fail-fast，不静默取默认值。
+  - 全部注册点由 `RuntimeRegistrationsContractGuards` 与冻结清单机械锁定（防清单腐烂）；注册一律显式泛型形态（服务类型可被机械提取）。
 - `AgentAssemblyFactory`：把 Agent 名 / 指令 / 工具 / 历史裁剪窗组装为 `ChatClientAgentOptions`。
 - `ObservedDelegatingAgent`：运行期编织基类（摘要先于 Run → 运行 Span → 耗时直方图 → token 用量 → 失败标注）。
 - `AgentSessionStore`：产品中立会话门面，承担坏值自愈；`MemorySessionStore`：软过期 + 分摊节流全量清扫。
 - `GuidanceComposer`：把「已启用工具所属域」的 guidance 追加到宿主指令之后；截断与否落在返回值上（可断言信号）。
+
+### 8. 产品上下文与环境量（Events/ITurnScopeFactory + Abstractions/Context/AmbientScope）
+
+- **产品专属环境量的官方形态 = `AmbientScope<T>`**（中立机制）：AsyncLocal 槽位 + Scope 句柄所有权校验 + 栈式恢复。产品实现 `ITurnScopeFactory` 时只用它，不另写一套恢复逻辑（"不得自建第二套恢复语义"）。
+- **产品维度透传 = `TurnScopeContext.Facts`**：租户凭证之外的维度（企业标识、应用凭证槽位等）由产品经 `ConversationalTurnOptions.BuildScopeFacts` 委托生产，管线在建立工具作用域时搬运；中立管线不认识任何键的语义。
+- **HITL 续跑的环境量恢复 = `AgentApprovalContinuation.RunAsync` 的 `restoreScope`**：先于工具作用域建立（外层），覆盖续跑全程。
+- **工具面遥测 = `IAgentToolTelemetry`**（Abstractions）：接口拆分而非给 `IAgentTelemetry` 加成员；`ToolExecutor`（`ToolInvoked`，读写分类由构造携带）、`VectorRetriever`（`RetrievalPerformed`，**零命中同样上报 0/0**——否则"向量库配错 ⇒ 永远零知识"在指标上隐形）、`ConversationalTurnPipeline` + `AgentApprovalContinuation`（`ApprovalRequested`，逐项按其自身工具名上报，覆盖首轮与续跑轮两条路径）空安全消费。
+- **归下游的埋点**：`ToolRetried` 由重试循环所有者调用（中立 `ToolRetryPolicy` 是无环判定件，不埋）；`ApprovalResolved` 由宿主批准入口在收到人类响应时调用（等待时长只有宿主知道，中立侧不伪造 0）。
 
 ## 契约守卫测试
 
@@ -164,8 +180,17 @@ per-method 实例）把三段机械骨架从执行器方法中抽出：
 services.AddAgentRuntimeCore();
 services.AddSingleton<ISessionStore, MyRedisSessionStore>();     // 覆盖默认内存实现
 
-// 跑一个回合（产品事实经选项与端口注入）
-var outcome = await pipeline.RunTurnAsync(request, options, ct);
+// 主体机制装配（官方路径；TryAdd 语义，先注册者生效）
+services.AddSingleton(new AgentRuntimeOptions { /* 产品 Options 投影 */ });
+services.AddAgentSessionStore(agent, historyStateKey: "myapp.agent.history");
+services.AddConcurrencyLimiter();
+services.AddToolRetryPolicy();
+// sessions 传 null ⇒ 解析上面注册的 IAgentSessionFacade（产品自有门面则直接传实例）
+services.AddConversationalTurnPipeline(agent, sessions: null, request => $"{request.AppKey}|{request.SubjectId}");
+
+// 跑一个回合（回复端口由产品实现：投递失败照常传播，幂等回滚由事件层 at-least-once 承接）
+var pipeline = provider.GetRequiredService<ConversationalTurnPipeline>();
+var outcome = await pipeline.RunTurnAsync(request, replySink, ct);
 ```
 
 ## 相关包
