@@ -63,6 +63,9 @@ public sealed class AgentSessionStore
         _logger = logger;
     }
 
+    /// <summary>会话历史在框架状态袋内的状态键（构造时注入的产品事实；供门面层转述给 <c>IAgentSessionFacade</c> 端口）。</summary>
+    public string HistoryStateKey => _historyStateKey;
+
     /// <summary>按会话键读取会话；miss（不存在、TTL 过期、载荷损坏）时创建新会话。</summary>
     /// <param name="key">会话键（由产品侧的键治理构造）。</param>
     /// <param name="cancellationToken">取消令牌。</param>

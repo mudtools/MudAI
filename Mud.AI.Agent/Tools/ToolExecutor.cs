@@ -5,31 +5,32 @@
 //  不得利用本项目从事危害国家安全、扰乱社会秩序、侵犯他人合法权益等法律法规禁止的活动！任何基于本项目开发而产生的一切法律纠纷和责任，我们不承担任何责任！
 // -----------------------------------------------------------------------
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Mud.AI.Abstractions.Observability;
 
 namespace Mud.AI.Agent.Tools;
 
 /// <summary>执行器骨架：参数校验失败回填 / JSON 解析失败回填 / ApiResult 解包（失败回填 + 成功投影 + 截断）三段机械骨架；投影是有意策展的，留在各执行器。</summary>
 /// <remarks>
-/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）：本类型不比较长度、不拼装标记——截断是出口的性质，而不是某个执行器记得写的一步。
-/// <b>per-method 实例</b>：工具名 + 截断上限构造时绑定一次，执行器方法内 <c>FeishuToolNames.X</c> 只出现 1 处（守卫机械断言防回归）。
+/// <b>出站预算与标记委托给 <see cref="ToolResultPipeline"/></b>（唯一出口）：本类型不比较长度、不拼装标记——截断是出口的性质，而不是某个执行器记得写的一步。<b>per-method 实例</b>：工具名 + 截断上限构造时绑定一次，执行器方法内 <c>FeishuToolNames.X</c> 只出现 1 处（守卫机械断言防回归）。
 /// </remarks>
 /// <param name="toolName">工具名（结构化错误的锚点）。</param>
 /// <param name="maxResultLength">结果截断上限（来自 <c>FeishuAgentOptions.MaxToolResultLength</c>；≤ 0 = 无预算）。</param>
-public readonly struct ToolExecutor(string toolName, int maxResultLength)
+/// <param name="telemetry">遥测端口（可空；未实现 <see cref="IAgentToolTelemetry"/> 时零埋点零异常——旧替身不因端口拆分而失效）。</param>
+/// <param name="isWrite">读写分类（遥测维度；单参"写工具构造"自动置真，无需调用方重复声明）。</param>
+public readonly struct ToolExecutor(string toolName, int maxResultLength, IAgentTelemetry? telemetry = null, bool isWrite = false)
 {
-    /// <summary>写工具构造：写工具载荷小（单 ID），无截断语义，不注入截断上限。</summary>
-    public ToolExecutor(string toolName)
-        : this(toolName, 0)
+    /// <summary>写工具构造：写工具载荷小（单 ID），无截断语义，不注入截断上限；读写分类经本构造自动携带（遥测维度，调用方无需重复声明）。</summary>
+    public ToolExecutor(string toolName, IAgentTelemetry? telemetry = null)
+        : this(toolName, 0, telemetry, isWrite: true)
     {
     }
 
     /// <summary><b><c>IOptions</c> 空值守卫的唯一地点</b>（返回已校验的选项值）：执行器只声明"工具名 + 依赖"，构造参数校验集中于此，由 <c>ToolExecutorSkeletonGuards.OptionsNullGuard_ShouldLiveOnlyInToolExecutor</c> 机械锁定不回潮。</summary>
-    /// <remarks>
-    /// <b>为什么是泛型而不是 <c>IOptions&lt;FeishuAgentOptions&gt;</c></b>：骨架所在包不得反向依赖任何产品包（产品 Options 在下游包，连同类型搬走违反中立命名、不搬则成环）；按值分别开放会重复过守卫，返回已校验的 Options 让"守卫一次、读取多次"成为唯一形态。
-    /// </remarks>
+    /// <remarks><b>为什么是泛型而不是 <c>IOptions&lt;FeishuAgentOptions&gt;</c></b>：骨架所在包不得反向依赖任何产品包（产品 Options 在下游包，连同类型搬走违反中立命名、不搬则成环）；按值分别开放会重复过守卫，返回已校验的 Options 让"守卫一次、读取多次"成为唯一形态。</remarks>
     /// <param name="options">宿主注入的 Agent 选项（<see langword="null"/> ⇒ 立即抛，构造期即暴露配置错误）。</param>
     // DynamicallyAccessedMembers：IOptions<TOptions> 上游契约要求 PublicParameterlessConstructor
     // （配置绑定源生成经 new T() 构造），不标注即 IL2091；netstandard2.0 的 BCL 该特性为 internal，
@@ -47,25 +48,50 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     public string ToolName => toolName;
 
     /// <summary>统一执行骨架：参数校验失败（<see cref="ArgumentException"/>）与 JSON 解析失败（<see cref="JsonException"/>）的结构化回填；行为与逐方法 try/catch 同构——catch 覆盖整个方法体（校验、下游调用与投影），补偿性回填不替换原始异常的"结构化错误"语义。</summary>
-    public async Task<ToolResult> RunAsync(Func<Task<ToolResult>> body)
+    /// <remarks><b>取消语义</b>：<see cref="OperationCanceledException"/> 不在 catch 面内——它本就不被转换为结构化错误，原样传播给调用方（取消不是"模型可自我修正的失败"）；body 可经形参令牌协作取消，也可继续闭包捕获既有令牌（旧形态等价）。</remarks>
+    public async Task<ToolResult> RunAsync(
+        Func<CancellationToken, Task<ToolResult>> body,
+        CancellationToken cancellationToken = default)
     {
+        var startedAt = Stopwatch.GetTimestamp();
         try
         {
-            return await body().ConfigureAwait(false);
+            var result = await body(cancellationToken).ConfigureAwait(false);
+            ReportToolInvoked(startedAt, result);
+            return result;
         }
         catch (ArgumentException ex)
         {
-            // 有意静默（守卫白名单）：异常被**转换**为模型可见的结构化错误文本（换了一条上报通道：
-            // 回填模型 + 调用方侧同样计 Error 指标与审计），不是吞掉；闭集非法值的候选随载荷回填模型。
-            return FromStructuredError(
+            // 有意静默（守卫白名单）：异常被**转换**为模型可见的结构化错误文本（换了一条上报通道：回填模型 + 调用方侧同样计 Error 指标与审计），不是吞掉；闭集非法值的候选随载荷回填模型。
+            var failure = FromStructuredError(
                 ToolErrorCategory.Validation, ToolErrorSubtype.InvalidArgs, ex.Message,
                 suggestions: (ex as ToolArgumentException)?.Suggestions);
+            ReportToolInvoked(startedAt, failure);
+            return failure;
         }
         catch (JsonException ex)
         {
             // 有意静默（守卫白名单）：同 ArgumentException 分支——转为结构化错误文本回填模型。
-            return FromStructuredError(ToolErrorCategory.Validation, ToolErrorSubtype.ShapeMismatch, $"参数不是合法 JSON: {ex.Message}");
+            var failure = FromStructuredError(ToolErrorCategory.Validation, ToolErrorSubtype.ShapeMismatch, $"参数不是合法 JSON: {ex.Message}");
+            ReportToolInvoked(startedAt, failure);
+            return failure;
         }
+    }
+
+    /// <summary>统一执行骨架（无取消令牌形态）：委托 <see cref="RunAsync(Func{CancellationToken, Task{ToolResult}}, CancellationToken)"/>——body 闭包自行捕获令牌时行为等价。</summary>
+    public Task<ToolResult> RunAsync(Func<Task<ToolResult>> body)
+        => RunAsync(_ => body(), default);
+
+    /// <summary>工具调用埋点（<see cref="IAgentToolTelemetry"/> 空安全消费）：成功/被转换失败都记一次（失败样本不得缺席，否则错误率指标失真）；时长经 <see cref="Stopwatch"/> 时间戳差计算，不分配计时器对象。</summary>
+    private void ReportToolInvoked(long startedAt, ToolResult result)
+    {
+        if (telemetry is not IAgentToolTelemetry toolTelemetry)
+        {
+            return;
+        }
+
+        var elapsedMs = (Stopwatch.GetTimestamp() - startedAt) * 1000L / Stopwatch.Frequency;
+        toolTelemetry.ToolInvoked(toolName, isWrite, elapsedMs, result.Truncated, result.Error?.Category);
     }
 
     /// <summary>统一 ApiResult 解包路径（<b>纯文本载荷</b>）：失败回填 + 成功取文本 + 截断；适用不做字段投影的出参（如 docx 正文纯文本——信封投影会改变行为）。</summary>
@@ -92,9 +118,7 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     }
 
     /// <summary><b>多步链路</b>（如上传 → 发送）的失败短路：解包失败返回结构化错误结果，成功返回 <see langword="null"/>，调用方据此继续下一步。</summary>
-    /// <remarks>
-    /// 用法 <c>if (executor.FailIfError(uploadOutcome) is { } failure) { return failure; }</c>——中间步骤因此<b>不需要</b>手写 <c>if (!outcome.Ok)</c> 骨架（守卫锁死该形态）；不能改用 <c>FromApi*</c>——那要求"成功投影"，而中间产物（如 <c>image_key</c>）不是工具结果，恒等投影会掩盖意图。
-    /// </remarks>
+    /// <remarks>用法 <c>if (executor.FailIfError(uploadOutcome) is { } failure) { return failure; }</c>——中间步骤因此<b>不需要</b>手写 <c>if (!outcome.Ok)</c> 骨架（守卫锁死该形态）；不能改用 <c>FromApi*</c>——那要求"成功投影"，而中间产物（如 <c>image_key</c>）不是工具结果，恒等投影会掩盖意图。</remarks>
     /// <typeparam name="T">业务载荷类型。</typeparam>
     /// <param name="outcome">产品侧 API 结果读取器（如飞书 <c>FeishuApiResultReader.Read</c>）的解包结果。</param>
     /// <returns>失败时的结构化错误结果；成功时为 <see langword="null"/>。</returns>
@@ -104,9 +128,7 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
             : FromApiOutcomeError(outcome.Code, outcome.ErrorText!, outcome.Failure);
 
     /// <summary><b>统一分页出口（页状态显式版）</b>：给<b>翻页契约字段名与基类不一致</b>的历史 DTO 用——少数结果类型自带 <c>items</c>/<c>total</c>/<c>has_more</c>/<c>page_token</c> 但<b>不继承</b> <c>ApiPageListResult</c>。</summary>
-    /// <remarks>
-    /// 没有本重载，这类工具只能退回"手写两段（聚合 + 单页）"。纪律：<paramref name="readPageState"/> 必须读<b>该 DTO 自己声明的</b>那两个字段（不得另找等价字段猜值）；空值按"<c>has_more == true</c> 才算有下一页"处理（可空布尔里 <c>null</c> = 未知，此时停在第 N 页而非无限翻）。
-    /// </remarks>
+    /// <remarks>没有本重载，这类工具只能退回"手写两段（聚合 + 单页）"。纪律：<paramref name="readPageState"/> 必须读<b>该 DTO 自己声明的</b>那两个字段（不得另找等价字段猜值）；空值按"<c>has_more == true</c> 才算有下一页"处理（可空布尔里 <c>null</c> = 未知，此时停在第 N 页而非无限翻）。</remarks>
     public async Task<ToolResult> FromPagedApiAsync<TPage>(
         Func<string?, CancellationToken, Task<ToolApiOutcome<TPage>>> fetchPage,
         Func<TPage, JsonObject> project,
@@ -158,9 +180,7 @@ public readonly struct ToolExecutor(string toolName, int maxResultLength)
     }
 
     /// <summary>统一 <c>fetch_all</c> 聚合信封出口：首页即失败 → 回到结构化错误路径（保留产品 code 与<b>产品侧读数</b> → <see cref="ToolApiFailure"/>）；其余情况 → 聚合信封（items/has_more/truncated/next_page_token/_budget/partial_error）。</summary>
-    /// <remarks>
-    /// 截断标记的<b>双来源合并</b>：聚合层截断（触达 <c>max_items</c>/<c>max_pages</c>）与结果长度截断（<c>MaxToolResultLength</c>）任一为真即 <c>Truncated=true</c>——否则"信封被长度截断"对宿主与审计不可见。
-    /// </remarks>
+    /// <remarks>截断标记的<b>双来源合并</b>：聚合层截断（触达 <c>max_items</c>/<c>max_pages</c>）与结果长度截断（<c>MaxToolResultLength</c>）任一为真即 <c>Truncated=true</c>——否则"信封被长度截断"对宿主与审计不可见。</remarks>
     /// <param name="result">聚合结果。</param>
     /// <param name="maxItems">本条调用的结果预算上限（写入 <c>_budget</c>）。</param>
     public ToolResult FromPagedResult(ToolPagination.PagedFetchResult result, int maxItems)

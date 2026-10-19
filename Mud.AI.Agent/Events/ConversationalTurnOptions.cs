@@ -70,4 +70,8 @@ public sealed class ConversationalTurnOptions
     /// <see langword="null"/> ⇒ 管线内建默认文案。
     /// </summary>
     public Func<IReadOnlyList<FrameworkToolApprovalRequest>, string>? BuildApprovalPendingReply { get; init; }
+
+    /// <summary>工具执行上下文的<b>产品维度事实</b>生产（③ 式委托；产品侧按自身知识提供，如企业标识、应用凭证槽位）。</summary>
+    /// <remarks><c>TurnScopeContext.Facts</c> 的语义由产品定义、中立管线不认识任何键——没有本委托它就是无人生产的幽灵维度；返回 <see langword="null"/> / 空字典 ⇒ 不传（同现状）。<b>不得</b>把 <c>ConversationRequest.EventFacts</c> 直接灌入：那是装配器面（值可能含用户内容、须 untrusted 标注），与工具执行上下文的消费者和威胁模型不同。</remarks>
+    public Func<ConversationRequest, IReadOnlyDictionary<string, string?>?>? BuildScopeFacts { get; init; }
 }

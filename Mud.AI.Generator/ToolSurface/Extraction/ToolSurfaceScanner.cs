@@ -9,17 +9,8 @@ namespace Mud.AI.ToolSurface.Extraction;
 
 /// <summary>Tier C 扫描器：把手写工具特性接口（策展暴露面的<b>唯一</b>声明处）编译为 <see cref="ToolSchemaModel"/>，并就 <c>Source</c> 与 SDK 事实做交叉校验。</summary>
 /// <remarks>
-/// <para>
-/// 泛化点：特性识别 → <see cref="Extractors.GetToolAttribute"/>（<c>ToolAttributeName/Namespace</c> 槽）；源挂钩解析 →
-/// <see cref="SourceResolver"/>（<c>SdkNamespaceRoot</c> 槽）；令牌身份推导 → <see cref="InterfaceIdentityParser.DeriveTokenKind"/>
-/// （<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c> 标记表）；接口范式校验 → <see cref="InterfaceIdentityParser.TryParse"/>（<c>InterfaceNameRegex</c> 槽）；
-/// 危险词表 → <c>WriteVerbKeywords</c> 槽（经 <see cref="Extractors.DeriveRisk"/>）；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 动态槽位。
-/// </para>
-/// <para>
-/// <b>这是"工具面不脱钩 SDK"的机械保证</b>：工具名/描述/scope 由人声明（就是策展），而 <b>HTTP 路由、风险分级、返回形状、
-/// 上传/下载形态</b>全部从 SDK 符号推导——声明与 SDK 不符即构建失败（槽位 019 / 017）。参数 Schema 由
-/// <see cref="ParameterSchemaRenderer"/> 从符号推导（枚举/数组元素/format/复合 DTO）。
-/// </para>
+/// 泛化点：特性识别 → <see cref="Extractors.GetToolAttribute"/>（<c>ToolAttributeName/Namespace</c> 槽）；源挂钩解析 → <see cref="SourceResolver"/>（<c>SdkNamespaceRoot</c> 槽）；令牌身份推导 → <see cref="InterfaceIdentityParser.DeriveTokenKind"/>（<c>TokenKindStrategy</c> + <c>TokenKindMarkers</c> 标记表）；接口范式校验 → <see cref="InterfaceIdentityParser.TryParse"/>（<c>InterfaceNameRegex</c> 槽）；危险词表 → <c>WriteVerbKeywords</c> 槽（经 <see cref="Extractors.DeriveRisk"/>）；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 动态槽位。
+/// <b>这是"工具面不脱钩 SDK"的机械保证</b>：工具名/描述/scope 由人声明（就是策展），而 <b>HTTP 路由、风险分级、返回形状、上传/下载形态</b>全部从 SDK 符号推导——声明与 SDK 不符即构建失败（槽位 019 / 017）。参数 Schema 由 <see cref="ParameterSchemaRenderer"/> 从符号推导（枚举/数组元素/format/复合 DTO）。
 /// </remarks>
 internal static class ToolSurfaceScanner
 {
@@ -28,11 +19,7 @@ internal static class ToolSurfaceScanner
     /// <param name="compilation">当前编译（<c>Source</c> 解析与类型推导用）。</param>
     /// <param name="profile">当前剖面。</param>
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
-    /// <param name="faultInjection">
-    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在扫描体起点抛出。
-    /// <b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让 xUnit 并行跑的<b>并发测试</b>扫描
-    /// 一并被打挂（表现为产物静默缺席、只剩一条 026），且只在负载下偶发、极难复现；常态为 <see langword="null"/>，零开销。
-    /// </param>
+    /// <param name="faultInjection">验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让 xUnit 并行跑的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、只剩一条 026），且只在负载下偶发、极难复现；常态为 <see langword="null"/>，零开销。</param>
     /// <returns>扫描结果（模型 + 诊断）。</returns>
     public static ScannedTool Scan(
         INamedTypeSymbol symbol,
@@ -208,10 +195,7 @@ internal static class ToolSurfaceScanner
 
     /// <summary>读取并校验工具特性的 <c>AnyOf = ["a|b|c"]</c> 条件必填组。</summary>
     /// <remarks>
-    /// <b>为什么在生成器侧校验</b>：组内参数名若拼错，渲染出的 <c>anyOf</c> 会指向不存在的字段，约束<b>永久失效且无任何
-    /// 症状</b>（构建通过、Schema 合法、只是约束了空气）——这类"静默失效"必须在构建期拦下，故报槽位 011（Error）。
-    /// <b>三条校验规则</b>：① 组内每个参数名必须存在于签名；② 组内不得含 <c>Required = true</c> 的参数（否则"至少一个"
-    /// 退化为"全部必填"，语义相反）；③ 单元素组无意义（等价于该参数必填，应改用 <c>Required</c>）。
+    /// <b>为什么在生成器侧校验</b>：组内参数名若拼错，渲染出的 <c>anyOf</c> 会指向不存在的字段，约束<b>永久失效且无任何症状</b>（构建通过、Schema 合法、只是约束了空气）——这类"静默失效"必须在构建期拦下，故报槽位 011（Error）。<b>三条校验规则</b>：① 组内每个参数名必须存在于签名；② 组内不得含 <c>Required = true</c> 的参数（否则"至少一个"退化为"全部必填"，语义相反）；③ 单元素组无意义（等价于该参数必填，应改用 <c>Required</c>）。
     /// </remarks>
     private static IReadOnlyList<IReadOnlyList<string>> ReadAnyOfGroups(
         AttributeData attribute,
@@ -393,10 +377,7 @@ internal static class ToolSurfaceScanner
     // ────────── 辅助 ──────────
 
     /// <summary>无 <c>Source</c> 声明（或声明未命中）时的缺省令牌身份。</summary>
-    /// <remarks>
-    /// 上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（槽位清单无此项），为保持行为零漂移沿用同一枚举值
-    /// （枚举槽本身平台无关，Tenant 语义 = 租户/企业级令牌）。
-    /// </remarks>
+    /// <remarks>上游缺省为 <c>ToolIdentity.Tenant</c>；剖面没有"缺省身份"槽（槽位清单无此项），为保持行为零漂移沿用同一枚举值（枚举槽本身平台无关，Tenant 语义 = 租户/企业级令牌）。</remarks>
     private const ToolSurfaceTokenKind DefaultIdentity = ToolSurfaceTokenKind.Tenant;
 
     /// <summary>从源接口的命名标记表推导令牌身份（泛化自上游 <c>StartsWith("IFeishuTenant")</c> 硬编码）；未命中任何标记

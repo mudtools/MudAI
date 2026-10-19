@@ -44,6 +44,9 @@ public class ConversationalTurnPipelineTests
         public string ResponseText = "模型回答";
         public string? LastUserMessage;
 
+        /// <summary>非流式路径要返回的审批请求（空 = 普通文本回答）。</summary>
+        public List<ToolApprovalRequestContent> PendingApprovals { get; } = [];
+
         protected override ValueTask<AgentSession> CreateSessionCoreAsync(CancellationToken cancellationToken = default)
             => new(new TestSession());
 
@@ -60,6 +63,13 @@ public class ConversationalTurnPipelineTests
         {
             RunCount++;
             LastUserMessage = messages.FirstOrDefault()?.Text;
+
+            if (PendingApprovals.Count > 0)
+            {
+                return Task.FromResult(new AgentResponse(
+                    new ChatMessage(ChatRole.Assistant, [.. PendingApprovals.Cast<AIContent>()])));
+            }
+
             return Task.FromResult(new AgentResponse(new ChatMessage(ChatRole.Assistant, ResponseText)));
         }
 
@@ -176,13 +186,32 @@ public class ConversationalTurnPipelineTests
         }
     }
 
-    /// <summary>遥测替身：记录全部事件点。</summary>
-    private sealed class RecordingTelemetry : IAgentTelemetry
+    /// <summary>遥测替身：记录全部事件点（同时实现工具面端口，覆盖 HITL 入口埋点）。</summary>
+    private sealed class RecordingTelemetry : IAgentToolTelemetry
     {
         public int StartTurnCount;
         public int ReplayedCount;
         public int StreamedCount;
         public double? GateWaitedMs;
+        public List<string> ApprovalRequestedTools { get; } = [];
+
+        public void ToolInvoked(string toolName, bool isWrite, long durationMs, bool truncated, string? errorCategory)
+        {
+        }
+
+        public void ToolRetried(string toolName, int attempt)
+        {
+        }
+
+        public void RetrievalPerformed(int chunks, int injectedChars)
+        {
+        }
+
+        public void ApprovalRequested(string toolName) => ApprovalRequestedTools.Add(toolName);
+
+        public void ApprovalResolved(string toolName, bool approved, long waitMs)
+        {
+        }
 
         public IDisposable? StartTurn(string conversationKey, string? tenantKey)
         {
@@ -523,6 +552,86 @@ public class ConversationalTurnPipelineTests
         outcome.Replayed.Should().BeFalse();
         sink.Delivered.Should().ContainSingle().Which.Should().Be("模型回答");
     }
+
+    /// <summary>产品维度事实经 <c>BuildScopeFacts</c> 委托流进 <see cref="TurnScopeContext.Facts"/>。</summary>
+    [Fact]
+    public async Task RunTurnAsync_BuildScopeFacts_ShouldFlowIntoTurnScopeContext()
+    {
+        var agent = new StubAgent();
+        var sessions = new StubSessions();
+        var sink = new StubReplySink();
+        var scopeFactory = new StubScopeFactory(new List<string>());
+        var options = new ConversationalTurnOptions
+        {
+            BuildScopeFacts = request => new Dictionary<string, string?>
+            {
+                ["corp_id"] = request.AppKey,
+                ["extra"] = null,
+            },
+        };
+        var pipeline = NewPipeline(agent, sessions, sink, scopeFactory: scopeFactory, turnOptions: options);
+
+        await pipeline.RunTurnAsync(NewRequest(), sink);
+
+        var context = scopeFactory.Contexts.Single();
+        context.Facts.Should().NotBeNull("委托生产的产品维度必须透传（产品不必自建第二个上下文槽位）");
+        context.Facts!["corp_id"].Should().Be("app-1");
+        context.Facts["extra"].Should().BeNull("可空值的键按原样搬运（跳过与否由产品消费方决定）");
+    }
+
+    /// <summary>委托缺席 ⇒ Facts 恒 null（无生产侧即无维度，不凭空造空字典）。</summary>
+    [Fact]
+    public async Task RunTurnAsync_WithoutBuildScopeFacts_ShouldPassNullFacts()
+    {
+        var agent = new StubAgent();
+        var sessions = new StubSessions();
+        var sink = new StubReplySink();
+        var scopeFactory = new StubScopeFactory(new List<string>());
+        var pipeline = NewPipeline(agent, sessions, sink, scopeFactory: scopeFactory);
+
+        await pipeline.RunTurnAsync(NewRequest(), sink);
+
+        scopeFactory.Contexts.Single().Facts.Should().BeNull("无生产侧即无维度——不得凭空造空字典");
+    }
+
+    /// <summary>HITL 入口埋点：首轮产出审批的主路径逐项上报（指标不得只覆盖续跑轮）。</summary>
+    [Fact]
+    public async Task RunTurnAsync_PendingApprovals_ShouldReportApprovalRequestedPerTool()
+    {
+        var agent = new StubAgent();
+        agent.PendingApprovals.Add(NewApproval("req-1", "demo.write"));
+        agent.PendingApprovals.Add(NewApproval("req-2", "demo.delete"));
+        var sessions = new StubSessions();
+        var sink = new StubReplySink();
+        var telemetry = new RecordingTelemetry();
+        var pipeline = NewPipeline(agent, sessions, sink, telemetry);
+
+        var outcome = await pipeline.RunTurnAsync(NewRequest(), sink);
+
+        telemetry.ApprovalRequestedTools.Should().Equal(
+            new[] { "demo.write", "demo.delete" }, "逐项按其自身工具名上报（多写工具不得只记首个）");
+        sink.Delivered.Should().ContainSingle().Which.Should().Contain("人工确认",
+            "宿主看到「等待确认」文案，而不是空回复");
+        outcome.ResponseText.Should().Be("以下操作需要人工确认后才能执行：demo.write、demo.delete。已通知审批人，确认后会自动继续。");
+    }
+
+    /// <summary>无待确认项 ⇒ 零 HITL 埋点（不得虚报）。</summary>
+    [Fact]
+    public async Task RunTurnAsync_NoPendingApproval_ShouldNotReportApprovalRequested()
+    {
+        var agent = new StubAgent();
+        var sessions = new StubSessions();
+        var sink = new StubReplySink();
+        var telemetry = new RecordingTelemetry();
+        var pipeline = NewPipeline(agent, sessions, sink, telemetry);
+
+        await pipeline.RunTurnAsync(NewRequest(), sink);
+
+        telemetry.ApprovalRequestedTools.Should().BeEmpty("普通文本回答不产生 HITL 入口事件");
+    }
+
+    private static ToolApprovalRequestContent NewApproval(string requestId, string toolName)
+        => new(requestId, new FunctionCallContent($"call-{requestId}", toolName, new Dictionary<string, object?> { ["x"] = 1 }));
 
     private sealed class Gate(Action onDispose) : IDisposable
     {

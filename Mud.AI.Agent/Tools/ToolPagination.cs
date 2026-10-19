@@ -12,12 +12,7 @@ namespace Mud.AI.Agent.Tools;
 
 /// <summary>自动分页聚合器：把多次翻页调用的结果合并为单个信封，在预算内自动取完。</summary>
 /// <remarks>
-/// <b>设计约束</b>：唯一翻页实现——执行器内不得手写 <c>while</c>/<c>do</c> 翻页循环（守卫机械断言）；
-/// <c>fetch_all=false</c> 时逐字节等价既有行为（单次请求，返回 <c>has_more</c>/<c>page_token</c>）；
-/// <c>fetch_all=true</c> 时循环翻页，直到 <c>has_more=false</c> 或触达 <c>maxItems</c>/<c>maxPages</c>；
-/// 触达预算上限时结果信封带 <c>truncated: true</c> + <c>next_page_token</c>（给出可续 token）；
-/// 中途某页失败：保留已取数据并以结构化错误说明第几页失败（不整批丢弃）；<c>dry_run=true</c> 时不翻页
-/// （只预览第一页的请求）。
+/// <b>设计约束</b>：唯一翻页实现——执行器内不得手写 <c>while</c>/<c>do</c> 翻页循环（守卫机械断言）；<c>fetch_all=false</c> 时逐字节等价既有行为（单次请求，返回 <c>has_more</c>/<c>page_token</c>）；<c>fetch_all=true</c> 时循环翻页，直到 <c>has_more=false</c> 或触达 <c>maxItems</c>/<c>maxPages</c>；触达预算上限时结果信封带 <c>truncated: true</c> + <c>next_page_token</c>（给出可续 token）；中途某页失败：保留已取数据并以结构化错误说明第几页失败（不整批丢弃）；<c>dry_run=true</c> 时不翻页（只预览第一页的请求）。
 /// </remarks>
 public static class ToolPagination
 {
@@ -27,8 +22,7 @@ public static class ToolPagination
     /// <summary>硬上限：单次 <c>fetch_all</c> 最多翻多少页（防失控）。</summary>
     public const int HardMaxPages = 50;
 
-    /// <summary>聚合层截断的<b>统一原因字面量</b>（口径单源）：触达 <c>max_items</c> 或 <c>max_pages</c> 时回填给模型与
-    /// 审计的 <c>TruncationReason</c>；具体是哪一个由信封内的 <c>truncation_reason</c> 细化（见 <see cref="BuildEnvelope"/>）。</summary>
+    /// <summary>聚合层截断的<b>统一原因字面量</b>（口径单源）：触达 <c>max_items</c> 或 <c>max_pages</c> 时回填给模型与审计的 <c>TruncationReason</c>；具体是哪一个由信封内的 <c>truncation_reason</c> 细化（见 <see cref="BuildEnvelope"/>）。</summary>
     public const string AggregateTruncationReason = "fetch_all 预算上限";
 
     /// <summary>聚合分页结果。</summary>
@@ -52,9 +46,7 @@ public static class ToolPagination
         int? ApiCode = null,
         ToolApiFailure? Failure = null);
 
-    /// <summary>自动翻页聚合（<b>解包结果</b>形态，执行器实际使用）：保留失败页的产品业务 code 与<b>产品侧读数</b>
-    /// （<see cref="ToolApiOutcome{T}.Failure"/>），使"首页即失败"能回到既有的结构化错误路径（分类由产品侧完成，
-    /// 中立层不持有码表）。</summary>
+    /// <summary>自动翻页聚合（<b>解包结果</b>形态，执行器实际使用）：保留失败页的产品业务 code 与<b>产品侧读数</b>（<see cref="ToolApiOutcome{T}.Failure"/>），使"首页即失败"能回到既有的结构化错误路径（分类由产品侧完成，中立层不持有码表）。</summary>
     /// <typeparam name="TPage">单页数据类型（须为 class）。</typeparam>
     /// <param name="fetchPage">翻页函数：接收 pageToken，返回解包结果（<c>Ok=false</c> 视为该页失败）。</param>
     /// <param name="readPageState">从单页结果读取 (HasMore, NextToken)。</param>

@@ -2,6 +2,41 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本规范](https://semver.org/lang/zh-CN/)。
 
+## [1.1.0] - 2026-10-19
+
+### 新增
+
+- `Mud.AI.Agent`：`ToolResult.FromUnclassifiedError(string errorText, string toolName = "", int maxLength = 0)`——"握有一条错误文本、没有码表读数"的出口经唯一出口拿到 `api/upstream_error` 结构化载荷（与产品码表回落同口径），失败不再被记成 Succeeded。
+- `Mud.AI.Agent`：`ToolExecutor.RunAsync(Func<CancellationToken, Task<ToolResult>>, CancellationToken)` 取消重载——工具执行链的取消断点；旧重载保留并委托（1.2.0 起评估弃用）。
+- `Mud.AI.Abstractions`：`IAgentToolTelemetry : IAgentTelemetry`（Observability）——工具调用 / 重试 / RAG 检索 / HITL 审批的遥测扩展端口。接口拆分而非给主端口加成员（不 breaking 既有实现）；`NoopAgentTelemetry` 同时实现新接口（加接口不破坏二进制兼容）。
+- `Mud.AI.Agent`：`ToolExecutor` 构造可选接收 `IAgentTelemetry` 并按构造携带读写分类（单参"写工具构造"自动为写），`RunAsync` 空安全埋点 `ToolInvoked`；`VectorRetriever` 埋点 `RetrievalPerformed`；`AgentApprovalContinuation.RunAsync` 埋点 `ApprovalRequested`（续跑轮再产出审批请求）。未实现新端口的旧遥测零埋点零异常。
+- `Mud.AI.Agent`：`AgentApprovalContinuation.RunAsync` 末尾可选参数 `restoreScope`——产品环境量恢复委托，先于工具作用域建立（外层），覆盖续跑全程；置于取消令牌之后，既有按位传参调用点不错位。
+- `Mud.AI.Abstractions`：`AmbientScope<T>`（Context）——产品专属环境量的官方机制：AsyncLocal 槽位 + Scope 句柄所有权校验 + 栈式恢复；产品实现 `ITurnScopeFactory` 不再各写一份恢复逻辑。
+- `Mud.AI.Agent`：`TurnScopeContext` 追加 `Facts` 尾参 + `ConversationalTurnOptions.BuildScopeFacts` 委托（生产侧）——租户凭证之外的产品维度经中立端口透传，产品不必自建第二个上下文槽位。
+- `Mud.AI.Agent`：运行期机制装配端口 `AddConversationalTurnPipeline` / `AddAgentSessionStore` / `AddConcurrencyLimiter` / `AddToolRetryPolicy`（`AgentRuntimeServiceCollectionExtensions`，TryAdd 语义不变）；新增中立实现 `AgentSessionStoreFacade`（`IAgentSessionFacade` 的薄适配）。
+- `Mud.AI.Agent`：`DelegatingToolFunction`（Tools）——AOT 安全的工具函数装饰基座：三契约成员逐字转发 + `InvokeCoreAsync` 单装饰点，零反射。
+- `Mud.AI.Agent`：`AddConversationalTurnPipeline` 的 `sessions` 允许传 `null` ⇒ 解析容器内的 `IAgentSessionFacade`——与 `AddAgentSessionStore` 组合成单条官方装配路径（门面缺位在解析期抛错，不静默造内存件）。
+- `Mud.AI.Agent`：`ConversationalTurnPipeline` 把待确认项交给宿主批准通道时逐项上报 `ApprovalRequested`——首轮审批路径与续跑轮同口径（此前只有续跑轮有入口埋点）。
+
+### 变更
+
+- `Mud.AI.Agent`：`ToolResult.FromError(string)` 标 `[Obsolete]`（本仓零调用点，构建 0 CS0618；2.0.0 移除）。
+- `Mud.AI.Agent`：`ToolResultPipeline.FromErrorText` 超预算时回填截断标记（错误出口此前截断正文但不标记——"模型把不完整正文当完整事实"的可见性缺口）。
+- `Mud.AI.Agent`：`AgentSessionStore` 公开 `HistoryStateKey`（供门面层转述）。
+- `Mud.AI.Abstractions`：`IAgentToolTelemetry.ApprovalResolved` 明确调用归属 = 宿主批准入口（等待时长只有宿主知道；中立侧不伪造 0）。
+- 注释预算台账 `documents/comment-budget-baseline.json` 重新固化（新文件入账 + 触碰文件的换行合并；冻结文件零增长）。
+- `Tests/Directory.Build.props`：测试工程增补 `Microsoft.Extensions.DependencyInjection` 10.0.12（DI 装配语义用例的容器面；版本与既有 M.E.* 定版对齐，NU1603 纪律不变）。
+- 仓库清理：删除 `scripts/tmp-blocks.ps1` / `scripts/tmp-stats.ps1`（一次性注释块扫描脚本，硬编码本机绝对路径且无任何引用；正式口径由 `scripts/comment-audit.ps1` 承担）。
+- 文档：`Mud.AI.Abstractions/README.md` 模块导览补齐 `AmbientScope<T>` 与 `IAgentToolTelemetry`；`Mud.AI.Agent/README.md` 修正快速开始示例（回复端口而非 options）并补埋点归属说明。
+
+### 修复
+
+- 工具错误出口的截断不可见（`FromErrorText` 截断后 `Truncated` 恒 false）——随 `FromError(ToolError, string, bool, string?)` 可选参数与出口逻辑修正。
+- `VectorRetriever` 在"已查询但零命中"分支漏报 `RetrievalPerformed` ⇒ "向量库配错、永远零知识"在指标上完全隐形；现补 `(0, 0)` 样本。
+- `AgentApprovalContinuation` 的 `ApprovalRequested` 只上报旧审批的工具名且多条新审批只记一次；现逐项按其自身工具名上报。
+
+[1.1.0]: https://github.com/mudtools/Mud.AI/releases/tag/v1.1.0
+
 ## [1.0.1] - 2026-10-16
 
 ### 新增

@@ -6,6 +6,7 @@
 // -----------------------------------------------------------------------
 
 using Mud.AI.Abstractions.Knowledge;
+using Mud.AI.Abstractions.Observability;
 
 namespace Mud.AI.Agent.Knowledge;
 
@@ -32,19 +33,22 @@ public sealed class VectorRetriever : IRetriever
     private readonly int _topK;
     private readonly int _maxChunkLength;
     private readonly int _maxTotalLength;
+    private readonly IAgentTelemetry? _telemetry;
 
     /// <summary>构造。</summary>
     /// <param name="store">向量存储（宿主实现，必填）。</param>
     /// <param name="topK">召回条数上限。</param>
     /// <param name="maxChunkLength">单条长度上限（默认取 <see cref="RetrievalBudgets.ChunkPreviewLength"/>）。</param>
     /// <param name="maxTotalLength">总长度上限（默认取 <see cref="RetrievalBudgets.TotalLength"/>）。</param>
+    /// <param name="telemetry">遥测端口（可空；未实现 <c>IAgentToolTelemetry</c> 时零埋点零异常）。</param>
     /// <exception cref="ArgumentNullException"><paramref name="store"/> 为 null。</exception>
     /// <exception cref="ArgumentOutOfRangeException">阈值非法。</exception>
     public VectorRetriever(
         IVectorStore store,
         int topK = DefaultTopK,
         int maxChunkLength = RetrievalBudgets.ChunkPreviewLength,
-        int maxTotalLength = RetrievalBudgets.TotalLength)
+        int maxTotalLength = RetrievalBudgets.TotalLength,
+        IAgentTelemetry? telemetry = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
 
@@ -66,6 +70,7 @@ public sealed class VectorRetriever : IRetriever
         _topK = topK;
         _maxChunkLength = maxChunkLength;
         _maxTotalLength = maxTotalLength;
+        _telemetry = telemetry;
     }
 
     /// <inheritdoc />
@@ -82,6 +87,8 @@ public sealed class VectorRetriever : IRetriever
         var hits = await _store.QueryAsync(query, _topK, cancellationToken).ConfigureAwait(false);
         if (hits is null || hits.Count == 0)
         {
+            // 已查询但零命中同样是「检索完成」样本：漏报会让「向量库配错 ⇒ 永远零知识」在指标上完全隐形。
+            (_telemetry as IAgentToolTelemetry)?.RetrievalPerformed(0, 0);
             return [];
         }
 
@@ -107,6 +114,9 @@ public sealed class VectorRetriever : IRetriever
             total += text.Length;
             results.Add(hit with { Text = text });
         }
+
+        // RAG 埋点（空安全消费）：注入量为 0 时说明三级闸全拦截——不可观测即"静默零知识"只能靠读日志发现。
+        (_telemetry as IAgentToolTelemetry)?.RetrievalPerformed(results.Count, total);
 
         return results;
     }

@@ -55,10 +55,7 @@ public sealed class SdkToolProfileAttribute : Attribute
     public string SdkNamespaceRoot { get; set; } = string.Empty;
 
     /// <summary>额外「可软缺席」命名空间根（<c>|</c> 分隔，如 <c>Mud.Feishu|Mud.AI</c>），用于执行器构造参数的 DI 依赖分类。</summary>
-    /// <remarks>
-    /// <b>为什么必须与 <see cref="SdkNamespaceRoot"/> 分开</b>：后者承担三种语义——<c>Source</c> 挂钩的类型名解析、SDK 程序集定位（按程序集名 == 根名）与<b>软缺席判定</b>；而中立契约（如 <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）也要表达「该能力域缺席 → 该域工具不进注册表」——把根放宽到 <c>Mud</c> 会同时破坏前两种语义（程序集定位会去找名为 <c>Mud</c> 的程序集）。
-    /// <b>判定规则（引擎侧）</b>：命中 <see cref="SdkNamespaceRoot"/> 或本槽任一根的接口参数 ⇒ 软缺席候选；未设置本槽等价于只认 <see cref="SdkNamespaceRoot"/>。
-    /// </remarks>
+    /// <remarks><b>为什么必须与 <see cref="SdkNamespaceRoot"/> 分开</b>：后者承担三种语义——<c>Source</c> 挂钩的类型名解析、SDK 程序集定位（按程序集名 == 根名）与<b>软缺席判定</b>；而中立契约（如 <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）也要表达「该能力域缺席 → 该域工具不进注册表」——把根放宽到 <c>Mud</c> 会同时破坏前两种语义（程序集定位会去找名为 <c>Mud</c> 的程序集）。<b>判定规则（引擎侧）</b>：命中 <see cref="SdkNamespaceRoot"/> 或本槽任一根的接口参数 ⇒ 软缺席候选；未设置本槽等价于只认 <see cref="SdkNamespaceRoot"/>。</remarks>
     public string SoftAbsentNamespaceRoots { get; set; } = string.Empty;
 
     // ────────── 3. 接口命名范式 ──────────
@@ -72,9 +69,7 @@ public sealed class SdkToolProfileAttribute : Attribute
     public TokenKindDerivationStrategy TokenKindStrategy { get; set; } = TokenKindDerivationStrategy.Unspecified;
 
     /// <summary>「标记串=<see cref="SdkTokenKind"/> 成员名」表，以 <c>;</c> 分隔。例：飞书 <c>"IFeishuTenant=Tenant;IFeishuUser=User"</c>；微信 <c>"_Provider=ThirdParty;_ThirdParty=ThirdParty;_Internal=Internal"</c>。</summary>
-    /// <remarks>
-    /// <b>适用面（引擎对两侧都查）</b>：标记表既用于 <b>SDK 接口</b>（<c>Source</c> 挂钩的目标），也用于 <b>工具的承载接口</b>（声明 <c>[AgentTool]</c> 方法的那个接口）——把「工具声明的 identity」与「承载接口名按本表推导出的令牌类型」比对，不一致即 Error ⇒ <b>承载接口名自身必须携带标记串</b>。
-    /// </remarks>
+    /// <remarks><b>适用面（引擎对两侧都查）</b>：标记表既用于 <b>SDK 接口</b>（<c>Source</c> 挂钩的目标），也用于 <b>工具的承载接口</b>（声明 <c>[AgentTool]</c> 方法的那个接口）——把「工具声明的 identity」与「承载接口名按本表推导出的令牌类型」比对，不一致即 Error ⇒ <b>承载接口名自身必须携带标记串</b>。</remarks>
     public string TokenKindMarkers { get; set; } = string.Empty;
 
     // ────────── 5-7. 产物前缀 / 诊断 / 危险词 ──────────

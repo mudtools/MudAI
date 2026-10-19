@@ -80,6 +80,7 @@
 | `IContextAssembler` | interface | 上下文装配插件：`int Order { get; }` + `Task<string?> AssembleAsync(ConversationRequest, CancellationToken)`；单装配器失败被隔离吞为 Warning |
 | `EventFact` | readonly record struct | 有序键值事实（生产者→装配器最小载体）；有序列表保证 prompt 顺序确定 |
 | `AssemblerBudgets` | static class | 装配预算常量：`MaxFactsPerAssembler=16`、`TruncationMarker="…（内容超预算已截断）"` |
+| `AmbientScope<T>` | static class | 产品专属环境量的官方机制：`AsyncLocal` 槽位存 **Scope 句柄** + `Begin(value)` 栈式恢复 + 引用所有权校验（乱序释放不回滚内层）。产品实现 `ITurnScopeFactory` 时只用它，不另写一套恢复语义 |
 
 ### Channels — 流式通道抽象
 
@@ -101,7 +102,8 @@
 | 类型 | 职责 |
 | --- | --- |
 | `IAgentTelemetry` | 埋点与命名面解耦的遥测端口：`StartTurn` / `GateWaited` / `Replayed` / `Streamed` / `LlmDuration` / `Degraded` / `StartSummarize` / `SummarizeCompleted` / `StartRun` / `RunCompleted`。返回 `IDisposable?` 为阶段作用域（null=不采集，丢失零差异）；租户/会话键只进 Span 属性不进 Metrics tag |
-| `NoopAgentTelemetry` | 全空实现 + 无状态共享单例 `Instance`（默认零开销） |
+| `IAgentToolTelemetry` | **能力拆分**（继承主端口，不加成员以保二进制兼容）：`ToolInvoked` / `ToolRetried` / `RetrievalPerformed` / `ApprovalRequested` / `ApprovalResolved`。调用点 `as` 空安全消费——未实现它的既有遥测零埋点零异常 |
+| `NoopAgentTelemetry` | 全空实现（同时实现 `IAgentToolTelemetry`）+ 无状态共享单例 `Instance`（默认零开销） |
 
 ### Media — 媒体转写
 

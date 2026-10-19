@@ -7,19 +7,12 @@
 
 namespace Mud.AI.ToolSurface.Extraction;
 
-/// <summary>handler 特性（<c>[{ToolHandlerAttributeName}]</c>，名字/命名空间来自剖面槽）扫描器：把「执行器方法 + 工具名」
-/// 编译为 <see cref="ToolHandlerBinding"/>（含执行器构造器的 DI 依赖分类）。</summary>
+/// <summary>handler 特性（<c>[{ToolHandlerAttributeName}]</c>，名字/命名空间来自剖面槽）扫描器：把「执行器方法 + 工具名」编译为 <see cref="ToolHandlerBinding"/>（含执行器构造器的 DI 依赖分类）。</summary>
 /// <remarks>
-/// 泛化点：<c>AttributeNamespace</c> 常量 → <see cref="SdkToolProfileModel.ToolHandlerAttributeNamespace"/>（<b>注意与工具特性
-/// 命名空间不同</b>，不得复用 <c>ToolAttributeNamespace</c>）；<c>AttributeName</c> → <see cref="SdkToolProfileModel.ToolHandlerAttributeName"/>；
-/// 返回类型名 → <see cref="SdkToolProfileModel.ResultTypeName"/>；软缺席命名空间判定 → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>；
-/// 诊断 MUDFT022/023/024/025 → factory 槽 22/23/24/25。
-/// <b>工具名来源</b>：handler 特性的 <c>typeof(工具接口)</c> 指向的接口自身的工具特性声明——<b>不</b>用 <c>{P}Names</c> 常量
-/// （源生成器看不到自己本趟的输出，特性实参会退化为错误常量）。
-/// <b>注册器分组 = 执行器类本身</b>：一枚方法级特性同时携带「工具名」（编译期常量）与「执行器类型」（特性的宿主类），
-/// 两类事实一次到位，无需类级声明、无需模块映射、无特例分支。
-/// <b>无额外 CompilationProvider</b>：注册器需要执行器<b>构造签名</b>，而它落在 <c>SemanticModel</c> 内即可完全解析
-/// （<see cref="ISymbol.ContainingType"/> 的实例构造器），故本扫描器与 Tier C 同层同纪律（源不变则不重发）。
+/// 泛化点：<c>AttributeNamespace</c> 常量 → <see cref="SdkToolProfileModel.ToolHandlerAttributeNamespace"/>（<b>注意与工具特性命名空间不同</b>，不得复用 <c>ToolAttributeNamespace</c>）；<c>AttributeName</c> → <see cref="SdkToolProfileModel.ToolHandlerAttributeName"/>；返回类型名 → <see cref="SdkToolProfileModel.ResultTypeName"/>；软缺席命名空间判定 → <see cref="SdkToolProfileModel.SdkNamespaceRoot"/>；诊断 MUDFT022/023/024/025 → factory 槽 22/23/24/25。
+/// <b>工具名来源</b>：handler 特性的 <c>typeof(工具接口)</c> 指向的接口自身的工具特性声明——<b>不</b>用 <c>{P}Names</c> 常量（源生成器看不到自己本趟的输出，特性实参会退化为错误常量）。
+/// <b>注册器分组 = 执行器类本身</b>：一枚方法级特性同时携带「工具名」（编译期常量）与「执行器类型」（特性的宿主类），两类事实一次到位，无需类级声明、无需模块映射、无特例分支。
+/// <b>无额外 CompilationProvider</b>：注册器需要执行器<b>构造签名</b>，而它落在 <c>SemanticModel</c> 内即可完全解析（<see cref="ISymbol.ContainingType"/> 的实例构造器），故本扫描器与 Tier C 同层同纪律（源不变则不重发）。
 /// </remarks>
 internal static class ToolHandlerScanner
 {
@@ -27,12 +20,7 @@ internal static class ToolHandlerScanner
     /// <param name="context">语法上下文（语义模型取自 <c>context.SemanticModel</c>）。</param>
     /// <param name="profile">当前剖面。</param>
     /// <param name="factory">当前剖面的诊断工厂（动态槽位描述符）。</param>
-    /// <param name="faultInjection">
-    /// 验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在
-    /// 扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让
-    /// xUnit 并行跑的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、只剩一条 026），
-    /// 且只在负载下偶发、极难复现。常态为 <see langword="null"/>，零开销。
-    /// </param>
+    /// <param name="faultInjection">验证钩子（仅供测试程序集经 <c>InternalsVisibleTo</c> 注入）：实参为剖面名，返回非空异常即在扫描体起点抛出。<b>由调用方（生成器实例）持有并传入，本层不保存</b>——进程级静态字段会让 xUnit 并行跑的<b>并发测试</b>扫描一并被打挂（表现为产物静默缺席、只剩一条 026），且只在负载下偶发、极难复现。常态为 <see langword="null"/>，零开销。</param>
     /// <param name="cancellationToken">取消令牌（CA1068：须为末位参数）。</param>
     /// <returns>扫描结果（<see cref="ScannedHandler.Faulted"/> 或 <see langword="null"/>）。</returns>
     public static ScannedHandler? Scan(
@@ -167,12 +155,8 @@ internal static class ToolHandlerScanner
         }
     }
 
-    /// <summary>取 handler 特性数据（按「简单名 + 命名空间」双重判定，防同名特性误命中；简单名匹配
-    /// <c>{ToolHandlerAttributeName}</c> 与 <c>…Attribute</c> 双形态）。</summary>
-    /// <remarks>
-    /// 此处不得就地吞异常——吞掉会让 handler 以「非 handler」身份静默消失（不可诊断）；异常上抛给
-    /// <see cref="Scan"/> 的 catch，折算为 <c>{prefix}026</c> 随流上报。
-    /// </remarks>
+    /// <summary>取 handler 特性数据（按「简单名 + 命名空间」双重判定，防同名特性误命中；简单名匹配 <c>{ToolHandlerAttributeName}</c> 与 <c>…Attribute</c> 双形态）。</summary>
+    /// <remarks>此处不得就地吞异常——吞掉会让 handler 以「非 handler」身份静默消失（不可诊断）；异常上抛给 <see cref="Scan"/> 的 catch，折算为 <c>{prefix}026</c> 随流上报。</remarks>
     public static AttributeData? GetHandlerAttribute(IMethodSymbol method, SdkToolProfileModel profile)
     {
         var bare = profile.ToolHandlerAttributeName;
@@ -198,14 +182,9 @@ internal static class ToolHandlerScanner
 
     // ────────── 依赖分类（唯一的判定点） ──────────
 
-    /// <summary>按「是否接口 + 命名空间是否 <c>{SdkNamespaceRoot}*</c> + 是否可空」分类（判定依据见
-    /// <see cref="ToolDependencyKind"/> 的说明表）。</summary>
+    /// <summary>按「是否接口 + 命名空间是否 <c>{SdkNamespaceRoot}*</c> + 是否可空」分类（判定依据见 <see cref="ToolDependencyKind"/> 的说明表）。</summary>
     /// <remarks>
-    /// <b>可空声明优先于命名空间</b>：参数的 <c>?</c> 就是"该依赖可缺席"的意图表达——可空的非 SDK 接口参数必须走
-    /// <see cref="ToolDependencyKind.OptionalService"/>（<c>GetService</c>，缺席返回 null）；若误判为
-    /// <see cref="ToolDependencyKind.RequiredService"/>（生成 <c>GetRequiredService&lt;T&gt;()</c>），"声明可空"与
-    /// "解析必失败即崩"互相矛盾（典型：执行器为补日志而新增 <c>ILogger&lt;T&gt;? logger = null</c>）。只有<b>非可空</b>的
-    /// 非 SDK 依赖才走 <c>GetRequiredService</c>（宿主必须提供的硬依赖，如 <c>IOptions&lt;T&gt;</c>）。
+    /// <b>可空声明优先于命名空间</b>：参数的 <c>?</c> 就是"该依赖可缺席"的意图表达——可空的非 SDK 接口参数必须走 <see cref="ToolDependencyKind.OptionalService"/>（<c>GetService</c>，缺席返回 null）；若误判为 <see cref="ToolDependencyKind.RequiredService"/>（生成 <c>GetRequiredService&lt;T&gt;()</c>），"声明可空"与"解析必失败即崩"互相矛盾（典型：执行器为补日志而新增 <c>ILogger&lt;T&gt;? logger = null</c>）。只有<b>非可空</b>的非 SDK 依赖才走 <c>GetRequiredService</c>（宿主必须提供的硬依赖，如 <c>IOptions&lt;T&gt;</c>）。
     /// </remarks>
     private static ToolDependencyKind ClassifyDependency(IParameterSymbol parameter, SdkToolProfileModel profile)
     {
@@ -221,12 +200,7 @@ internal static class ToolHandlerScanner
     }
 
     /// <summary>命名空间是否为「可软缺席」命名空间（软缺席候选的判定前提，剖面槽驱动）。</summary>
-    /// <remarks>
-    /// <b>两个槽而非一个（中立化的直接后果）</b>：<see cref="SdkToolProfileModel.SdkNamespaceRoot"/> 还承担
-    /// 「SDK 程序集定位」与 <c>Source</c> 前缀剥离，不能为推动软缺席判定而放宽；中立契约（如
-    /// <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）经 <see cref="SdkToolProfileModel.SoftAbsentNamespaceRoots"/> 追加。
-    /// 两者取<b>并集</b>：命中任一根即软缺席候选。
-    /// </remarks>
+    /// <remarks><b>两个槽而非一个（中立化的直接后果）</b>：<see cref="SdkToolProfileModel.SdkNamespaceRoot"/> 还承担「SDK 程序集定位」与 <c>Source</c> 前缀剥离，不能为推动软缺席判定而放宽；中立契约（如 <c>Mud.AI.Abstractions.Knowledge.IRetriever</c>）经 <see cref="SdkToolProfileModel.SoftAbsentNamespaceRoots"/> 追加。两者取<b>并集</b>：命中任一根即软缺席候选。</remarks>
     private static bool IsSdkNamespace(INamespaceSymbol? ns, SdkToolProfileModel profile)
     {
         if (ns is null || ns.IsGlobalNamespace)
@@ -257,10 +231,7 @@ internal static class ToolHandlerScanner
             && (namespaceName == root || namespaceName.StartsWith(root + ".", StringComparison.Ordinal));
 
     /// <summary>参数类型能否作为 DI 服务类型（类/接口，非开放泛型、非元组、非值类型、<b>非 BCL 内建类型</b>）。</summary>
-    /// <remarks>
-    /// <c>SpecialType != None</c> 的排除是必要的：<c>string</c>/<c>object</c> 等在符号层是 <see cref="TypeKind.Class"/>，
-    /// 但把它们当服务解析（<c>GetRequiredService&lt;string&gt;()</c>）无意义甚至有害（会把任意 <c>string</c> 注册当依赖注入）。
-    /// </remarks>
+    /// <remarks><c>SpecialType != None</c> 的排除是必要的：<c>string</c>/<c>object</c> 等在符号层是 <see cref="TypeKind.Class"/>，但把它们当服务解析（<c>GetRequiredService&lt;string&gt;()</c>）无意义甚至有害（会把任意 <c>string</c> 注册当依赖注入）。</remarks>
     private static bool CanBeServiceType(ITypeSymbol type)
         => type is INamedTypeSymbol
         {
@@ -274,8 +245,7 @@ internal static class ToolHandlerScanner
 
     // ────────── 形状校验 ──────────
 
-    /// <summary>执行器方法契约：<c>public Task&lt;{ResultTypeName}&gt; X(IReadOnlyDictionary&lt;string, object?&gt;, CancellationToken)</c>
-    /// （返回类型名来自剖面第 13 槽 <see cref="SdkToolProfileModel.ResultTypeName"/>，按简单名判定）。</summary>
+    /// <summary>执行器方法契约：<c>public Task&lt;{ResultTypeName}&gt; X(IReadOnlyDictionary&lt;string, object?&gt;, CancellationToken)</c>（返回类型名来自剖面第 13 槽 <see cref="SdkToolProfileModel.ResultTypeName"/>，按简单名判定）。</summary>
     private static bool IsExecutorShape(IMethodSymbol method, SdkToolProfileModel profile)
     {
         if (method.IsStatic || method.DeclaredAccessibility != Accessibility.Public)
@@ -326,8 +296,7 @@ internal static class ToolHandlerScanner
             .OrderByDescending(static c => c.Parameters.Length)
             .First();
 
-    /// <summary>类型显示名归一（去可空标注、补 <c>global::</c>）——产物中会写成 <c>GetService&lt;T&gt;()</c>，
-    /// 带 <c>?</c> 的泛型实参在低 TFM 上是无效写法。</summary>
+    /// <summary>类型显示名归一（去可空标注、补 <c>global::</c>）——产物中会写成 <c>GetService&lt;T&gt;()</c>，带 <c>?</c> 的泛型实参在低 TFM 上是无效写法。</summary>
     private static string NormalizeTypeName(ITypeSymbol type)
         => type.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
