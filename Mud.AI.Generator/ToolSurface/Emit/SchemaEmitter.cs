@@ -10,32 +10,16 @@ using Mud.AI.ToolSurface.Schema;
 
 namespace Mud.AI.ToolSurface.Emit;
 
-/// <summary>Tier C 发射器：产出 <c>{P}Schemas.g.cs</c>（Schema 常量 + 名字注册表）、<c>{P}Names.g.cs</c>（工具名契约表）、
-/// <c>{P}Contracts.g.cs</c>（类型化契约表）以及 golden 快照比对。</summary>
+/// <summary>Tier C 发射器：产出 <c>{P}Schemas.g.cs</c>（Schema 常量 + 名字注册表）、<c>{P}Names.g.cs</c>（工具名契约表）、<c>{P}Contracts.g.cs</c>（类型化契约表）以及 golden 快照比对。</summary>
 /// <remarks>
-/// <para>
-/// 泛化点：owner 门槛（上游三处同值常量）收敛为单一剖面槽 <see cref="SdkToolProfileModel.OwnerAssembly"/>——门槛值
-/// <b>不是</b> ProductPrefix 推导（缺 <c>.AI.</c> 段、复数 <c>Tools</c>、无 <c>Tool</c> 后缀，推导即错误抽象）；产物命名空间
-/// <c>{P}Schemas</c>/<c>{P}Contracts</c> → <see cref="SdkToolProfileModel.GeneratedNamespace"/>、<c>{P}Names</c> →
-/// <see cref="SdkToolProfileModel.ContractNamespace"/>（勿与门槛值混淆）；风险枚举全名 → <see cref="SdkToolProfileModel.RiskEnumFullName"/>；
-/// golden 文件名 → <see cref="SdkToolProfileModel.GoldenFileName"/>（全名匹配，非后缀匹配）。
-/// </para>
-/// <para>
-/// <b>单一真相源纪律</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定必须全部从工具特性派生，<b>不得</b>手写
-/// 平行清单——漂移后名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"。
-/// <b>名字契约的所有者唯一</b>：工具名契约表只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/> 程序集（工具面的
-/// 实现包）——其他引用本生成器的工程也可能声明工具特性样例接口，若一并发射会同名类型冲突（CS0433）。
-/// </para>
+/// 泛化点：owner 门槛（上游三处同值常量）收敛为单一剖面槽 <see cref="SdkToolProfileModel.OwnerAssembly"/>——门槛值<b>不是</b> ProductPrefix 推导（缺 <c>.AI.</c> 段、复数 <c>Tools</c>、无 <c>Tool</c> 后缀，推导即错误抽象）；产物命名空间 <c>{P}Schemas</c>/<c>{P}Contracts</c> → <see cref="SdkToolProfileModel.GeneratedNamespace"/>、<c>{P}Names</c> → <see cref="SdkToolProfileModel.ContractNamespace"/>（勿与门槛值混淆）；风险枚举全名 → <see cref="SdkToolProfileModel.RiskEnumFullName"/>；golden 文件名 → <see cref="SdkToolProfileModel.GoldenFileName"/>（全名匹配，非后缀匹配）。
+/// <b>单一真相源纪律</b>：工具名常量、只读/写类清单与 <c>IsWriteTool</c> 判定必须全部从工具特性派生，<b>不得</b>手写平行清单——漂移后名字常量编译期不报错，只在运行期表现为"白名单里的名字不存在"。<b>名字契约的所有者唯一</b>：工具名契约表只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/> 程序集（工具面的实现包）——其他引用本生成器的工程也可能声明工具特性样例接口，若一并发射会同名类型冲突（CS0433）。
 /// </remarks>
 internal static class SchemaEmitter
 {
     /// <summary>判断 AdditionalFile 是否为该剖面的 golden 快照（由入口生成器在 <c>AdditionalTextsProvider</c> 过滤时
     /// 消费；<b>全文件名</b>匹配）。</summary>
-    /// <remarks>
-    /// <see cref="SdkToolProfileModel.GoldenFileName"/> 是<b>非必填槽</b>（剖面尚未固化快照时为空串）：未声明时本方法恒为
-    /// <see langword="false"/>——否则 <c>EndsWith("")</c> 恒为 true，消费方工程里任意 AdditionalFile（任意 .txt /
-    /// appsettings.json）都会被当作 golden 快照参与比对，凭空产出零容忍的槽位 014 并构建失败。
-    /// </remarks>
+    /// <remarks><see cref="SdkToolProfileModel.GoldenFileName"/> 是<b>非必填槽</b>（剖面尚未固化快照时为空串）：未声明时本方法恒为 <see langword="false"/>——否则 <c>EndsWith("")</c> 恒为 true，消费方工程里任意 AdditionalFile（任意 .txt / appsettings.json）都会被当作 golden 快照参与比对，凭空产出零容忍的槽位 014 并构建失败。</remarks>
     public static bool IsGoldenFile(string path, SdkToolProfileModel profile)
         => profile.GoldenFileName.Length > 0
             && path.Replace('\\', '/').EndsWith(profile.GoldenFileName, StringComparison.OrdinalIgnoreCase);
@@ -234,16 +218,8 @@ internal static class SchemaEmitter
     /// <summary>发射类型化契约表：契约事实（risk/identity/scopes/isWrite/http/route）的<b>类型化出口</b>——下游
     /// （注册器、目录、宿主策略默认值）直接消费编译期常量，不再运行期解析 Schema JSON。</summary>
     /// <remarks>
-    /// <para>
-    /// <b>与 Schema 常量同一 pass</b>（零新增扫描）：字段取值与 <c>SchemaWriter</c> 扩展块的 JSON 字面量逐一对齐
-    /// （<c>IsWrite = Risk != Read</c> 是既有派生式，非声明标志），保证"契约表 vs Schema JSON"不构成第二真相源。
-    /// </para>
-    /// <para>
-    /// <b>类型可见性</b>：契约记录的 <c>Risk</c> 直接使用剖面 <see cref="SdkToolProfileModel.RiskEnumFullName"/> 指向的
-    /// 消费方枚举——契约源码被注入消费方（owner 程序集），而消费方引用 SDK/AI 包，故枚举在其编译视角可见；生成器工程
-    /// 本身无需引用任何运行时包（包依赖图零变化）。只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/>
-    /// （与 {P}Names 同款门槛），否则其他声明工具特性样例接口的工程会因找不到该枚举而 CS0246。
-    /// </para>
+    /// <b>与 Schema 常量同一 pass</b>（零新增扫描）：字段取值与 <c>SchemaWriter</c> 扩展块的 JSON 字面量逐一对齐（<c>IsWrite = Risk != Read</c> 是既有派生式，非声明标志），保证"契约表 vs Schema JSON"不构成第二真相源。
+    /// <b>类型可见性</b>：契约记录的 <c>Risk</c> 直接使用剖面 <see cref="SdkToolProfileModel.RiskEnumFullName"/> 指向的消费方枚举——契约源码被注入消费方（owner 程序集），而消费方引用 SDK/AI 包，故枚举在其编译视角可见；生成器工程本身无需引用任何运行时包（包依赖图零变化）。只发射进 <see cref="SdkToolProfileModel.OwnerAssembly"/>（与 {P}Names 同款门槛），否则其他声明工具特性样例接口的工程会因找不到该枚举而 CS0246。
     /// </remarks>
     private static void EmitContracts(SourceProductionContext context, ToolSchemaModel[] ordered, SdkToolProfileModel profile)
     {
@@ -384,11 +360,7 @@ internal static class SchemaEmitter
             .ToList();
 
     /// <summary>工具名 → PascalCase 常量名（<c>bitable.list_tables</c> → <c>BitableListTables</c>）。</summary>
-    /// <remarks>
-    /// <b>派生名规则的单一真相源</b>：{P}Names 常量、{P}Contracts 属性、<c>{Tool}Args</c> 类型名与 hintName 全部由本方法
-    /// 派生——Schema 层 <c>DescriptorValidator.ValidateAll</c> 的可选委托参数 <c>nameConstantBuilder</c>（槽位 027
-    /// 「派生常量名冲突」检测）由入口生成器注入本方法，保证校验规则与产物规则同源（Schema 层不复刻）。
-    /// </remarks>
+    /// <remarks><b>派生名规则的单一真相源</b>：{P}Names 常量、{P}Contracts 属性、<c>{Tool}Args</c> 类型名与 hintName 全部由本方法派生——Schema 层 <c>DescriptorValidator.ValidateAll</c> 的可选委托参数 <c>nameConstantBuilder</c>（槽位 027「派生常量名冲突」检测）由入口生成器注入本方法，保证校验规则与产物规则同源（Schema 层不复刻）。</remarks>
     public static string BuildNameConstant(string toolName)
     {
         var sb = new StringBuilder(toolName.Length);
