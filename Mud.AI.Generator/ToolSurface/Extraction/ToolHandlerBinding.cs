@@ -8,17 +8,7 @@
 namespace Mud.AI.ToolSurface.Extraction;
 
 /// <summary>执行器构造参数在 DI 中的解析类别（<b>由符号事实推导，不由人声明</b>）。</summary>
-/// <remarks>
-/// 判定只用三条符号事实：<b>参数是否为接口</b> + <b>接口所在命名空间是否为 <c>{SdkNamespaceRoot}*</c></b>（剖面槽）+
-/// <b>参数是否可空</b>。三者的组合恰好覆盖工具面全部执行器的真实差异，<b>无需 per-domain 逃生舱</b>：
-/// <list type="bullet">
-/// <item>SDK 接口（不可空）→ <see cref="SoftService"/>；</item>
-/// <item>SDK 接口（<b>可空</b>）→ <see cref="OptionalService"/>——缺席时执行器<b>仍要构造</b>（工具级报错），
-/// 若误判为软缺席会让该工具从注册表消失（语义变更）；</item>
-/// <item>SDK 邻域接口（如知识检索器/暂存器）→ <see cref="SoftService"/>（缺席 = 对应能力域不注册）；</item>
-/// <item>非 SDK 命名空间的配置类依赖（如 <c>IOptions&lt;T&gt;</c>）→ <see cref="RequiredService"/>。</item>
-/// </list>
-/// </remarks>
+/// <remarks>判定只用三条符号事实：<b>参数是否为接口</b> + <b>接口所在命名空间是否为 <c>{SdkNamespaceRoot}*</c></b>（剖面槽）+ <b>参数是否可空</b>。三者的组合恰好覆盖工具面全部执行器的真实差异，<b>无需 per-domain 逃生舱</b>：SDK 接口（不可空）→ <see cref="SoftService"/>；SDK 接口（<b>可空</b>）→ <see cref="OptionalService"/>——缺席时执行器<b>仍要构造</b>（工具级报错），若误判为软缺席会让该工具从注册表消失（语义变更）；SDK 邻域接口（如知识检索器/暂存器）→ <see cref="SoftService"/>（缺席 = 对应能力域不注册）；非 SDK 命名空间的配置类依赖（如 <c>IOptions&lt;T&gt;</c>）→ <see cref="RequiredService"/>。</remarks>
 internal enum ToolDependencyKind
 {
     /// <summary>软缺席候选：缺席 → 执行器为 <see langword="null"/> → 注册器不注册 → 该域工具不进注册表。</summary>
@@ -64,16 +54,8 @@ internal sealed class ToolExecutorDependency : IEquatable<ToolExecutorDependency
 
 /// <summary>一枚「工具 ↔ 执行器方法」绑定（handler 特性的编译期投影，值模型）。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么需要方法级声明</b>：tool → 执行器方法<b>不可派生</b>——<c>CapabilityEntry.MethodName</c> 是 <c>Source</c>
-/// 挂钩解析出的 <b>SDK 方法名</b>，而注册器需要的是执行器方法名，二者既不等同也无命名律可依；故映射必须显式声明，
-/// 把它放在<b>执行器方法上</b>（而非单独的注册器文件里）使「新增工具」的编辑点最少化，且工具名经名字契约常量传递
-/// = 编译期校验。
-/// </para>
-/// <para>
-/// <b>注册器分组 = 执行器类</b>（不依赖「模块」这一维度）：跨模块的写域因此自然拆成多个注册器，「一模块一执行器」的
-/// 伪约束与随之而来的特例分支一并消失。
-/// </para>
+/// <b>为什么需要方法级声明</b>：tool → 执行器方法<b>不可派生</b>——<c>CapabilityEntry.MethodName</c> 是 <c>Source</c> 挂钩解析出的 <b>SDK 方法名</b>，而注册器需要的是执行器方法名，二者既不等同也无命名律可依；故映射必须显式声明，把它放在<b>执行器方法上</b>（而非单独的注册器文件里）使「新增工具」的编辑点最少化，且工具名经名字契约常量传递 = 编译期校验。
+/// <b>注册器分组 = 执行器类</b>（不依赖「模块」这一维度）：跨模块的写域因此自然拆成多个注册器，「一模块一执行器」的伪约束与随之而来的特例分支一并消失。
 /// </remarks>
 internal sealed class ToolHandlerBinding : IEquatable<ToolHandlerBinding?>
 {
@@ -127,8 +109,7 @@ internal sealed class ToolHandlerBinding : IEquatable<ToolHandlerBinding?>
         return stem + "ToolDomainRegistrar";
     }
 
-    /// <summary>由执行器类型名派生 DI 核心方法名（<c>BitableTools</c> + SDK 名 <c>Feishu</c> →
-    /// <c>AddFeishuBitableToolsCore</c>）；SDK 名取自剖面 <see cref="SdkToolProfileModel.Name"/> 槽（同源事实）。</summary>
+    /// <summary>由执行器类型名派生 DI 核心方法名（<c>BitableTools</c> + SDK 名 <c>Feishu</c> → <c>AddFeishuBitableToolsCore</c>）；SDK 名取自剖面 <see cref="SdkToolProfileModel.Name"/> 槽（同源事实）。</summary>
     public static string BuildCoreMethodName(string executorTypeName, SdkToolProfileModel profile)
         => "Add" + profile.Name + executorTypeName + "Core";
 
@@ -200,10 +181,7 @@ internal sealed class ToolHandlerBinding : IEquatable<ToolHandlerBinding?>
 
 /// <summary>一次 handler 特性（<c>[{ToolHandlerAttributeName}]</c>，名字来自剖面槽）扫描的产物：可发射绑定（可能为
 /// <see langword="null"/>）+ 待上报诊断。</summary>
-/// <remarks>
-/// <b>工具名独立于绑定保留</b>：签名不合法（槽位 024）时绑定为 <see langword="null"/>，但工具名仍要传给发射器——否则
-/// 「已声明但形态错误」会被同时报成「未绑定」（同一根因两条诊断）。
-/// </remarks>
+/// <remarks><b>工具名独立于绑定保留</b>：签名不合法（槽位 024）时绑定为 <see langword="null"/>，但工具名仍要传给发射器——否则「已声明但形态错误」会被同时报成「未绑定」（同一根因两条诊断）。</remarks>
 internal sealed class ScannedHandler : IEquatable<ScannedHandler?>
 {
     private ScannedHandler(string? toolName, ToolHandlerBinding? binding, PendingDiagnostic[] diagnostics)
