@@ -12,20 +12,8 @@ namespace Mud.AI.ToolSurface.Schema;
 
 /// <summary>per-tool affordance 资产的<b>采集 / 解析 / 校验</b>（<see cref="SdkToolProfileModel.AffordanceDirectory"/> 槽驱动）。</summary>
 /// <remarks>
-/// <para>
-/// <b>为什么用 AdditionalFiles 而非源码内 XML 文档</b>：与 <c>GuidanceEmitter</c> 同款判断——生成器工程受
-/// <c>netstandard2.0</c> 约束，解析 XML doc 需手写解析器（复杂且脆）；AdditionalFiles 的扫描、读取、比对全部复用既有管线。
-/// <b>为什么与 guidance 分两套代码</b>：两者的<b>键空间与结构约束完全不同</b>——guidance 是「路径 → 自由文本」的字典，
-/// affordance 是「工具名 → 四节数组」的结构化契约（缺节/未知节/空节都是策展错误，必须报红）；强行抽象会把"结构校验"
-/// 这条核心价值稀释成可选钩子。
-/// </para>
-/// <para>
-/// <b>失败模式比 guidance 更隐蔽</b>：guidance 写错文件名只是"某域少了一段文本"，而 affordance 写错文件名/节名
-/// <b>不会触发任何编译错误</b>，表现为"模型还是不看这些提示"，构建日志完全看不出来 ⇒ 必须由 Error 级诊断机械拦下（028/029/030）。
-/// <b>为什么在本层报错而不是抛异常</b>：guidance 的"键冲突抛异常"适用于「两个文件争一个键」（无法归属到单个资产）；
-/// affordance 的三类失败都能精确归属到<b>某一份资产</b>，报诊断能一次列全所有坏资产（抛异常只能报第一个），且可被消费方
-/// 按精确 ID 配置/审计。
-/// </para>
+/// <b>为什么用 AdditionalFiles 而非源码内 XML 文档</b>：与 <c>GuidanceEmitter</c> 同款判断——生成器工程受 <c>netstandard2.0</c> 约束，解析 XML doc 需手写解析器（复杂且脆）；AdditionalFiles 的扫描、读取、比对全部复用既有管线。<b>为什么与 guidance 分两套代码</b>：两者的<b>键空间与结构约束完全不同</b>——guidance 是「路径 → 自由文本」的字典，affordance 是「工具名 → 四节数组」的结构化契约（缺节/未知节/空节都是策展错误，必须报红）；强行抽象会把"结构校验"这条核心价值稀释成可选钩子。
+/// <b>失败模式比 guidance 更隐蔽</b>：guidance 写错文件名只是"某域少了一段文本"，而 affordance 写错文件名/节名<b>不会触发任何编译错误</b>，表现为"模型还是不看这些提示"，构建日志完全看不出来 ⇒ 必须由 Error 级诊断机械拦下（028/029/030）。<b>为什么在本层报错而不是抛异常</b>：guidance 的"键冲突抛异常"适用于「两个文件争一个键」（无法归属到单个资产）；affordance 的三类失败都能精确归属到<b>某一份资产</b>，报诊断能一次列全所有坏资产（抛异常只能报第一个），且可被消费方按精确 ID 配置/审计。
 /// </remarks>
 internal static class AffordanceAssets
 {
@@ -39,10 +27,7 @@ internal static class AffordanceAssets
     private const int MaxListedAssets = 5;
 
     /// <summary>四个固定小节：标题文本（大小写不敏感匹配）→ 发射键。</summary>
-    /// <remarks>
-    /// 顺序即 <see cref="AffordanceEntry.ToJson"/> 的键顺序（golden 确定性的一部分）；标题文本按<b>人类可读</b>书写
-    /// （<c>Avoid when</c>），发射键按<b>机器可读</b> snake_case（<c>avoid_when</c>），与 <c>x-{sdk}</c> 既有键风格一致。
-    /// </remarks>
+    /// <remarks>顺序即 <see cref="AffordanceEntry.ToJson"/> 的键顺序（golden 确定性的一部分）；标题文本按<b>人类可读</b>书写（<c>Avoid when</c>），发射键按<b>机器可读</b> snake_case（<c>avoid_when</c>），与 <c>x-{sdk}</c> 既有键风格一致。</remarks>
     private static readonly ImmutableArray<SectionDefinition> SectionTable =
     [
         new("WHEN", "when"),
@@ -52,11 +37,7 @@ internal static class AffordanceAssets
     ];
 
     /// <summary>判断 AdditionalFile 是否为该剖面的 affordance 资产（正斜杠归一后按目录片段匹配）。</summary>
-    /// <remarks>
-    /// <see cref="SdkToolProfileModel.AffordanceDirectory"/> 是<b>非必填槽</b>：空串时本方法恒为 <see langword="false"/>。
-    /// 否则 <c>IndexOf("")</c> 恒为 0，消费方工程里任意 <c>.md</c>（README、CHANGELOG、Guidance 资产）都会被吸收为本
-    /// 剖面的 affordance，进而以"文件名不是工具名"批量产出零容忍的归属诊断（028/029）——升级即构建失败。
-    /// </remarks>
+    /// <remarks><see cref="SdkToolProfileModel.AffordanceDirectory"/> 是<b>非必填槽</b>：空串时本方法恒为 <see langword="false"/>。否则 <c>IndexOf("")</c> 恒为 0，消费方工程里任意 <c>.md</c>（README、CHANGELOG、Guidance 资产）都会被吸收为本剖面的 affordance，进而以"文件名不是工具名"批量产出零容忍的归属诊断（028/029）——升级即构建失败。</remarks>
     public static bool IsAffordanceFile(string path, SdkToolProfileModel profile)
     {
         var directory = profile.AffordanceDirectory;
@@ -87,10 +68,7 @@ internal static class AffordanceAssets
     /// <param name="profile">当前剖面（提供目录槽与诊断 ID 前缀）。</param>
     /// <param name="factory">该剖面的诊断工厂（拼 <c>{prefix}{slot:D3}</c> 描述符）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
-    /// <remarks>
-    /// <b>确定性</b>：资产按路径序处理，条目按工具名 <c>SortedDictionary</c> 归集——与 golden 的逐字节可比性要求一致
-    /// （同一输入必须产出同一 JSON）。
-    /// </remarks>
+    /// <remarks><b>确定性</b>：资产按路径序处理，条目按工具名 <c>SortedDictionary</c> 归集——与 golden 的逐字节可比性要求一致（同一输入必须产出同一 JSON）。</remarks>
     public static (ImmutableArray<AffordanceEntry> Entries, ImmutableArray<PendingDiagnostic> Diagnostics) Collect(
         ImmutableArray<AdditionalText> files,
         ImmutableArray<ToolSchemaModel> models,
@@ -219,17 +197,8 @@ internal static class AffordanceAssets
 
     /// <summary>解析资产正文为四节条目数组（顺序与 <see cref="SectionTable"/> 一致）。</summary>
     /// <remarks>
-    /// <para>
-    /// <b>词法规则（确定性优先，全部可机械复现）</b>：小节标题 = 行首（允许空白）以 <c>#</c> 开头的行，去掉全部 <c>#</c>
-    /// 与空白后<b>大小写不敏感</b>匹配 <see cref="SectionTable"/> 的标题文本，未命中即"未知小节"；首个小节标题之前的
-    /// 正文被忽略（容错：资产可以有一级标题或说明抬头）；小节体内以 <c>-</c>/<c>*</c>/<c>+</c> 开头的行是<b>一个条目</b>
-    /// （标记剥离），非项目符号行并入当前条目（续行以 <c>\n</c> 连接），空行忽略；四节必须<b>都存在且各至少一个条目</b>
-    /// ——“空节”与“缺节”同为策展错误。
-    /// </para>
-    /// <para>
-    /// <b>为什么“空节”也要报错</b>：affordance 的价值在于“逼迫策展者显式回答四个问题”；允许留空会让资产退化为
-    /// “只写 WHEN 的半个描述”，而模型拿到 <c>"avoid_when":[]</c> 无法区分“确实没有反例”与“策展者忘了写”。
-    /// </para>
+    /// <b>词法规则（确定性优先，全部可机械复现）</b>：小节标题 = 行首（允许空白）以 <c>#</c> 开头的行，去掉全部 <c>#</c> 与空白后<b>大小写不敏感</b>匹配 <see cref="SectionTable"/> 的标题文本，未命中即"未知小节"；首个小节标题之前的正文被忽略（容错：资产可以有一级标题或说明抬头）；小节体内以 <c>-</c>/<c>*</c>/<c>+</c> 开头的行是<b>一个条目</b>（标记剥离），非项目符号行并入当前条目（续行以 <c>\n</c> 连接），空行忽略；四节必须<b>都存在且各至少一个条目</b>——“空节”与“缺节”同为策展错误。
+    /// <b>为什么“空节”也要报错</b>：affordance 的价值在于“逼迫策展者显式回答四个问题”；允许留空会让资产退化为“只写 WHEN 的半个描述”，而模型拿到 <c>"avoid_when":[]</c> 无法区分“确实没有反例”与“策展者忘了写”。
     /// </remarks>
     private static bool TryParse(
         string text,

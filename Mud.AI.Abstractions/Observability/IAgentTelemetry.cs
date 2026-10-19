@@ -7,9 +7,7 @@
 
 namespace Mud.AI.Abstractions.Observability;
 
-/// <summary>
-/// 中立遥测端口：把「运行管线要埋的事件点」与「具体遥测实现与命名面」解耦。
-/// </summary>
+/// <summary>中立遥测端口：把「运行管线要埋的事件点」与「具体遥测实现与命名面」解耦。</summary>
 /// <remarks>
 /// <b>为什么是端口而不是直接调 <c>ActivitySource</c></b>：中立包不得认识任何产品的遥测命名面（<c>xxx.agent.*</c> 键、Span 名、Meter 名都是产品资产——改名会让已依赖它的宿主仪表盘失效）；端口只提供<b>调用入口</b>，键名/单位/聚合口径由产品侧决定。
 /// <b>句柄语义</b>：各 <c>Start*</c> 返回的 <see cref="IDisposable"/> 是阶段作用域（产品侧通常映射为一个 <c>Activity</c>），<see langword="null"/> 表示不采集；作用域必须及时 <c>Dispose</c>，且<b>不得</b>承载业务状态——丢失/为 null 时业务行为必须零差异。
@@ -46,11 +44,7 @@ public interface IAgentTelemetry
     void Degraded(string reason);
 
     /// <summary>开启一次「会话历史摘要」阶段作用域（命名面由产品实现决定）。</summary>
-    /// <remarks>
-    /// <b>为什么不复用 <see cref="StartTurn"/></b>：摘要是<b>嵌套在回合内</b>的子阶段（回合 → 摘要 → 模型调用），产品侧的
-    /// Span 名与标签集合都不同（条数标签 + 「是否已摘要」「是否不可收敛」两个结果标记）——复用回合作用域会把子阶段语义
-    /// 塞进父 Span，宿主再也分不出「这一轮到底摘要了没有」。
-    /// </remarks>
+    /// <remarks><b>为什么不复用 <see cref="StartTurn"/></b>：摘要是<b>嵌套在回合内</b>的子阶段（回合 → 摘要 → 模型调用），产品侧的 Span 名与标签集合都不同（条数标签 + 「是否已摘要」「是否不可收敛」两个结果标记）——复用回合作用域会把子阶段语义塞进父 Span，宿主再也分不出「这一轮到底摘要了没有」。</remarks>
     /// <param name="summarizedCount">被压缩的旧消息条数。</param>
     /// <param name="retainedCount">保留的最近消息条数。</param>
     /// <returns>作用域（实现返回 <see langword="null"/> 表示不采集）。</returns>

@@ -10,18 +10,11 @@ using Mud.AI.ToolSurface.Schema;
 
 namespace Mud.AI.ToolSurface.Emit;
 
-/// <summary>
-/// Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型（<c>{Tool}Args</c>，独立产物文件），
-/// 把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。
-/// </summary>
+/// <summary>Tier C 发射器：产出参数解包类型——每枚工具特性接口一个强类型入参类型（<c>{Tool}Args</c>，独立产物文件），把执行器方法首部逐参读取收敛为<b>一次</b> <c>Unpack</c> 调用。</summary>
 /// <remarks>
-/// 泛化点：owner 门槛与产物命名空间 → <see cref="SdkToolProfileModel.OwnerAssembly"/> /
-/// <see cref="SdkToolProfileModel.ContractNamespace"/>（同串但语义不同：前者是程序集名，后者是产物落点命名空间）；
-/// hintName 前缀 → <c>{ProductPrefix}Args</c>；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。
-/// <b>为什么值得生成</b>：参数名在「接口签名」与「执行器里的字符串字面量」两处独立维护，漂移的唯一表现是<b>运行期</b>
-/// <c>ArgumentException: 缺少必填参数 x</c>；生成 <c>Unpack</c> 后字段名由接口派生，改名即执行器编译失败。
-/// <b>解包映射表是引擎机制</b>：<see cref="TryResolveReader"/> 的「类型 → 读取器」表留在引擎内，读取器指向的
-/// <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名）。
+/// 泛化点：owner 门槛与产物命名空间 → <see cref="SdkToolProfileModel.OwnerAssembly"/> / <see cref="SdkToolProfileModel.ContractNamespace"/>（同串但语义不同：前者是程序集名，后者是产物落点命名空间）；hintName 前缀 → <c>{ProductPrefix}Args</c>；诊断 → <see cref="ToolSurfaceDiagnostics.Factory"/> 槽位 20/21。
+/// <b>为什么值得生成</b>：参数名在「接口签名」与「执行器里的字符串字面量」两处独立维护，漂移的唯一表现是<b>运行期</b> <c>ArgumentException: 缺少必填参数 x</c>；生成 <c>Unpack</c> 后字段名由接口派生，改名即执行器编译失败。
+/// <b>解包映射表是引擎机制</b>：<see cref="TryResolveReader"/> 的「类型 → 读取器」表留在引擎内，读取器指向的 <c>ToolArgs</c> helper 集由 owner 程序集手写提供（产物只引用其类型名）。
 /// <b>不生成执行器方法体</b>：白名单投影、filter/sort 解析、dry_run 摘要等业务逻辑仍由人写。
 /// </remarks>
 internal static class ToolArgsEmitter
@@ -39,9 +32,7 @@ internal static class ToolArgsEmitter
     public static string OutputFolder(SdkToolProfileModel profile)
         => profile.ProductPrefix + TypeSuffix;
 
-    /// <summary>
-    /// 发射参数解包产物（仅名字契约所有者程序集；无工具或不满足门槛时不产出）。每枚 <c>{Tool}Args</c> 类型一个独立产物文件（<c>{P}Args/{TypeName}.g.cs</c>）。
-    /// </summary>
+    /// <summary>发射参数解包产物（仅名字契约所有者程序集；无工具或不满足门槛时不产出）。每枚 <c>{Tool}Args</c> 类型一个独立产物文件（<c>{P}Args/{TypeName}.g.cs</c>）。</summary>
     /// <param name="context">源产出上下文。</param>
     /// <param name="models">Tier C 模型集合。</param>
     /// <param name="profile">当前剖面（owner 门槛 / 产物命名空间 / 目录前缀槽的唯一来源）。</param>
@@ -150,13 +141,8 @@ internal static class ToolArgsEmitter
                 closedSetMaps: RenderClosedSetMaps(entry.Parameters));
     }
 
-    /// <summary>
-    /// 参数 → 解包读取器映射表（唯一真相源；与 owner 程序集 <c>ToolArgs</c> 的 helper 集必须一一对应）。
-    /// </summary>
-    /// <remarks>
-    /// 只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> / <c>string[]?</c> /
-    /// <c>int?</c> / <c>bool?</c>。<c>int</c> 必填与可选映射均提供；<c>bool</c> 仅提供可选映射（无工具声明必填布尔参数）。
-    /// </remarks>
+    /// <summary>参数 → 解包读取器映射表（唯一真相源；与 owner 程序集 <c>ToolArgs</c> 的 helper 集必须一一对应）。</summary>
+    /// <remarks>只映射<b>当前工具面真实存在的形态</b>：<c>string</c> / <c>string?</c> / <c>string[]</c> / <c>string[]?</c> / <c>int?</c> / <c>bool?</c>。<c>int</c> 必填与可选映射均提供；<c>bool</c> 仅提供可选映射（无工具声明必填布尔参数）。</remarks>
     private static bool TryResolveReader(CapabilityParameter parameter, out string fieldType, out string reader)
     {
         var name = JsonText.ToCSharpLiteral(parameter.Name);
@@ -228,12 +214,7 @@ internal static class ToolArgsEmitter
     }
 
     /// <summary>渲染取值闭集的读取器；返回 <see langword="false"/> 表示"无闭集或闭集不可解"⇒ 调用方回退到类型推导分支。</summary>
-    /// <remarks>
-    /// 两类闭集：<b>C# enum</b>（参数 C# 类型就是该 enum）⇒ <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> /
-    /// <c>OptionalEnum&lt;TEnum&gt;</c>，泛型 + <c>Enum.TryParse</c>，AOT 安全；<b>常量类</b>（<c>const int</c>）⇒
-    /// 只能按名字映射，用 <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，映射表由
-    /// <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。
-    /// </remarks>
+    /// <remarks>两类闭集：<b>C# enum</b>（参数 C# 类型就是该 enum）⇒ <c>ToolArgs.RequireEnum&lt;TEnum&gt;</c> / <c>OptionalEnum&lt;TEnum&gt;</c>，泛型 + <c>Enum.TryParse</c>，AOT 安全；<b>常量类</b>（<c>const int</c>）⇒ 只能按名字映射，用 <c>ToolArgs.RequireNamedInt</c> / <c>OptionalNamedInt</c>，映射表由 <see cref="RenderClosedSetMaps"/> 发射为 <c>static readonly Dictionary</c>。</remarks>
     private static bool TryResolveClosedSetReader(
         CapabilityParameter parameter,
         string nameLiteral,
@@ -291,14 +272,8 @@ internal static class ToolArgsEmitter
     private static string ClosedSetMapAccess(string enumTypeFullName)
         => "__closedSet_" + enumTypeFullName.Replace("global::", string.Empty).Replace('.', '_');
 
-    /// <summary>
-    /// 为参数列表中<b>每个常量类闭集</b>发射一个 <c>private static readonly IReadOnlyDictionary&lt;string,int&gt;</c> 映射表。
-    /// </summary>
-    /// <remarks>
-    /// <b>为什么必须发射</b>：模型按 Schema 里的<b>常量名</b>传值而 SDK 要<b>整型平台值</b>，不发射这层映射就会
-    /// "Schema 收名字、读取器收数字"⇒ 该参数<b>恒失败</b>；<c>static readonly</c> ⇒ <b>零反射</b>（AOT 纪律）。
-    /// 成员表取自 <see cref="CapabilityParameter.EnumMembers"/>（<c>"name=value;…"</c>）。
-    /// </remarks>
+    /// <summary>为参数列表中<b>每个常量类闭集</b>发射一个 <c>private static readonly IReadOnlyDictionary&lt;string,int&gt;</c> 映射表。</summary>
+    /// <remarks><b>为什么必须发射</b>：模型按 Schema 里的<b>常量名</b>传值而 SDK 要<b>整型平台值</b>，不发射这层映射就会"Schema 收名字、读取器收数字"⇒ 该参数<b>恒失败</b>；<c>static readonly</c> ⇒ <b>零反射</b>（AOT 纪律）。成员表取自 <see cref="CapabilityParameter.EnumMembers"/>（<c>"name=value;…"</c>）。</remarks>
     private static string RenderClosedSetMaps(IReadOnlyList<CapabilityParameter> parameters)
     {
         var emitted = new HashSet<string>(StringComparer.Ordinal);
@@ -357,10 +332,7 @@ internal static class ToolArgsEmitter
         return builder.ToString();
     }
 
-    /// <summary>
-    /// 归一化 C# 类型显示名（去 <c>?</c>、别名与 CLR 名统一）——<c>ToDisplayString()</c> 的
-    /// 可空引用注解与 <c>UseSpecialTypes</c> 选项跨版本有差异，按名匹配必须容错两侧写法。
-    /// </summary>
+    /// <summary>归一化 C# 类型显示名（去 <c>?</c>、别名与 CLR 名统一）——<c>ToDisplayString()</c> 的可空引用注解与 <c>UseSpecialTypes</c> 选项跨版本有差异，按名匹配必须容错两侧写法。</summary>
     private static string NormalizeTypeName(string csharpType)
     {
         var name = csharpType.Trim().TrimEnd('?').Trim();
@@ -459,10 +431,7 @@ internal static class ToolArgsEmitter
             ClosedSetMaps = closedSetMaps;
         }
 
-        /// <summary>
-        /// 常量类闭集的"常量名 → 平台整数值"映射表源码（<c>static readonly Dictionary</c>）。
-        /// 为空串表示本工具无常量类闭集参数——此时产物里不应出现任何 <c>__closedSet_*</c> 字段。
-        /// </summary>
+        /// <summary>常量类闭集的"常量名 → 平台整数值"映射表源码（<c>static readonly Dictionary</c>）。为空串表示本工具无常量类闭集参数——此时产物里不应出现任何 <c>__closedSet_*</c> 字段。</summary>
         public string ClosedSetMaps { get; }
 
         public string ToolName { get; }
