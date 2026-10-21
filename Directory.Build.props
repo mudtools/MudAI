@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<!-- 新仓自有版本线（方案 §3.3 D-3）：与飞书仓全局 <Version> 解耦，自 1.0.0 起步。 -->
-		<Version>1.1.0</Version>
+		<Version>1.0.2</Version>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>

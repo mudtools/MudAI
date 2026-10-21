@@ -2,7 +2,9 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本规范](https://semver.org/lang/zh-CN/)。
 
-## [1.1.0] - 2026-10-19
+## [1.0.2] - 2026-10-19
+
+> 本版按补丁号发布：契约面全部为**加法 + 弃用警告**（无破坏性变更），两处主构造变更均为钉版下游重建即可的源码兼容变更。
 
 ### 新增
 
@@ -35,7 +37,7 @@
 - `VectorRetriever` 在"已查询但零命中"分支漏报 `RetrievalPerformed` ⇒ "向量库配错、永远零知识"在指标上完全隐形；现补 `(0, 0)` 样本。
 - `AgentApprovalContinuation` 的 `ApprovalRequested` 只上报旧审批的工具名且多条新审批只记一次；现逐项按其自身工具名上报。
 
-[1.1.0]: https://github.com/mudtools/Mud.AI/releases/tag/v1.1.0
+[1.0.2]: https://github.com/mudtools/Mud.AI/releases/tag/v1.0.2
 
 ## [1.0.1] - 2026-10-16
 

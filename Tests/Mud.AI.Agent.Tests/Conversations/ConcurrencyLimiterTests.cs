@@ -73,7 +73,11 @@ public class ConcurrencyLimiterTests
         stopwatch.Stop();
 
         timedOut.Should().BeNull("队列超时的表达是 null，不是异常——异常语义留给外壳");
-        stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(timeout, "必须真的等到超时点才放弃");
+
+        // 已耗时断言带容差：定时器基于节拍、按相对时刻计算，可能提前约 1 个节拍（~15ms）返回。
+        // 断言"至少等够超时的三分之二"既能否定"完全没等"，又不会被 1ms 级的提前返回打成假红。
+        stopwatch.Elapsed.Should().BeGreaterThan(
+            timeout - TimeSpan.FromMilliseconds(50), "必须真的等到超时点才放弃（容差仅吸收计时器节拍抖动）");
 
         held!.Dispose();
         (await limiter.TryAcquireAsync()).Should().NotBeNull("超时放弃不得吞掉许可（放弃的是登记，不是许可）");
