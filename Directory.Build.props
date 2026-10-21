@@ -20,7 +20,7 @@
 		<!-- 打包元数据（方案 §5.1）：包身份已独立于飞书仓，故在根 props 统一声明。
 		     图标/README 由下方 ItemGroup 逐工程注入（PackageIcon/PackageReadmeFile 指向包内根）。 -->
 		<PackageProjectUrl>http://www.mudtools.cn/</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/mudtools/Mud.AI</RepositoryUrl>
+		<RepositoryUrl>https://github.com/mudtools/mudai</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageIcon>Icon.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
